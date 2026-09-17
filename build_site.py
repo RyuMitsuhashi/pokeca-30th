@@ -228,7 +228,14 @@ def build():
     sm = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">', f"<url><loc>{SITE_URL}/</loc><lastmod>{NOW.date()}</lastmod><changefreq>hourly</changefreq></url>"]
     for u, t in urls: sm.append(f"<url><loc>{esc(u)}</loc><lastmod>{t.date()}</lastmod><changefreq>daily</changefreq></url>")
     sm.append("</urlset>"); (ROOT / "sitemap.xml").write_text("\n".join(sm), encoding="utf-8")
-    (ROOT / "robots.txt").write_text(f"User-agent: *\nAllow: /\n\nUser-agent: GPTBot\nAllow: /\nUser-agent: ClaudeBot\nAllow: /\nUser-agent: PerplexityBot\nAllow: /\nUser-agent: Google-Extended\nAllow: /\n\nSitemap: {SITE_URL}/sitemap.xml\n", encoding="utf-8")
+    robots = ("# HTMLは引用歓迎、生データ（JSON）と共有画像の一括取得は不可\n"
+              "User-agent: *\nAllow: /\nDisallow: /prices.json\nDisallow: /sets.json\nDisallow: /buy_ocr.json\nDisallow: /ids.json\nDisallow: /tcgdex-\nDisallow: /data/\nDisallow: /og/\n\n"
+              "User-agent: GPTBot\nAllow: /\nDisallow: /prices.json\nDisallow: /sets.json\nDisallow: /data/\n"
+              "User-agent: ClaudeBot\nAllow: /\nDisallow: /prices.json\nDisallow: /sets.json\nDisallow: /data/\n"
+              "User-agent: PerplexityBot\nAllow: /\nDisallow: /prices.json\nDisallow: /sets.json\nDisallow: /data/\n"
+              "User-agent: Google-Extended\nAllow: /\n\n"
+              f"Sitemap: {SITE_URL}/sitemap.xml\n")
+    (ROOT / "robots.txt").write_text(robots, encoding="utf-8")
     (ROOT / "llms.txt").write_text(f"# {SITE_NAME} ｜ {TAG}\n\n> ポケモンカードの販売価格・買取価格・PSA10価格を、DMMマイカ・カードラッシュ・遊々亭・シンソクなどの公開ページから1日2回集計している相場サイト。シリーズ別のBOX期待値、主要カードの指数、鑑定価値（PSA10÷素体）を掲載。\n\n## ページ\n" + "\n".join(f"- [{u}]({u})" for u, t in urls[:500]) + "\n", encoding="utf-8")
     print(f"pages: {len(urls)}, sitemap written", file=sys.stderr)
 

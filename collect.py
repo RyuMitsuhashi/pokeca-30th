@@ -23,7 +23,7 @@ import requests
 from bs4 import BeautifulSoup
 
 WAIT = 2.0
-HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; pokeca-souba/2.0; +mailto:you@example.com)", "Accept-Language": "ja,en;q=0.8"}
+HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; SOUBADEX-bot/2.0; +https://soubadex.com/#/about; contact@soubadex.com)", "Accept-Language": "ja,en;q=0.8"}
 OUT = pathlib.Path("prices.json"); SETS_FILE = pathlib.Path("sets.json"); DUMP = pathlib.Path("dump")
 JST = dt.timezone(dt.timedelta(hours=9))
 BASE = "https://myca.dmm.com"; GENRE = "pokemon-trading-card-game"; SERIES = "ポケモンカードゲームMEGA"

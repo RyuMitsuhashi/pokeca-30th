@@ -45,7 +45,7 @@ def main():
         images = [src["image"]] if src.get("image") else []
         if src.get("page"):
             try:
-                html = requests.get(src["page"], timeout=60, headers={"User-Agent": "Mozilla/5.0 (compatible; pokeca-souba/2.0)"}).text
+                html = requests.get(src["page"], timeout=60, headers={"User-Agent": "Mozilla/5.0 (compatible; SOUBADEX-bot/2.0; +https://soubadex.com/#/about)"}).text
                 for u in re.findall(r'<img[^>]+src="([^"]+)"', html):
                     if src.get("match", "") in u: images.append(requests.compat.urljoin(src["page"], u))
             except requests.RequestException as e:
