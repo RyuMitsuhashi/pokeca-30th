@@ -141,6 +141,30 @@ def discover_packs(dump) -> dict[str, int]:
     return packs
 
 
+PACKS_FILE = pathlib.Path("packs.json")   # 総当たりで見つけたパックIDのキャッシュ {setId: {name, pack_id}}
+
+def probe_packs(center: int = 6374, before: int = 140, after: int = 30) -> dict[str, dict]:
+    """絞り込みUIが読めないときの保険：pack id を前後に総当たりして、一覧の『…/M6a』からシリーズを判定する（1回だけ、結果はキャッシュ）"""
+    found = json.loads(PACKS_FILE.read_text(encoding="utf-8")) if PACKS_FILE.exists() else {}
+    if found: return found
+    base = f"{BASE}/{GENRE}/list?cardseries={requests.utils.quote(SERIES)}&myca_primary_pack_id="
+    for pid in list(range(center - 1, center - before - 1, -1)) + list(range(center + 1, center + after + 1)):
+        try:
+            html = render(base + str(pid), None, wait_for='a[href*="/items/single-card/"]')
+        except Exception as e:
+            log(f"  probe {pid}: {e}"); continue
+        cards = parse_list(html)
+        codes = [c["setcode"] for c in cards if c["setcode"]]
+        if not codes: continue
+        code = max(set(codes), key=codes.count)
+        if not code.lower().startswith("m") or code in found: continue
+        m = re.search(r"<title>(.*?)</title>", html, re.S); title = re.sub(r"\s*[|｜].*$", "", m.group(1)).strip() if m else code
+        found[code] = {"name": title or code, "pack_id": pid}
+        log(f"  probe {pid}: {code} {found[code]['name']} ({len(cards)}枚)")
+    PACKS_FILE.write_text(json.dumps(found, ensure_ascii=False, indent=1), encoding="utf-8")
+    return found
+
+
 # ---------- DMM：一覧ページから全カード ----------
 def parse_list(html: str) -> list[dict]:
     """一覧ページ → [{key, no, name, rarity, setcode, dmmId, lowest, cond}]"""
@@ -405,6 +429,11 @@ def main():
     for name, pid in discover_packs(a.dump).items():
         if pid in packs.values(): continue
         packs[f"pack{pid}"] = pid; names[f"pack{pid}"] = name
+    if len(packs) <= 1:   # 絞り込みから拾えなかった → 総当たり（初回のみ）
+        for code, info in probe_packs().items():
+            if info["pack_id"] in packs.values(): continue
+            packs[code] = info["pack_id"]; names[code] = info["name"]
+        log(f"packs after probe: {len(packs)} → {[(k, v) for k, v in packs.items()]}")
     sets_db = json.loads(SETS_FILE.read_text(encoding="utf-8")) if SETS_FILE.exists() else {}
     snap = {"fetched_at": dt.datetime.now(JST).isoformat(timespec="minutes"), "v": 2, "sets": {}}
     shinsoku = shinsoku_buylist(a.dump)        # 弾をまたぐ一覧なのでカード番号で照合
