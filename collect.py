@@ -185,7 +185,9 @@ def cardrush_page(pid, dump):
         m = PRICE.search(text[i:i + 300]); return yen(m.group(1) or m.group(2)) if m else None
     sell = near("販売価格") or near("価格")
     buy = near("買取価格")
-    return {"sell": sell, "buy": buy, "verify": sell is None}
+    # 売り切れ：カートに入れるボタンが無く「再入荷を知らせる」がある／SOLD OUT 表記
+    soldout = ("再入荷を知らせる" in text and "カートに入れる" not in text) or bool(re.search(r"sold\s*out|売り切れ|在庫切れ", text, re.I))
+    return {"sell": sell, "buy": buy, "soldout": soldout, "verify": sell is None}
 
 
 # ---- Shopify（晴れる屋2・トレカキャンプ） ----
@@ -240,7 +242,7 @@ def main():
         except (requests.RequestException, ValueError, KeyError) as e:
             print(f"  {key}: {e}", file=sys.stderr)
         cards.append({"key": key, "name": c["name"], "prices": P})
-        print(f"  {key} {c['name']}: " + ", ".join(f"{k}={v.get('lowest', v.get('sell'))}" for k, v in P.items()), file=sys.stderr)
+        print(f"  {key} {c['name']}: " + ", ".join(f"{k}={v.get('lowest', v.get('sell'))}{'(売切)' if v.get('soldout') else ''}" for k, v in P.items()), file=sys.stderr)
     snap = {"fetched_at": dt.datetime.now(JST).isoformat(timespec="minutes"), "cards": cards}
     hist = json.loads(OUT.read_text(encoding="utf-8")) if OUT.exists() else []
     hist.append(snap); OUT.write_text(json.dumps(hist, ensure_ascii=False, indent=1), encoding="utf-8")

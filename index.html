@@ -664,9 +664,9 @@ async function loadPricesJson(){
         const add=(s,v,src)=>{ if(v) (loaded[key]=loaded[key]||[]).push({s,t,v,src,custom:false}); };
         const P=hit.prices||{}; const dmmSrc=P.dmm||(hit.lowest?{lowest:hit.lowest,cond:hit.cond,listings:hit.listings}:null);
         if(dmmSrc) add('dmm',dmmSrc.lowest,'DMMマイカ（prices.json）'+(dmmSrc.cond?'・状態'+dmmSrc.cond:''));
-        if(P.cardrush){ add('rush',P.cardrush.sell,'カードラッシュ（prices.json）'); add('buy',P.cardrush.buy,'カードラッシュ 買取（prices.json）'); }
+        if(P.cardrush){ if(!P.cardrush.soldout) add('rush',P.cardrush.sell,'カードラッシュ（prices.json）'); add('buy',P.cardrush.buy,'カードラッシュ 買取（prices.json）'); }
         if(snap===lastSnap){
-          const rows=[]; for(const [k,label] of Object.entries(SHOP)) if(P[k]&&P[k].sell) rows.push({shop:label, price:P[k].sell, cond:P[k].cond||'—', when:fmtDT(t), src:'直接取得'});
+          const rows=[]; for(const [k,label] of Object.entries(SHOP)) if(P[k]&&P[k].sell) rows.push({shop:label, price:P[k].sell, cond:P[k].soldout?'売切':(P[k].cond||'—'), when:fmtDT(t), src:P[k].soldout?'直接取得・売り切れ時の値札':'直接取得'});
           if(dmmSrc&&dmmSrc.listings) for(const l of dmmSrc.listings) rows.push({shop:l.shop, price:l.price, cond:l.cond||'—', when:fmtDT(t), src:'DMMマイカ出品'});
           if(rows.length) shops[key]=rows;
         }
