@@ -1,0 +1,30 @@
+# HTMLは引用歓迎、生データ（JSON）と共有画像の一括取得は不可
+User-agent: *
+Allow: /
+Disallow: /prices.json
+Disallow: /sets.json
+Disallow: /buy_ocr.json
+Disallow: /ids.json
+Disallow: /tcgdex-
+Disallow: /data/
+Disallow: /og/
+
+User-agent: GPTBot
+Allow: /
+Disallow: /prices.json
+Disallow: /sets.json
+Disallow: /data/
+User-agent: ClaudeBot
+Allow: /
+Disallow: /prices.json
+Disallow: /sets.json
+Disallow: /data/
+User-agent: PerplexityBot
+Allow: /
+Disallow: /prices.json
+Disallow: /sets.json
+Disallow: /data/
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://ryumitsuhashi.github.io/pokeca-30th/sitemap.xml
