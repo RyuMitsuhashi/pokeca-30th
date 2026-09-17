@@ -222,7 +222,7 @@ details.sec > *:not(summary){margin-top:8px}
 <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="mbox" id="mbox"></div></div>
 
 <footer class="foot">
-  価格は各サイト掲載時点の数値で、実際の店頭・取引価格とは異なる場合があります。カードラッシュの販売・買取は攻略大百科（9/16 14:00）とポケカ当たり.jp（9/17）の掲載値、フリマ相場は攻略大百科（9/15フラゲ・9/16 1:00）、店舗平均はポケカ当たり.jpの10店舗以上の平均、DMMマイカの最安値と出品は通販サイト（myca.dmm.com）の9/17午後の掲載値、未追跡カードの買取目安はトレカプロが遊々亭・カードラッシュの9/17 7時台の買取価格から集計したレンジです。同じ場所に prices.json（collect.py の出力）があれば自動で読み、各店の直接取得値で更新します。カード画像はファン運営のデータベース TCGdex（api.tcgdex.net）から取得して表示しています（非公式・非商用の個人利用）。画像の権利は ©Pokémon/Nintendo/Creatures/GAME FREAK に帰属します。画像が無いカードは独自のプレースホルダーを表示し、claude.ai上では外部画像を読めないためプレースホルダーのままになります。リポジトリの img/ に「番号.jpg」（例 img/135.jpg、RGBは img/R.jpg）を置けば、その写真を優先して表示します。
+  価格は各サイト掲載時点の数値で、実際の店頭・取引価格とは異なる場合があります。カードラッシュの販売・買取は攻略大百科（9/16 14:00）とポケカ当たり.jp（9/17）の掲載値、フリマ相場は攻略大百科（9/15フラゲ・9/16 1:00）、店舗平均はポケカ当たり.jpの10店舗以上の平均、DMMマイカの最安値と出品は通販サイト（myca.dmm.com）の9/17午後の掲載値、未追跡カードの買取目安はトレカプロが遊々亭・カードラッシュの9/17 7時台の買取価格から集計したレンジです。同じ場所に prices.json（collect.py の出力）があれば自動で読み、各店の直接取得値で更新します。カード画像はファン運営のデータベース TCGdex（api.tcgdex.net）から取得して表示しています（非公式・非商用の個人利用）。画像の権利は ©Pokémon/Nintendo/Creatures/GAME FREAK に帰属します。画像が無いカードは独自のプレースホルダーを表示し、claude.ai上では外部画像を読めないためプレースホルダーのままになります。リポジトリの img/ に「番号.webp／.jpg／.png」（例 img/135.webp、RGBは img/R.webp）を置けば、その写真を表示します。
   出典：<a href="https://premium.gamepedia.jp/pokeca/archives/24665" target="_blank" rel="noopener">攻略大百科</a>／<a href="https://pokeka-atari.jp/expansion/30th-celebration" target="_blank" rel="noopener">ポケカ当たり.jp</a>／<a href="https://myca.dmm.com/pokemon-trading-card-game/list?cardseries=%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0MEGA&myca_primary_pack_id=6374" target="_blank" rel="noopener">DMMマイカ</a>／<a href="https://tcgpro.co.jp/media/pokeka-30th-atari/30th-card-list/" target="_blank" rel="noopener">トレカプロ</a>／画像 <a href="https://tcgdex.dev/" target="_blank" rel="noopener">TCGdex</a>
 </footer>
 
@@ -393,8 +393,10 @@ function spark(c){
   return `<svg viewBox="0 0 64 20" aria-hidden="true"><polyline fill="none" stroke="${col}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="${pts}"/></svg>`;
 }
 function frame(c, lg){ // TCGdex や FULL の画像URL → 無ければ img/番号.jpg（自分で置いた写真）→ 無ければ独自プレースホルダー
-  const src = (lg ? (c.imgHi||c.img) : c.img) || `img/${/^\d+$/.test(c.no) ? c.no : c.no.split('/')[0]}.jpg`;
-  return `<div class="frame ${lg?'lg':''} rar-${c.rarity||'REG'}"><div class="ph"><div class="n"><span>${esc(noLabel(c))}</span><span>M6a</span></div><div class="c"><b>${esc(c.name)}</b><span>${c.rarity||'NORMAL'}</span></div><div class="f">30th CELEBRATION</div></div><img class="art" src="${esc(src)}" alt="${esc(c.name)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"></div>`;
+  const base = `img/${/^\d+$/.test(c.no) ? c.no : c.no.split('/')[0]}`;
+  const remote = lg ? (c.imgHi||c.img) : c.img;
+  const cands = remote ? [remote] : ['webp','jpg','jpeg','png'].map(e=>`${base}.${e}`); // 自分で置く画像は webp / jpg / jpeg / png の順に探す
+  return `<div class="frame ${lg?'lg':''} rar-${c.rarity||'REG'}"><div class="ph"><div class="n"><span>${esc(noLabel(c))}</span><span>M6a</span></div><div class="c"><b>${esc(c.name)}</b><span>${c.rarity||'NORMAL'}</span></div><div class="f">30th CELEBRATION</div></div><img class="art" src="${esc(cands[0])}" data-alts="${esc(cands.slice(1).join(','))}" alt="${esc(c.name)}" loading="lazy" referrerpolicy="no-referrer" onerror="var a=(this.dataset.alts||'').split(',').filter(Boolean);if(a.length){this.src=a.shift();this.dataset.alts=a.join(',');}else{this.remove();}"></div>`;
 }
 
 /* ---- BOX期待値 ---- */
