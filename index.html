@@ -630,6 +630,8 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape' && $('#modal').clas
 /* ---- TCGdex（非公式ファンDB）からカード画像URLを引く ---- */
 const TCGDEX_SET_IDS = ['M6a','m6a'];
 async function applyTcgdex(set){
+  const sid=String(set.id||'').toLowerCase(), nm=String(set.name||'');
+  if(!(sid==='m6a' || (sid.startsWith('m') && !sid.startsWith('sm') && /30th/i.test(nm)))) return 0; // 別セット（SM6a等）の誤適用を防ぐ
   let n=0;
   for(const cd of (set.cards||[])){
     if(!cd.image) continue;

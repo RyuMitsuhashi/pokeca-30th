@@ -151,24 +151,32 @@ def dmm_page(cid, dump):
 
 
 def dmm_discover(dump) -> dict:
-    """未確認のDMM商品IDを、既知の商品ページの「関連カード」リンクから探して ids.json に貯める"""
+    """未確認のDMM商品IDを、一覧ページ（ブラウザ描画で2ページ目以降も）と商品ページの「関連カード」から探して ids.json に貯める"""
     known = json.loads(IDS.read_text(encoding="utf-8")) if IDS.exists() else {}
     for k, c in CARDS.items():
         if "dmm" not in c and k in known: c["dmm"] = int(known[k])
     missing = [k for k, c in CARDS.items() if "dmm" not in c]
     if not missing: return known
-    queue = [c["dmm"] for c in CARDS.values() if "dmm" in c]; seen = set()
-    while missing and queue and len(seen) < 30:
-        cid = queue.pop(0)
-        if cid in seen: continue
-        seen.add(cid)
-        html = get(DMM.format(id=cid), None)
-        for m in LINK.finditer(html):
-            name = BeautifulSoup(m.group(2), "html.parser").get_text(" ", strip=True); mk = KEY.search(name)
-            if name and mk and mk.group(1) not in known:
-                known[mk.group(1)] = int(m.group(1)); queue.append(int(m.group(1)))
+    list_url = f"{BASE}/pokemon-trading-card-game/list?cardseries={requests.utils.quote(CARDSERIES)}&myca_primary_pack_id={PACK_ID}"
+    for page in range(1, 6):
+        html = render(f"{list_url}&page={page}", f"list_p{page}.html" if dump else None) or (get(list_url, None) if page == 1 else "")
+        found = ids_from_links(html); new = {k: v for k, v in found.items() if k not in known}
+        known.update(new)
+        print(f"  dmm list page {page}: {len(found)} links, {len(new)} new", file=sys.stderr)
         for k in list(missing):
             if k in known: CARDS[k]["dmm"] = int(known[k]); missing.remove(k)
+        if not missing or not found: break
+    if missing:  # 念のため商品ページの「関連カード」も辿る
+        queue = [c["dmm"] for c in CARDS.values() if "dmm" in c]; seen = set()
+        while missing and queue and len(seen) < 20:
+            cid = queue.pop(0)
+            if cid in seen: continue
+            seen.add(cid)
+            html = render(DMM.format(id=cid), None) or get(DMM.format(id=cid), None)
+            for k, v in ids_from_links(html).items():
+                if k not in known: known[k] = v; queue.append(v)
+            for k in list(missing):
+                if k in known: CARDS[k]["dmm"] = int(known[k]); missing.remove(k)
     IDS.write_text(json.dumps(known, ensure_ascii=False, indent=1), encoding="utf-8")
     if missing: print(f"dmm id unresolved: {missing}", file=sys.stderr)
     return known
@@ -192,7 +200,10 @@ def cardrush_page(pid, dump):
 
 # ---- Shopify（晴れる屋2・トレカキャンプ） ----
 def shopify_json(url, dump_name, dump):
-    txt = get(url, dump_name if dump else None)
+    try:
+        txt = get(url, dump_name if dump else None)
+    except requests.RequestException:
+        time.sleep(5); txt = get(url, dump_name if dump else None)
     p = json.loads(txt)["product"]
     vs = [v for v in p.get("variants", []) if v.get("available", True)] or p.get("variants", [])
     price = min((float(v["price"]) for v in vs if v.get("price")), default=None)
@@ -202,16 +213,22 @@ def shopify_json(url, dump_name, dump):
 
 # ---- TCGdex（カード画像URL） ----
 def fetch_tcgdex(out: pathlib.Path = pathlib.Path("tcgdex-M6a.json")) -> bool:
+    """TCGdex の日本語セット一覧から M6a（30th CELEBRATION）だけを選び、カード一覧（画像URL入り）を保存する"""
     api = "https://api.tcgdex.net/v2"
     h = {"User-Agent": HEADERS["User-Agent"]}
     try:
         sets = requests.get(f"{api}/ja/sets", headers=h, timeout=30).json()
     except Exception as e:
         print(f"tcgdex: セット一覧を取得できず ({e})", file=sys.stderr); return False
-    cand = [x for x in sets if isinstance(x, dict) and ("m6a" in str(x.get("id", "")).lower() or "30th" in str(x.get("name", "")))]
+    def is_m6a(x):
+        sid = str(x.get("id", "")).lower(); name = str(x.get("name", ""))
+        return sid == "m6a" or (sid.startswith("m") and not sid.startswith("sm") and "30th" in name)
+    cand = [x for x in sets if isinstance(x, dict) and is_m6a(x)]
     if not cand:
-        recent = [x.get("id") for x in sets if isinstance(x, dict) and str(x.get("id", "")).lower().startswith("m")]
-        print(f"tcgdex: M6a が見つからない。M系のID: {recent[-12:]}", file=sys.stderr); return False
+        m_ids = [x.get("id") for x in sets if isinstance(x, dict) and re.match(r"^m\d", str(x.get("id", "")).lower())]
+        print(f"tcgdex: M6a は未収録。MEGA期のID: {m_ids}", file=sys.stderr)
+        out.unlink(missing_ok=True)  # 別セットの古いファイルが残らないように
+        return False
     for x in cand:
         try:
             r = requests.get(f"{api}/ja/sets/{x['id']}", headers=h, timeout=30)
