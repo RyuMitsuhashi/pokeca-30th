@@ -1,0 +1,32 @@
+# .github/workflows/fetch-myca-prices.yml
+# 1日2回（JST 9:00 / 21:00）DMMマイカの公開ページから価格を取り、prices.json をコミットする。
+# 同じリポジトリを GitHub Pages で公開しておけば、価格推移ボード（HTML）が同一オリジンの prices.json を読める。
+name: fetch-prices
+
+on:
+  schedule:
+    - cron: "0 0,12 * * *"   # UTC 0:00 / 12:00 = JST 9:00 / 21:00
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests beautifulsoup4
+      - run: python collect.py
+      - name: cache TCGdex set data (card image URLs)
+        run: curl -fsSL https://api.tcgdex.net/v2/ja/sets/M6a -o tcgdex-M6a.json || echo "tcgdex fetch skipped"
+      - name: commit prices.json
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add prices.json ids.json tcgdex-M6a.json
+          git commit -m "prices: $(date -u +%Y-%m-%dT%H:%M)Z" || echo "no changes"
+          git push
