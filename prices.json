@@ -1259,5 +1259,1687 @@
     }
    }
   ]
+ },
+ {
+  "fetched_at": "2026-09-18T04:20+09:00",
+  "v": 2,
+  "sets": {
+   "M6a": {
+    "102/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 110,
+       "cond": "A"
+      }
+     }
+    },
+    "010/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 50,
+       "cond": "A"
+      }
+     }
+    },
+    "034/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 390,
+       "cond": "A"
+      }
+     }
+    },
+    "101/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 60,
+       "cond": "A"
+      }
+     }
+    },
+    "077/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 80,
+       "cond": "A"
+      }
+     }
+    },
+    "037/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 300,
+       "cond": "A"
+      }
+     }
+    },
+    "017/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 280,
+       "cond": "A"
+      }
+     }
+    },
+    "028/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 280,
+       "cond": "A"
+      }
+     }
+    },
+    "029/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 200,
+       "cond": "A"
+      }
+     }
+    },
+    "026/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 300,
+       "cond": "A"
+      }
+     }
+    },
+    "041/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "018/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "030/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 280,
+       "cond": "A"
+      }
+     }
+    },
+    "027/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "022/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 380,
+       "cond": "A"
+      }
+     }
+    },
+    "093/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 50,
+       "cond": "A"
+      }
+     }
+    },
+    "095/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 50,
+       "cond": "A"
+      }
+     }
+    },
+    "092/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 50,
+       "cond": "A"
+      }
+     }
+    },
+    "031/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 200,
+       "cond": "A"
+      }
+     }
+    },
+    "023/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "019/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "044/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "103/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 50,
+       "cond": "A"
+      }
+     }
+    },
+    "035/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "032/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "024/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "020/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "057/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 300,
+       "cond": "A"
+      }
+     }
+    },
+    "052/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "042/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 300,
+       "cond": "A"
+      }
+     }
+    },
+    "038/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "036/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "025/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 200,
+       "cond": "A"
+      }
+     }
+    },
+    "047/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 300,
+       "cond": "A"
+      }
+     }
+    },
+    "060/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 50,
+       "cond": "A"
+      }
+     }
+    },
+    "048/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 250,
+       "cond": "A"
+      }
+     }
+    },
+    "045/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "033/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "039/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 200,
+       "cond": "A"
+      }
+     }
+    },
+    "021/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "058/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 50,
+       "cond": "A"
+      }
+     }
+    },
+    "046/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "076/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 150,
+       "cond": "A"
+      }
+     }
+    },
+    "043/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "097/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 80,
+       "cond": "A"
+      }
+     }
+    },
+    "040/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "054/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 60,
+       "cond": "A"
+      }
+     }
+    },
+    "127/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 12800,
+       "cond": "A"
+      },
+      "cardrush": {
+       "sell": 13800,
+       "buy": null,
+       "soldout": true
+      },
+      "hareruya2": {
+       "sell": 12000
+      }
+     }
+    },
+    "081/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 76,
+       "cond": "A"
+      }
+     }
+    },
+    "108/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 500,
+       "cond": "A"
+      }
+     }
+    },
+    "107/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 500,
+       "cond": "A"
+      }
+     }
+    },
+    "105/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 600,
+       "cond": "A"
+      }
+     }
+    },
+    "015/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 80,
+       "cond": "A"
+      }
+     }
+    },
+    "128/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 4280,
+       "cond": "A-",
+       "listings": [
+        {
+         "shop": "P&Pポケカ専門店",
+         "price": 5500,
+         "cond": "A"
+        },
+        {
+         "shop": "Pocket Center岡山本店",
+         "price": 5832,
+         "cond": "A"
+        },
+        {
+         "shop": "リサイクルハウス",
+         "price": 5861,
+         "cond": "A"
+        },
+        {
+         "shop": "株式会社アヴァンツァーレ_路地裏オタロード本店",
+         "price": 6156,
+         "cond": "A"
+        },
+        {
+         "shop": "アドチャン。",
+         "price": 8000,
+         "cond": "A"
+        },
+        {
+         "shop": "JOKER TCG",
+         "price": 4280,
+         "cond": "A-"
+        }
+       ]
+      },
+      "cardrush": {
+       "sell": 4480,
+       "buy": null,
+       "soldout": false
+      },
+      "hareruya2": {
+       "sell": 6000
+      }
+     }
+    },
+    "135/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 22000,
+       "cond": "A"
+      },
+      "cardrush": {
+       "sell": 14800,
+       "buy": null,
+       "soldout": false
+      },
+      "hareruya2": {
+       "sell": 16000
+      },
+      "torecacamp": {
+       "sell": 7980
+      }
+     }
+    },
+    "129/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 7990,
+       "cond": "A-"
+      },
+      "cardrush": {
+       "sell": 9480,
+       "buy": null,
+       "soldout": false
+      },
+      "hareruya2": {
+       "sell": 9000
+      }
+     }
+    },
+    "126/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 11000,
+       "cond": "A"
+      },
+      "cardrush": {
+       "sell": 12800,
+       "buy": null,
+       "soldout": true
+      },
+      "hareruya2": {
+       "sell": 11000
+      },
+      "torecacamp": {
+       "sell": 8980
+      }
+     }
+    },
+    "114/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 350,
+       "cond": "A"
+      }
+     }
+    },
+    "088/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 50,
+       "cond": "A"
+      }
+     }
+    },
+    "134/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 14060,
+       "cond": "A"
+      },
+      "cardrush": {
+       "sell": 11800,
+       "buy": null,
+       "soldout": false
+      },
+      "torecacamp": {
+       "sell": 6980
+      }
+     }
+    },
+    "115/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 480,
+       "cond": "A"
+      }
+     }
+    },
+    "096/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "094/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 50,
+       "cond": "A"
+      }
+     }
+    },
+    "007/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 50,
+       "cond": "A"
+      }
+     }
+    },
+    "132/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 4480,
+       "cond": "A"
+      },
+      "cardrush": {
+       "sell": 3280,
+       "buy": null,
+       "soldout": false
+      },
+      "hareruya2": {
+       "sell": 4000
+      }
+     }
+    },
+    "120/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 480,
+       "cond": "A"
+      }
+     }
+    },
+    "106/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 300,
+       "cond": "A"
+      }
+     }
+    },
+    "141/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 2380,
+       "cond": "A-",
+       "listings": [
+        {
+         "shop": "リサイクルハウス",
+         "price": 3308,
+         "cond": "A"
+        },
+        {
+         "shop": "ポケカん！",
+         "price": 3980,
+         "cond": "A"
+        },
+        {
+         "shop": "カードショップLight",
+         "price": 2380,
+         "cond": "A-"
+        },
+        {
+         "shop": "カードショップ彩々鹿児島店",
+         "price": 2610,
+         "cond": "B"
+        }
+       ]
+      },
+      "cardrush": {
+       "sell": 3280,
+       "buy": null,
+       "soldout": true
+      },
+      "hareruya2": {
+       "sell": 2800
+      }
+     }
+    },
+    "131/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 4760,
+       "cond": "B",
+       "listings": [
+        {
+         "shop": "黒札-KUROFUDA-",
+         "price": 6280,
+         "cond": "A"
+        },
+        {
+         "shop": "D-Cent game&card",
+         "price": 6480,
+         "cond": "A"
+        },
+        {
+         "shop": "カードショップLight",
+         "price": 6800,
+         "cond": "A"
+        },
+        {
+         "shop": "P&Pポケカ専門店",
+         "price": 7000,
+         "cond": "A"
+        },
+        {
+         "shop": "Pocket Center岡山本店",
+         "price": 7182,
+         "cond": "A"
+        },
+        {
+         "shop": "株式会社アヴァンツァーレ_路地裏オタロード本店",
+         "price": 7581,
+         "cond": "A"
+        },
+        {
+         "shop": "カードショップきりん 大阪天満橋店",
+         "price": 7800,
+         "cond": "A"
+        },
+        {
+         "shop": "カードショップLight",
+         "price": 4760,
+         "cond": "B"
+        },
+        {
+         "shop": "トレカ ぷれぞんす",
+         "price": 4980,
+         "cond": "B"
+        },
+        {
+         "shop": "TCG BASE",
+         "price": 5090,
+         "cond": "B"
+        },
+        {
+         "shop": "カードショップ彩々鹿児島店",
+         "price": 5580,
+         "cond": "B"
+        }
+       ]
+      },
+      "cardrush": {
+       "sell": 6480,
+       "buy": null,
+       "soldout": true
+      },
+      "hareruya2": {
+       "sell": 7500
+      }
+     }
+    },
+    "130/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 4590,
+       "cond": "A-",
+       "listings": [
+        {
+         "shop": "カードショップねすと",
+         "price": 4980,
+         "cond": "A"
+        },
+        {
+         "shop": "カードショップきりん 大阪天満橋店",
+         "price": 4980,
+         "cond": "A"
+        },
+        {
+         "shop": "P&Pポケカ専門店",
+         "price": 5000,
+         "cond": "A"
+        },
+        {
+         "shop": "遊楽舎 姫路花田店",
+         "price": 5000,
+         "cond": "A"
+        },
+        {
+         "shop": "リサイクルハウス",
+         "price": 5861,
+         "cond": "A"
+        },
+        {
+         "shop": "株式会社アヴァンツァーレ_路地裏オタロード本店",
+         "price": 6156,
+         "cond": "A"
+        },
+        {
+         "shop": "黒札-KUROFUDA-",
+         "price": 7100,
+         "cond": "A"
+        },
+        {
+         "shop": "カードショップLight",
+         "price": 4590,
+         "cond": "A-"
+        }
+       ]
+      },
+      "cardrush": {
+       "sell": 4480,
+       "buy": null,
+       "soldout": false
+      },
+      "hareruya2": {
+       "sell": 5500
+      }
+     }
+    },
+    "125/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 2480,
+       "cond": "A"
+      },
+      "cardrush": {
+       "sell": 2180,
+       "buy": null,
+       "soldout": false
+      },
+      "hareruya2": {
+       "sell": 3000
+      }
+     }
+    },
+    "122/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 580,
+       "cond": "A"
+      }
+     }
+    },
+    "117/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 480,
+       "cond": "A"
+      }
+     }
+    },
+    "069/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 40,
+       "cond": "A"
+      }
+     }
+    },
+    "163/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 1200,
+       "cond": "A-"
+      },
+      "cardrush": {
+       "sell": 1480,
+       "buy": null,
+       "soldout": false
+      }
+     }
+    },
+    "123/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 600,
+       "cond": "A"
+      }
+     }
+    },
+    "099/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "079/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 50,
+       "cond": "A"
+      }
+     }
+    },
+    "165/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 6638,
+       "cond": "A-",
+       "listings": [
+        {
+         "shop": "カードショップLight",
+         "price": 6800,
+         "cond": "A"
+        },
+        {
+         "shop": "カードショップきりん 大阪天満橋店",
+         "price": 6800,
+         "cond": "A"
+        },
+        {
+         "shop": "黒札-KUROFUDA-",
+         "price": 6800,
+         "cond": "A"
+        },
+        {
+         "shop": "株式会社アヴァンツァーレ_路地裏オタロード本店",
+         "price": 7581,
+         "cond": "A"
+        },
+        {
+         "shop": "リサイクルハウス",
+         "price": 7748,
+         "cond": "A"
+        },
+        {
+         "shop": "リサイクルハウス",
+         "price": 6638,
+         "cond": "A-"
+        }
+       ]
+      },
+      "cardrush": {
+       "sell": 6480,
+       "buy": null,
+       "soldout": true
+      },
+      "hareruya2": {
+       "sell": 7000
+      },
+      "torecacamp": {
+       "sell": 3980
+      }
+     }
+    },
+    "154/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 2100,
+       "cond": "A"
+      },
+      "cardrush": {
+       "sell": 1980,
+       "buy": null,
+       "soldout": true
+      }
+     }
+    },
+    "148/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 480,
+       "cond": "A"
+      }
+     }
+    },
+    "121/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 300,
+       "cond": "A"
+      }
+     }
+    },
+    "116/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 300,
+       "cond": "A"
+      }
+     }
+    },
+    "098/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "084/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "078/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 40,
+       "cond": "A"
+      }
+     }
+    },
+    "056/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 60,
+       "cond": "A"
+      }
+     }
+    },
+    "050/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 50,
+       "cond": "A"
+      }
+     }
+    },
+    "008/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "004/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "157/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 680,
+       "cond": "A"
+      }
+     }
+    },
+    "156/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 780,
+       "cond": "A"
+      },
+      "cardrush": {
+       "sell": 880,
+       "buy": null,
+       "soldout": false
+      }
+     }
+    },
+    "139/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 690,
+       "cond": "A"
+      }
+     }
+    },
+    "151/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 8980,
+       "cond": "A",
+       "listings": [
+        {
+         "shop": "黒札-KUROFUDA-",
+         "price": 8980,
+         "cond": "A"
+        }
+       ]
+      },
+      "cardrush": {
+       "sell": 3980,
+       "buy": null,
+       "soldout": false
+      },
+      "hareruya2": {
+       "sell": 2200
+      }
+     }
+    },
+    "144/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 1480,
+       "cond": "A"
+      },
+      "cardrush": {
+       "sell": 1480,
+       "buy": null,
+       "soldout": false
+      }
+     }
+    },
+    "118/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 300,
+       "cond": "A"
+      }
+     }
+    },
+    "100/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "162/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 650,
+       "cond": "A"
+      },
+      "cardrush": {
+       "sell": 880,
+       "buy": null,
+       "soldout": false
+      }
+     }
+    },
+    "158/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 480,
+       "cond": "A"
+      }
+     }
+    },
+    "136/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 5280,
+       "cond": "A"
+      },
+      "cardrush": {
+       "sell": 4980,
+       "buy": null,
+       "soldout": true
+      },
+      "hareruya2": {
+       "sell": 3700
+      },
+      "torecacamp": {
+       "sell": 2280
+      }
+     }
+    },
+    "065/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "059/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 60,
+       "cond": "A"
+      }
+     }
+    },
+    "153/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 1980,
+       "cond": "A"
+      },
+      "cardrush": {
+       "sell": 1580,
+       "buy": null,
+       "soldout": false
+      }
+     }
+    },
+    "152/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 1680,
+       "cond": "A"
+      }
+     }
+    },
+    "140/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 500,
+       "cond": "A"
+      }
+     }
+    },
+    "133/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 1100,
+       "cond": "A"
+      },
+      "cardrush": {
+       "sell": 1080,
+       "buy": null,
+       "soldout": false
+      },
+      "hareruya2": {
+       "sell": 1400
+      }
+     }
+    },
+    "124/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 980,
+       "cond": "A"
+      },
+      "cardrush": {
+       "sell": 1080,
+       "buy": null,
+       "soldout": false
+      },
+      "hareruya2": {
+       "sell": 100
+      },
+      "torecacamp": {
+       "sell": 680
+      }
+     }
+    },
+    "119/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 350,
+       "cond": "A"
+      }
+     }
+    },
+    "113/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 300,
+       "cond": "A"
+      }
+     }
+    },
+    "110/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 350,
+       "cond": "A"
+      }
+     }
+    },
+    "091/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "086/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "066/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "064/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "161/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 480,
+       "cond": "A"
+      }
+     }
+    },
+    "147/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 580,
+       "cond": "A"
+      }
+     }
+    },
+    "146/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 480,
+       "cond": "A"
+      }
+     }
+    },
+    "143/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 350,
+       "cond": "A"
+      }
+     }
+    },
+    "138/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 980,
+       "cond": "A"
+      },
+      "cardrush": {
+       "sell": 1080,
+       "buy": null,
+       "soldout": false
+      }
+     }
+    },
+    "112/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 200,
+       "cond": "A"
+      }
+     }
+    },
+    "111/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 300,
+       "cond": "A"
+      }
+     }
+    },
+    "109/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 300,
+       "cond": "A"
+      }
+     }
+    },
+    "104/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 350,
+       "cond": "A"
+      }
+     }
+    },
+    "085/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "062/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "055/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 80,
+       "cond": "A"
+      }
+     }
+    },
+    "009/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 50,
+       "cond": "A"
+      }
+     }
+    },
+    "003/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "164/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 700,
+       "cond": "A"
+      }
+     }
+    },
+    "159/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 480,
+       "cond": "A"
+      }
+     }
+    },
+    "149/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 780,
+       "cond": "A"
+      }
+     }
+    },
+    "145/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 500,
+       "cond": "A"
+      }
+     }
+    },
+    "087/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "083/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "049/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "155/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 300,
+       "cond": "A"
+      }
+     }
+    },
+    "090/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "089/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "082/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "075/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "074/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "073/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "072/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "070/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "068/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "063/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "061/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "053/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "051/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "006/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "001/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "B/RGB": {
+     "prices": {
+      "dmm": {
+       "lowest": 398000,
+       "cond": "B"
+      },
+      "cardrush": {
+       "sell": 548000,
+       "buy": null,
+       "soldout": true
+      },
+      "hareruya2": {
+       "sell": 550000
+      }
+     }
+    },
+    "080/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "071/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "067/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "016/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "014/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "013/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "012/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "011/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "005/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "002/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    }
+   }
+  }
  }
 ]
