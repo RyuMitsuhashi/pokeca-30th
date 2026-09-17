@@ -21,8 +21,36 @@
 :root[data-theme="dark"]{ --bg:#0F1524; --panel:#161D2F; --text:#E9EEF7; }
 *{box-sizing:border-box}
 html{font-size:15px}
-body{margin:0;background:var(--bg);color:var(--text);font-family:"Inter","Noto Sans JP","Hiragino Sans","Hiragino Kaku Gothic ProN",system-ui,sans-serif;font-feature-settings:"tnum" 1,"palt" 1;line-height:1.5}
+body{margin:0;background:#0A0F1D;color:var(--text);position:relative;font-family:"Inter","Noto Sans JP","Hiragino Sans","Hiragino Kaku Gothic ProN",system-ui,sans-serif;font-feature-settings:"tnum" 1,"palt" 1;line-height:1.5}
 body.lock{overflow:hidden}
+/* ===== 背景レイヤー（固定） ===== */
+.bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;background:
+  radial-gradient(1100px 600px at 12% -10%, rgba(245,196,81,.20), transparent 60%),
+  radial-gradient(900px 700px at 100% 8%, rgba(165,133,240,.18), transparent 60%),
+  radial-gradient(1000px 800px at 55% 110%, rgba(47,193,193,.14), transparent 60%),
+  linear-gradient(180deg,#0B1223 0%,#0A0F1D 55%,#070B16 100%)}
+.bg::before{content:"";position:absolute;inset:0;background-image:
+  linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
+  linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
+  background-size:32px 32px;
+  -webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 20%, #000 20%, transparent 100%);mask-image:radial-gradient(ellipse 70% 60% at 50% 20%, #000 20%, transparent 100%)}
+.bg::after{content:"";position:absolute;inset:0;opacity:.06;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+.bg .glow{position:absolute;width:56vw;height:56vw;max-width:900px;max-height:900px;border-radius:50%;filter:blur(90px);opacity:.55;will-change:transform}
+.bg .g1{left:-14vw;top:-22vw;background:radial-gradient(circle,rgba(245,196,81,.55),transparent 65%);animation:drift1 38s ease-in-out infinite alternate}
+.bg .g2{right:-18vw;top:-8vw;background:radial-gradient(circle,rgba(165,133,240,.5),transparent 65%);animation:drift2 46s ease-in-out infinite alternate}
+.bg .g3{left:30vw;bottom:-32vw;background:radial-gradient(circle,rgba(61,220,132,.35),transparent 65%);animation:drift3 52s ease-in-out infinite alternate}
+@keyframes drift1{to{transform:translate(6vw,4vw)}} @keyframes drift2{to{transform:translate(-5vw,6vw)}} @keyframes drift3{to{transform:translate(4vw,-5vw)}}
+.bg .mark{position:absolute;right:-1vw;top:60px;font-size:clamp(220px,34vw,520px);font-weight:800;letter-spacing:-.06em;line-height:.8;color:transparent;-webkit-text-stroke:1px rgba(255,255,255,.07);user-select:none}
+.bg .mark small{display:block;font-size:.16em;letter-spacing:.35em;-webkit-text-stroke:0;color:rgba(255,255,255,.05);font-weight:700;margin-left:.15em}
+.top,.wrap,.foot,.modal{position:relative;z-index:1}
+/* パネルは半透明＋ぼかしで背景を透かす */
+.kpi,.cc,.panel,.detail,.mbox{background:rgba(22,29,47,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-color:rgba(255,255,255,.07);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 10px 30px rgba(0,0,0,.25)}
+.kpi:first-child{background:linear-gradient(135deg,rgba(245,196,81,.16),rgba(22,29,47,.72) 55%)}
+.top{background:rgba(10,15,29,.78);border-bottom:1px solid rgba(255,255,255,.08)}
+.top::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:linear-gradient(90deg,var(--gold),rgba(245,196,81,0) 45%,rgba(165,133,240,.7) 80%,transparent)}
+thead th{background:rgba(28,37,64,.9)}
+.tbl-scroll{background:rgba(15,21,36,.35)}
+@media (prefers-reduced-motion:reduce){.bg .glow{animation:none}}
 a{color:inherit}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
@@ -200,6 +228,8 @@ details.sec > *:not(summary){margin-top:8px}
 </style>
 </head>
 <body>
+
+<div class="bg" aria-hidden="true"><div class="glow g1"></div><div class="glow g2"></div><div class="glow g3"></div><div class="mark">30<small>CELEBRATION</small></div></div>
 
 <header class="top">
   <div class="brand"><div class="mark">M6a</div><b>30th CELEBRATION</b><span>相場ダッシュボード</span></div>
