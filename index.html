@@ -38,6 +38,35 @@ button{cursor:pointer}
 .brand .mark{font-family:var(--mono);font-size:.72rem;color:var(--bg);background:var(--text);padding:1px 6px;border-radius:2px;font-weight:600;align-self:center}
 .brand b{font-weight:700;font-size:1.05rem;letter-spacing:.02em}
 .brand span{color:var(--muted);font-size:.8rem}
+.nav{display:flex;gap:2px;margin-left:6px}
+.nav a{text-decoration:none;color:var(--muted);font-size:.84rem;padding:4px 10px;border-bottom:2px solid transparent}
+.nav a.on{color:var(--text);border-bottom-color:var(--text);font-weight:700}
+.view{display:none}.view.on{display:block}
+.hband{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);background:var(--panel);margin-bottom:14px}
+@media (max-width:900px){.hband{grid-template-columns:repeat(2,1fr)}}
+.hband>div{padding:12px 14px;border-right:1px solid var(--line)}.hband>div:last-child{border-right:0}
+.hband .l{color:var(--muted);font-size:.72rem;letter-spacing:.06em}.hband .v{font-size:1.5rem;font-family:var(--mono);margin-top:4px}.hband .s{color:var(--muted);font-size:.74rem;margin-top:4px}
+.ranks{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px}
+@media (max-width:900px){.ranks{grid-template-columns:1fr}}
+.rank{background:var(--panel);border:1px solid var(--line)}
+.rank h2{margin:0;font-size:.9rem;padding:8px 12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:baseline}
+.rank h2 small{color:var(--muted);font-weight:400;font-size:.72rem}
+.rank ol{list-style:none;margin:0;padding:0}
+.rank li{display:grid;grid-template-columns:22px minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:6px 12px;border-bottom:1px solid var(--line-soft);cursor:pointer;font-size:.84rem}
+.rank li:hover{background:var(--hover)}
+.rank li .i{color:var(--dim);font-family:var(--mono);font-size:.72rem}
+.rank li .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rank li .n small{color:var(--muted);margin-left:6px;font-family:var(--mono);font-size:.7rem}
+.rank li .p{font-family:var(--mono)}
+.periods{display:flex;border:1px solid var(--line);width:max-content;margin:0 0 10px}
+.periods button{border:0;border-right:1px solid var(--line);background:transparent;color:var(--muted);padding:3px 12px;font-family:var(--mono);font-size:.76rem}
+.periods button:last-child{border-right:0}.periods button[aria-pressed="true"]{background:var(--text);color:var(--bg)}
+.sets{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:14px}
+.setc{background:var(--panel);padding:12px;display:grid;gap:6px;cursor:pointer}
+.setc:hover{background:var(--hover)}
+.setc .t{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.setc .t b{font-size:.95rem}.setc .t span{font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+.setc .r{display:flex;justify-content:space-between;font-size:.8rem;color:var(--muted)}.setc .r b{font-family:var(--mono);font-weight:500;color:var(--text)}
+.h2{margin:18px 0 8px;font-size:.95rem;font-weight:700}
 .setsel{background:transparent;border:1px solid var(--line);border-radius:2px;padding:5px 10px;color:var(--text);max-width:46vw}
 .top input{margin-left:auto;background:var(--panel);border:1px solid var(--line);border-radius:2px;padding:6px 10px;width:min(320px,40vw);color:var(--text)}
 .top input::placeholder{color:var(--dim)}
@@ -213,6 +242,7 @@ details.sec > *:not(summary){margin-top:8px}
 
 <header class="top">
   <div class="brand"><div class="mark" id="setMark">M6a</div><b>ポケカ相場</b><span>ダッシュボード</span></div>
+  <nav class="nav"><a href="#/" data-v="home">ホーム</a><a href="#/buy" data-v="buy">買取</a><a href="#/box" data-v="box">BOX</a></nav>
   <select id="setSel" class="setsel" aria-label="弾を選ぶ"></select>
   <input type="search" id="q" placeholder="カード名・番号で検索" aria-label="カード名・番号で検索">
   <div class="upd" id="upd"><i></i>価格データ 9/15〜9/17</div>
@@ -220,6 +250,10 @@ details.sec > *:not(summary){margin-top:8px}
 
 <div class="ticker" id="ticker" aria-hidden="true"></div>
 <div class="wrap">
+  <div id="home" class="view"></div>
+  <div id="buyview" class="view"></div>
+  <div id="boxview" class="view"></div>
+  <div id="setview" class="view">
   <section class="kpis" id="kpis" aria-label="サマリー"></section>
   <section id="ev" aria-label="BOX期待値の内訳"></section>
   <div id="adTop"></div>
@@ -231,6 +265,7 @@ details.sec > *:not(summary){margin-top:8px}
     <div class="toolbar"><span class="note" style="margin:0">行をクリックすると詳細が開きます。列名クリックで並べ替え。</span><span class="cnt" id="cnt"></span></div>
     <div class="tbl-scroll"><table id="tbl"><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
   </section>
+  </div>
 </div>
 
 <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="mbox" id="mbox"></div></div>
@@ -257,8 +292,10 @@ const SERIES = {
 const SALE_ORDER = ['dmm','rush','avg','flea','custom'];
 const BUY_LABEL = {yuyu:'遊々亭', shinsoku:'シンソク', kanabell:'カーナベル', cardrush:'カードラッシュ'};
 const buyLabel = k => BUY_LABEL[k] || (k.startsWith('ocr:') ? k.slice(4)+'（画像OCR）' : k);
-function buyRows(c){ const r=((state.loadedBuy[CUR]||{})[c.key]||[]).slice(); const b=latestOf(c,'buy'); if(!r.length && b && CUR==='M6a') r.push({shop:'カードラッシュ', price:b.v, when:fmtDT(b.t), src:''}); return r.sort((a,b)=>b.price-a.price); }
-function spread(c){ const s=latestSale(c), r=buyRows(c); if(!s||!r.length) return null; return {p:(s.v-r[0].price)/s.v*100, sale:s.v, buy:r[0].price, shop:r[0].shop}; }
+function buyRows(c){ const r=((state.loadedBuy[CUR]||{})[c.key]||[]).slice(); const b=latestOf(c,'buy'), s=latestSale(c);
+  if(!r.length && b && CUR==='M6a' && (!s || b.t >= s.t-48*3600e3)) r.push({shop:'カードラッシュ', price:b.v, when:fmtDT(b.t), src:''}); // 古い買取値（販売より2日以上前）は使わない
+  return r.sort((a,b)=>b.price-a.price); }
+function spread(c){ const s=latestSale(c), r=buyRows(c); if(!s||!r.length) return null; const p=(s.v-r[0].price)/s.v*100; if(p<0) return null; return {p, sale:s.v, buy:r[0].price, shop:r[0].shop}; }
 const RAR = {RGB:'RGB', FUR:'FUR', SAR:'SAR', AR:'AR', RR:'RR', CLS:'復刻版', PIKA:'ピカチュウ30種', TR:'トレーナーズ', '':'ノーマル'};
 const FULL = [["001", "タマタマ", "", "", 0, 0, ""], ["002", "アローラナッシー", "", "", 0, 0, ""], ["003", "バルビート", "", "", 0, 0, ""], ["004", "イルミーゼ", "", "", 0, 0, ""], ["005", "ビビヨン", "", "", 0, 0, ""], ["006", "ファイヤー", "", "", 0, 0, ""], ["007", "ホウオウ", "", "", 0, 0, ""], ["008", "レシラム", "", "", 0, 0, ""], ["009", "ホゲータex", "RR", "約10円", 0, 0, ""], ["010", "ヤドン", "", "約10円", 0, 0, ""], ["011", "ラプラス", "", "", 0, 0, ""], ["012", "フリーザー", "", "", 0, 0, ""], ["013", "カイオーガ", "", "", 0, 0, ""], ["014", "パルキア", "", "", 0, 0, ""], ["015", "ゲッコウガex", "RR", "約10円", 0, 0, ""], ["016", "ヨワシ", "", "", 0, 0, ""], ["017", "ピカチュウ（1/30）", "PIKA", "30〜150円", 373466, 0, ""], ["018", "ピカチュウ（2/30）", "PIKA", "10〜100円", 373469, 0, ""], ["019", "ピカチュウ（3/30）", "PIKA", "20〜100円", 373472, 0, ""], ["020", "ピカチュウ（4/30）", "PIKA", "50〜300円", 373475, 0, ""], ["021", "ピカチュウ（5/30）", "PIKA", "30〜200円", 373478, 0, ""], ["022", "ピカチュウ（6/30）", "PIKA", "50〜300円", 373481, 0, ""], ["023", "ピカチュウ（7/30）", "PIKA", "20〜200円", 373484, 0, ""], ["024", "ピカチュウ（8/30）", "PIKA", "20〜150円", 373487, 0, ""], ["025", "ピカチュウ（9/30）", "PIKA", "10〜100円", 0, 0, ""], ["026", "ピカチュウ（10/30）", "PIKA", "50〜400円", 373493, 0, ""], ["027", "ピカチュウ（11/30）", "PIKA", "30〜200円", 373496, 0, ""], ["028", "ピカチュウ（12/30）", "PIKA", "50〜200円", 373499, 0, ""], ["029", "ピカチュウ（13/30）", "PIKA", "20〜100円", 373502, 0, ""], ["030", "ピカチュウ（14/30）", "PIKA", "50〜400円", 373505, 0, ""], ["031", "ピカチュウ（15/30）", "PIKA", "10〜100円", 373515, 0, ""], ["032", "ピカチュウ（16/30）", "PIKA", "30〜200円", 373525, 0, ""], ["033", "ピカチュウ（17/30）", "PIKA", "10〜100円", 373535, 0, ""], ["034", "ピカチュウ（18/30）", "PIKA", "30〜200円", 373545, 0, ""], ["035", "ピカチュウ（19/30）", "PIKA", "10〜100円", 373555, 0, ""], ["036", "ピカチュウ（20/30）", "PIKA", "10〜100円", 373565, 0, ""], ["037", "ピカチュウ（21/30）", "PIKA", "50〜600円", 373575, 0, ""], ["038", "ピカチュウ（22/30）", "PIKA", "20〜100円", 373585, 0, ""], ["039", "ピカチュウ（23/30）", "PIKA", "10〜100円", 0, 0, ""], ["040", "ピカチュウ（24/30）", "PIKA", "20〜150円", 0, 0, ""], ["041", "ピカチュウ（25/30）", "PIKA", "30〜150円", 373615, 0, ""], ["042", "ピカチュウ（26/30）", "PIKA", "30〜200円", 373625, 0, ""], ["043", "ピカチュウ（27/30）", "PIKA", "20〜100円", 0, 0, ""], ["044", "ピカチュウ（28/30）", "PIKA", "20〜100円", 373645, 0, ""], ["045", "ピカチュウ（29/30）", "PIKA", "20〜100円", 0, 0, ""], ["046", "ピカチュウ（30/30）", "PIKA", "10〜150円", 373665, 0, ""], ["047", "ピカチュウex", "RR", "20〜150円", 373675, 0, ""], ["048", "ピカチュウex", "RR", "20〜150円", 373685, 0, ""], ["049", "サンダー", "", "", 0, 0, ""], ["050", "ゼクロム", "", "", 0, 0, ""], ["051", "ストリンダー", "", "", 0, 0, ""], ["052", "モルペコ", "", "", 0, 0, ""], ["053", "ミライドン", "", "", 0, 0, ""], ["054", "ミュウツー", "", "", 373745, 0, ""], ["055", "ミュウツーex", "RR", "約10円", 0, 0, ""], ["056", "ミュウ", "", "約30円", 0, 0, ""], ["057", "ミュウex", "RR", "100〜300円", 373765, 0, ""], ["058", "エーフィ", "", "約10円", 373785, 0, ""], ["059", "ニンフィアex", "RR", "約10円", 0, 0, ""], ["060", "アンノーン", "", "", 373805, 0, ""], ["061", "フワンテ", "", "", 0, 0, ""], ["062", "シャンデラ", "", "", 0, 0, ""], ["063", "ゼルネアス", "", "", 0, 0, ""], ["064", "コスモッグ", "", "", 0, 0, ""], ["065", "コスモウム", "", "", 0, 0, ""], ["066", "ルナアーラ", "", "", 0, 0, ""], ["067", "コレクレー", "", "", 0, 0, ""], ["068", "グラードン", "", "", 0, 0, ""], ["069", "ルカリオ", "", "", 0, 0, ""], ["070", "ガマゲロゲ", "", "", 0, 0, ""], ["071", "ルガルガン", "", "", 0, 0, ""], ["072", "コライドン", "", "", 0, 0, ""], ["073", "ニドラン♀", "", "", 0, 0, ""], ["074", "ニドリーナ", "", "", 0, 0, ""], ["075", "アローラニャース", "", "", 0, 0, ""], ["076", "ゲンガーex", "RR", "10〜50円", 373965, 0, ""], ["077", "ブラッキー", "", "約30円", 373975, 0, ""], ["078", "ズルッグ", "", "", 0, 0, ""], ["079", "イベルタル", "", "", 0, 0, ""], ["080", "ガラルニャース", "", "", 0, 0, ""], ["081", "ジラーチex", "RR", "約10円", 0, 0, ""], ["082", "ディアルガ", "", "", 0, 0, ""], ["083", "ナットレイ", "", "", 0, 0, ""], ["084", "ソルガレオ", "", "", 0, 0, ""], ["085", "ザシアン", "", "", 0, 0, ""], ["086", "ザマゼンタ", "", "", 0, 0, ""], ["087", "サーフゴー", "", "", 0, 0, ""], ["088", "ボーマンダex", "RR", "約10円", 0, 0, ""], ["089", "ジャラコ", "", "", 0, 0, ""], ["090", "ジャランゴ", "", "", 0, 0, ""], ["091", "ジャラランガ", "", "", 0, 0, ""], ["092", "ニャース", "", "", 374125, 0, ""], ["093", "メタモン", "", "", 374135, 0, ""], ["094", "イーブイ", "", "", 0, 0, ""], ["095", "カビゴン", "", "", 374155, 0, ""], ["096", "ププリン", "", "", 0, 0, ""], ["097", "ルギア", "", "約30円", 374175, 0, ""], ["098", "ヒスイゾロア", "", "", 0, 0, ""], ["099", "ヒスイゾロアーク", "", "", 0, 0, ""], ["100", "イッカネズミ", "", "", 0, 0, ""], ["101", "ハイパーボール", "TR", "約50円", 374215, 0, ""], ["102", "ポケパッド", "TR", "約50円", 374225, 0, ""], ["103", "ポケモンいれかえ", "TR", "", 374235, 0, ""], ["104", "アローラナッシー", "AR", "30〜200円", 0, 0, ""], ["105", "ファイヤー", "AR", "200〜700円", 0, 85210, ""], ["106", "ラプラス", "AR", "200〜600円", 0, 85211, ""], ["107", "フリーザー", "AR", "200〜800円", 0, 85212, ""], ["108", "サンダー", "AR", "200〜500円", 0, 85213, ""], ["109", "ストリンダー", "AR", "30〜200円", 0, 0, ""], ["110", "モルペコ", "AR", "100〜200円", 0, 0, ""], ["111", "フワンテ", "AR", "50〜200円", 0, 0, ""], ["112", "シャンデラ", "AR", "100〜200円", 0, 0, ""], ["113", "ルガルガン", "AR", "30〜200円", 0, 0, ""], ["114", "ニドリーナ", "AR", "30〜200円", 0, 0, ""], ["115", "アローラニャース", "AR", "200〜300円", 0, 85220, ""], ["116", "ズルッグ", "AR", "30〜200円", 0, 0, ""], ["117", "ガラルニャース", "AR", "200〜300円", 0, 85222, ""], ["118", "サーフゴー", "AR", "30〜200円", 0, 0, ""], ["119", "ジャラランガ", "AR", "30〜200円", 0, 0, ""], ["120", "ニャース", "AR", "200〜500円", 0, 85225, ""], ["121", "メタモン", "AR", "150〜400円", 0, 85226, ""], ["122", "ヒスイゾロア", "AR", "150〜400円", 0, 85227, ""], ["123", "イッカネズミ", "AR", "200〜800円", 0, 85228, ""], ["124", "ホゲータex", "SAR", "400〜1,000円", 0, 85229, ""], ["125", "ゲッコウガex", "SAR", "1,400〜2,500円", 374455, 85230, ""], ["126", "ピカチュウex（ピカピカパレード・昼）", "SAR", "5,000〜8,000円", 0, 85231, ""], ["127", "ピカチュウex（ビリビリフィーバー・夜）", "SAR", "5,000〜8,000円", 374475, 85232, ""], ["128", "ミュウツーex", "SAR", "2,400〜4,000円", 0, 85233, ""], ["129", "ミュウex", "SAR", "4,000〜6,000円", 0, 85234, ""], ["130", "ニンフィアex", "SAR", "2,200〜4,000円", 374505, 85235, ""], ["131", "ゲンガーex", "SAR", "3,200〜5,000円", 0, 85236, ""], ["132", "ジラーチex", "SAR", "2,200〜3,500円", 374525, 85237, ""], ["133", "ボーマンダex", "SAR", "500〜1,000円", 0, 85238, ""], ["134", "ミュウツーex", "FUR", "5,000〜10,000円", 374545, 85239, ""], ["135", "ミュウex", "FUR", "6,000〜14,000円", 374555, 85240, ""], ["136", "ピカチュウ LV.12", "CLS", "1,500〜3,000円", 374565, 85111, ""], ["137", "リザードン LV.76", "CLS", "4,500〜8,000円", 374575, 85112, ""], ["138", "カスミ", "CLS", "600〜1,200円", 374585, 85113, ""], ["139", "エリカのプリン LV.13", "CLS", "150〜700円", 374595, 85114, ""], ["140", "ニューラ LV.34", "CLS", "150〜700円", 374605, 85115, ""], ["141", "ひかるセレビィ LV.18", "CLS", "1,000〜3,000円", 374615, 85116, ""], ["142", "ルギア", "CLS", "6,000〜10,000円", 0, 85117, ""], ["143", "エネコロロ", "CLS", "150〜700円", 374635, 85118, ""], ["144", "わるいバンギラス", "CLS", "400〜1,500円", 374645, 85119, ""], ["145", "ハッサムex", "CLS", "150〜700円", 374655, 85120, ""], ["146", "メタグロス δ-デルタ種", "CLS", "150〜700円", 374665, 85121, ""], ["147", "パルキア LV.X", "CLS", "150〜700円", 374675, 85122, ""], ["148", "ユクシー LV.55", "CLS", "150〜700円", 374685, 85123, ""], ["149", "クロバットG LV.44", "CLS", "150〜700円", 374695, 85124, ""], ["150", "ゲンガー", "CLS", "2,000〜5,000円", 374705, 85125, ""], ["151", "ダークライ＆クレセリアLEGEND（上）", "CLS", "800〜4,000円", 374713, 85126, ""], ["152", "ダークライ＆クレセリアLEGEND（下）", "CLS", "約800円", 374714, 0, ""], ["153", "N", "CLS", "700〜1,500円", 374735, 85127, ""], ["154", "レックウザEX", "CLS", "700〜1,300円", 374745, 85128, ""], ["155", "ゲノセクトEX", "CLS", "100〜700円", 374755, 85129, ""], ["156", "MサーナイトEX", "CLS", "300〜700円", 374765, 85130, ""], ["157", "ゲッコウガBREAK", "CLS", "300〜700円", 374775, 85131, ""], ["158", "ソルガレオGX", "CLS", "100〜700円", 374785, 85132, ""], ["159", "マッシブーンGX", "CLS", "100〜700円", 374795, 85133, ""], ["160", "ピカチュウ＆ゼクロムGX", "CLS", "700〜1,300円", 374805, 85134, ""], ["161", "ザシアンV", "CLS", "100〜700円", 374815, 85135, ""], ["162", "ライコウ", "CLS", "200〜700円", 374825, 85136, ""], ["163", "ミュウVMAX", "CLS", "600〜1,300円", 374835, 85137, ""], ["164", "アルセウスVSTAR", "CLS", "150〜700円", 374845, 85138, ""], ["165", "コイキング", "CLS", "2,000〜5,000円", 374855, 85139, ""], ["R/RGB", "ミュウ（赤）", "RGB", "", 0, 85241, ""], ["G/RGB", "ミュウ（緑）", "RGB", "", 0, 85242, ""], ["B/RGB", "ミュウ（青）", "RGB", "", 374885, 85243, ""]];
 const TRACKED = [
@@ -570,8 +607,8 @@ function shopRows(c){
   return rows.sort((a,b)=>a.price-b.price);
 }
 function rangeFilter(ps){ if(state.range==='all') return ps; const days={'3d':3,'7d':7,'30d':30}[state.range]; const now=Math.max(Date.now(), ...ps.map(p=>p.t)); return ps.filter(p=>p.t>=now-days*86400000); }
-function openModal(key){ state.selected=key; renderModal(); $('#modal').classList.add('open'); document.body.classList.add('lock'); $('#mbox').scrollTop=0; const cl=$('#closeModal'); if(cl) cl.focus(); }
-function closeModal(){ $('#modal').classList.remove('open'); document.body.classList.remove('lock'); state.selected=null; }
+function openModal(key){ const want='#/card/'+CUR+'/'+encodeURIComponent(key); if(location.hash!==want) history.replaceState(null,'',want); state.selected=key; renderModal(); $('#modal').classList.add('open'); document.body.classList.add('lock'); $('#mbox').scrollTop=0; const cl=$('#closeModal'); if(cl) cl.focus(); }
+function closeModal(){ $('#modal').classList.remove('open'); document.body.classList.remove('lock'); state.selected=null; if(location.hash.startsWith('#/card/')) history.replaceState(null,'','#/set/'+CUR); }
 function renderModal(){
   const c=card(); if(!c) return;
   const ps=points(c), sale=latestSale(c), ch=change(c), fd=fleaDiff(c), buy=latestOf(c,'buy'), br=buyRows(c), sp=spread(c);
@@ -684,7 +721,7 @@ function renderSetSel(){
   $('#setMark').textContent=CUR;
 }
 function switchSet(id){ if(!SETS[id]) return; CUR=id; ALL=SETS[id].cards; state.tab='all'; state.q=''; $('#q').value=''; renderSetSel(); renderAll(); loadTcgdex(id); }
-$('#setSel').addEventListener('change',e=>switchSet(e.target.value));
+$('#setSel').addEventListener('change',e=>{ location.hash='#/set/'+e.target.value; });
 $('#thead').addEventListener('click',e=>{ const th=e.target.closest('[data-col]'); if(!th) return; const col=th.dataset.col; if(col==='spark') return;
   if(state.sort.col===col) state.sort.dir=state.sort.dir==='asc'?'desc':'asc'; else state.sort={col, dir:['no','name','rarity'].includes(col)?'asc':'desc'}; renderTable(); });
 $('#tbody').addEventListener('click',e=>{ const tr=e.target.closest('tr[data-key]'); if(tr) openModal(tr.dataset.key); });
@@ -772,12 +809,96 @@ async function loadPricesJson(){
     }
     state.loaded=loaded; state.loadedShops=shops; state.loadedAt=last;
     if(last) $('#upd').innerHTML=`<i></i>価格データ 〜${fmtDT(last)}（自動更新）`;
-    renderAll();
+    renderAll(); if($('#home').classList.contains('on')) renderHome();
   }catch(e){ /* prices.json が無い環境では何もしない */ }
 }
 function renderAds(){ $('#adTop').innerHTML=adSlot('top','ad-wide'); $('#adInline').innerHTML=adSlot('inline','ad-wide'); pushAds(); }
 function renderAll(){ renderKpis(); renderEv(); renderStrips(); renderTabs(); renderTable(); renderAds(); }
-renderSetSel(); renderAll(); (async()=>{ await loadSets(); await loadPricesJson(); loadTcgdex(CUR); })();
+
+/* ---- ホーム：横断の計算 ---- */
+const CHASE = new Set(['RGB','FUR','SAR','SR','UR','ACE','HR','CSR','CHR','SSR','MUR','CLS']);
+const SET_META = { M6a:{ box:24900, msrp:7200, release:'2026-09-16' } };   // BOX価格（実勢）・定価。弾を足したらここに追記
+const PERIODS = [['24h','24h',24],['7d','7日',24*7],['30d','30日',24*30],['rel','発売比',0]];
+let period = '24h';
+function salePts(c){ const ps=points(c); for(const s of ['dmm','rush']){ const q=ps.filter(p=>p.s===s); if(q.length) return q; } return []; }
+function chgOver(c, key){ // 期間内の変化率。発売比はフラゲ相場（無ければ最初の点）が基準
+  const q=salePts(c); if(!q.length) return null; const last=q[q.length-1];
+  if(key==='rel'){ const f=points(c).find(p=>p.s==='flea')||q[0]; return f.t<last.t?{p:pct(f.v,last.v),a:f,b:last}:null; }
+  const hours=PERIODS.find(x=>x[0]===key)[2]; const base=q.filter(p=>p.t<=last.t-hours*3600e3).pop(); return base?{p:pct(base.v,last.v),a:base,b:last}:null;
+}
+function withSet(setId, fn){ const pc=CUR, pa=ALL; CUR=setId; ALL=SETS[setId].cards; try{ return fn(); } finally{ CUR=pc; ALL=pa; } }
+function setIndex(setId, key){ return withSet(setId, ()=>{ const xs=ALL.filter(c=>CHASE.has(c.rarity)).map(c=>chgOver(c,key)).filter(Boolean).map(x=>x.p); return xs.length?{p:xs.reduce((a,b)=>a+b,0)/xs.length, n:xs.length}:null; }); }
+function allCards(){ const out=[]; for(const id of Object.keys(SETS)) withSet(id, ()=>{ for(const c of ALL){ const s=latestSale(c); if(s) out.push({setId:id, c, sale:s, ch:chgOver(c,period), sp:spread(c)}); } }); return out; }
+function topCard(setId){ return withSet(setId, ()=>{ let best=null; for(const c of ALL){ const s=latestSale(c); if(s&&(!best||s.v>best.v)) best={c, v:s.v}; } return best; }); }
+function boxInfo(setId){ const m=SET_META[setId]; const ev = setId==='M6a' ? withSet('M6a', ()=>evBreakdown()) : null; return {box:m&&m.box, msrp:m&&m.msrp, ev: ev? ev.withCls : null}; }
+
+function renderHome(){
+  const all=allCards(); const withCh=all.filter(x=>x.ch);
+  const up=withCh.filter(x=>x.ch.p>0.05).sort((a,b)=>b.ch.p-a.ch.p).slice(0,10);
+  const down=withCh.filter(x=>x.ch.p<-0.05).sort((a,b)=>a.ch.p-b.ch.p).slice(0,10);
+  const liquid=all.filter(x=>x.sp&&x.sale.v>=1000).sort((a,b)=>a.sp.p-b.sp.p).slice(0,10);
+  const ids=Object.keys(SETS).sort((a,b)=>String((SET_META[b]||{}).release||SETS[b].release||'').localeCompare(String((SET_META[a]||{}).release||SETS[a].release||''))||a.localeCompare(b));
+  const idx=ids.map(id=>({id, i:setIndex(id,period)})).filter(x=>x.i);
+  const mega = idx.length? idx.reduce((a,x)=>a+x.i.p,0)/idx.length : null;
+  const moved = idx.slice().sort((a,b)=>Math.abs(b.i.p)-Math.abs(a.i.p))[0];
+  const pl = PERIODS.find(x=>x[0]===period)[1];
+  const li=(x,i,val)=>`<li data-go="${esc(x.setId)}|${esc(x.c.key)}"><span class="i">${i+1}</span><span class="n">${esc(x.c.name)}<small>${esc(x.setId)} ${esc(x.c.rarity||'')}</small></span><span class="p">${yen(x.sale.v)}</span>${val}</li>`;
+  $('#home').innerHTML=`
+    <div class="hband">
+      <div><div class="l">MEGA指数（SAR以上・均等加重・${pl}）</div><div class="v">${mega==null?'—':chg(mega)}</div><div class="s">${idx.length}弾の平均</div></div>
+      <div><div class="l">上昇／下落（${pl}）</div><div class="v"><span class="up">${withCh.filter(x=>x.ch.p>0.05).length}</span> <span class="dim">/</span> <span class="down">${withCh.filter(x=>x.ch.p<-0.05).length}</span></div><div class="s">価格データのある ${all.length}枚のうち</div></div>
+      <div><div class="l">いちばん動いた弾</div><div class="v">${moved?chg(moved.i.p):'—'}</div><div class="s">${moved?esc(SETS[moved.id].name):'—'}</div></div>
+      <div><div class="l">追跡</div><div class="v">${all.length}枚</div><div class="s">${Object.keys(SETS).length}弾${state.loadedAt?'・更新 '+fmtDT(state.loadedAt):''}</div></div>
+    </div>
+    <div class="periods">${PERIODS.map(([k,l])=>`<button data-p="${k}" aria-pressed="${period===k}">${l}</button>`).join('')}</div>
+    <div class="ranks">
+      <section class="rank"><h2>高騰トップ10<small>${pl}・全弾</small></h2><ol>${up.map((x,i)=>li(x,i,chg(x.ch.p))).join('')||'<li class="dim">上昇したカードなし</li>'}</ol></section>
+      <section class="rank"><h2>下落トップ10<small>${pl}・全弾</small></h2><ol>${down.map((x,i)=>li(x,i,chg(x.ch.p))).join('')||'<li class="dim">下落したカードなし</li>'}</ol></section>
+      <section class="rank"><h2>買い時<small>スプレッドが小さい＝売買で損しにくい</small></h2><ol>${liquid.map((x,i)=>li(x,i,`<span class="p">${x.sp.p.toFixed(0)}%</span>`)).join('')||'<li class="dim">買取データが入ると表示</li>'}</ol></section>
+    </div>
+    <h2 class="h2">弾から探す</h2>
+    <div class="sets">${ids.map(id=>{ const i24=setIndex(id,'24h'), i7=setIndex(id,'7d'), top=topCard(id), b=boxInfo(id);
+      return `<div class="setc" data-set="${esc(id)}"><div class="t"><b>${esc(SETS[id].name)}</b><span>${esc(id)}</span></div>
+        <div class="r"><span>指数 24h／7日</span><b>${i24?chg(i24.p):'—'} <span class="dim">/</span> ${i7?chg(i7.p):'—'}</b></div>
+        <div class="r"><span>看板</span><b title="${top?esc(top.c.name):''}">${top?esc(top.c.name.length>9?top.c.name.slice(0,9)+'…':top.c.name)+' '+yen(top.v):'—'}</b></div>
+        <div class="r"><span>BOX vs 定価</span><b>${b.box?yen(b.box)+' <span class="dim">/</span> '+yen(b.msrp):'—'}</b></div>
+        <div class="r"><span>開封価値（期待値−BOX）</span><b class="${b.ev&&b.box?(b.ev-b.box>0?'up':'down'):''}">${b.ev&&b.box?yen(b.ev-b.box):'—'}</b></div></div>`; }).join('')}</div>
+    <h2 class="h2">BOX相場</h2>
+    <div class="panel"><table style="min-width:0"><thead><tr><th>弾</th><th class="r">BOX価格</th><th class="r">定価</th><th class="r">定価比</th><th class="r">期待値（復刻まで）</th><th class="r">開封価値</th></tr></thead><tbody>${ids.map(id=>{ const b=boxInfo(id); return `<tr data-set="${esc(id)}"><td>${esc(SETS[id].name)}</td><td class="r">${b.box?yen(b.box):'—'}</td><td class="r">${b.msrp?yen(b.msrp):'—'}</td><td class="r">${b.box&&b.msrp?(b.box/b.msrp).toFixed(2)+'×':'—'}</td><td class="r">${b.ev?yen(b.ev):'—'}</td><td class="r ${b.ev&&b.box?(b.ev-b.box>0?'up':'down'):''}">${b.ev&&b.box?yen(b.ev-b.box):'—'}</td></tr>`; }).join('')}</tbody></table></div>`;
+}
+function renderBuyView(){
+  const rows=[]; for(const id of Object.keys(SETS)) withSet(id, ()=>{ for(const c of ALL){ const br=buyRows(c); if(br.length) rows.push({setId:id,c,br,sp:spread(c)}); } });
+  rows.sort((a,b)=>b.br[0].price-a.br[0].price);
+  $('#buyview').innerHTML=`<h2 class="h2">売るならどこ<small class="dim" style="margin-left:8px;font-weight:400">買取価格が高い順・${rows.length}枚</small></h2>
+    <div class="panel"><div class="tbl-scroll"><table style="min-width:720px"><thead><tr><th>カード</th><th>弾</th><th class="r">買取最高</th><th>店</th><th class="r">2位</th><th class="r">スプレッド</th></tr></thead><tbody>${
+      rows.map(x=>`<tr data-go="${esc(x.setId)}|${esc(x.c.key)}"><td>${esc(x.c.name)} <span class="rar rar-${x.c.rarity||'REG'}">${x.c.rarity||'—'}</span></td><td class="num dim">${esc(x.setId)}</td><td class="r">${yen(x.br[0].price)}</td><td>${esc(x.br[0].shop)}</td><td class="r">${x.br[1]?yen(x.br[1].price)+' <span class="dim">'+esc(x.br[1].shop)+'</span>':'—'}</td><td class="r">${x.sp?x.sp.p.toFixed(0)+'%':'—'}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">買取データはまだありません</td></tr>'}</tbody></table></div></div>`;
+}
+function renderBoxView(){
+  const ids=Object.keys(SETS);
+  $('#boxview').innerHTML=`<h2 class="h2">BOX相場と期待値</h2><div class="panel"><table style="min-width:0"><thead><tr><th>弾</th><th class="r">BOX価格</th><th class="r">定価</th><th class="r">定価比</th><th class="r">期待値（復刻まで）</th><th class="r">開封価値</th></tr></thead><tbody>${ids.map(id=>{ const b=boxInfo(id); return `<tr data-set="${esc(id)}"><td>${esc(SETS[id].name)}</td><td class="r">${b.box?yen(b.box):'—'}</td><td class="r">${b.msrp?yen(b.msrp):'—'}</td><td class="r">${b.box&&b.msrp?(b.box/b.msrp).toFixed(2)+'×':'—'}</td><td class="r">${b.ev?yen(b.ev):'—'}</td><td class="r ${b.ev&&b.box?(b.ev-b.box>0?'up':'down'):''}">${b.ev&&b.box?yen(b.ev-b.box):'—'}</td></tr>`; }).join('')}</tbody></table></div>
+    <p class="note">期待値＝各レアリティの「1BOXあたり枚数×平均最安値」の合計。封入率の設定がある弾（今は30th）だけ計算します。開封価値がプラスなら開ける、マイナスなら開けずに単品を買うのが得。</p>`;
+}
+
+/* ---- ルーティング：#/ ホーム、#/set/ID、#/card/ID/KEY、#/buy、#/box ---- */
+function route(){
+  const h=location.hash.replace(/^#\/?/,''); const [v,a,b]=h.split('/');
+  const view = v==='set'||v==='card' ? 'set' : v==='buy' ? 'buy' : v==='box' ? 'box' : 'home';
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
+  document.querySelectorAll('.nav a').forEach(el=>el.classList.toggle('on', el.dataset.v===view));
+  if(view==='set'){ if(a&&SETS[a]&&a!==CUR){ CUR=a; ALL=SETS[a].cards; state.tab='all'; renderSetSel(); renderAll(); loadTcgdex(a); } $('#setview').classList.add('on');
+    if(v==='card'&&b){ const key=decodeURIComponent(b); if(byKey(key)) openModal(key); } else if($('#modal').classList.contains('open')) closeModal(); }
+  else if(view==='buy'){ renderBuyView(); $('#buyview').classList.add('on'); }
+  else if(view==='box'){ renderBoxView(); $('#boxview').classList.add('on'); }
+  else { renderHome(); $('#home').classList.add('on'); }
+  $('#setSel').style.display = view==='set' ? '' : 'none';
+}
+window.addEventListener('hashchange', route);
+document.addEventListener('click', e=>{
+  const pb=e.target.closest('.periods [data-p]'); if(pb){ period=pb.dataset.p; renderHome(); return; }
+  const sc=e.target.closest('[data-set]'); if(sc){ location.hash='#/set/'+sc.dataset.set; return; }
+  const go=e.target.closest('[data-go]'); if(go){ const [id,key]=go.dataset.go.split('|'); location.hash='#/card/'+id+'/'+encodeURIComponent(key); return; }
+});
+renderSetSel(); renderAll(); route(); (async()=>{ await loadSets(); await loadPricesJson(); loadTcgdex(CUR); route(); })();
 if(Object.values(ADS.affiliate).some(Boolean) || ADS.adsenseClient){ $('#affNote').innerHTML = '当サイトは各店舗・ASPのアフィリエイトプログラムに参加しており、「PR」表記のあるリンクから購入があった場合に報酬を受け取ることがあります。価格・順位はアフィリエイトの有無に関係なく取得したデータをそのまま表示しています。広告配信（Google AdSense）にはCookieが使用されます。 '; }
 })();
 </script>
