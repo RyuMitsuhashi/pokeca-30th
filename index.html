@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>30th CELEBRATION 相場ダッシュボード</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ===== Design tokens（Figma の Variables と同名） ===== */
+:root{
+  --bg:#0F1524; --panel:#161D2F; --panel-2:#1C2540; --line:#2A3553; --line-soft:#222B44; --hover:#1F2A47;
+  --text:#E9EEF7; --muted:#96A2BC; --dim:#6B7690; --gold:#F5C451;
+  --up:#FF6B6B; --down:#5CA8FF; --focus:#F5C451;
+  --s-flea:#F5C451; --s-rush:#FFFFFF; --s-dmm:#3DDC84; --s-avg:#5CA8FF; --s-buy:#8B95AD; --s-custom:#FF8FAB;
+  --rgb-r:#F06060; --rgb-g:#3FC276; --rgb-b:#5B8CF0; --fur:#2FC1C1; --sar:#A585F0; --ar:#5CC46B; --rr:#8E9BB3; --cls:#D89A4A; --pika:#F5C451; --tr:#7C879E; --reg:#3A4560;
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#0F1524; --panel:#161D2F; --text:#E9EEF7; } }
+:root[data-theme="dark"]{ --bg:#0F1524; --panel:#161D2F; --text:#E9EEF7; }
+*{box-sizing:border-box}
+html{font-size:15px}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Inter","Noto Sans JP","Hiragino Sans","Hiragino Kaku Gothic ProN",system-ui,sans-serif;font-feature-settings:"tnum" 1,"palt" 1;line-height:1.5}
+body.lock{overflow:hidden}
+a{color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+.up{color:var(--up)} .down{color:var(--down)} .flat{color:var(--muted)}
+.num{font-variant-numeric:tabular-nums}
+.chg{display:inline-block;font-weight:600;font-size:.82rem;padding:1px 7px;border-radius:5px;white-space:nowrap}
+.chg.up{background:rgba(255,107,107,.13)} .chg.down{background:rgba(92,168,255,.14)} .chg.flat{background:rgba(150,162,188,.12)}
+.empty{padding:26px 14px;color:var(--muted);font-size:.9rem;text-align:center}
+
+/* ===== Top bar ===== */
+.top{position:sticky;top:0;z-index:5;background:rgba(13,19,32,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 20px;height:56px}
+.brand{display:flex;align-items:center;gap:10px;white-space:nowrap}
+.brand .mark{width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,var(--gold),#C98F1C);color:#1A1200;font-weight:700;font-size:.62rem;display:grid;place-items:center}
+.brand b{font-weight:700;font-size:1rem;letter-spacing:-.01em}
+.brand span{color:var(--muted);font-size:.82rem}
+.top input{margin-left:auto;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:7px 12px;width:min(320px,40vw);color:var(--text)}
+.top input::placeholder{color:var(--dim)}
+.top .upd{color:var(--muted);font-size:.78rem;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.top .upd i{width:7px;height:7px;border-radius:50%;background:var(--s-dmm);display:inline-block}
+@media (max-width:700px){.top{padding:0 12px;gap:8px}.brand span{display:none}.top .upd{display:none}.top input{width:auto;flex:1;min-width:0}}
+.wrap{max-width:1440px;margin:0 auto;padding:16px 20px 60px}
+@media (max-width:700px){.wrap{padding:12px 12px 60px}}
+
+/* ===== KPI ===== */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+@media (max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--panel);border:1px solid var(--line-soft);border-radius:var(--r-lg);padding:12px 14px}
+.kpi .l{color:var(--muted);font-size:.76rem}
+.kpi .v{font-size:1.5rem;font-weight:600;letter-spacing:-.02em;line-height:1.2;margin-top:3px}
+.kpi .s{color:var(--muted);font-size:.76rem;margin-top:4px}
+.evbox{margin:-4px 0 14px;padding:8px 14px}
+.evbox summary{cursor:pointer;font-size:.86rem;font-weight:600;color:var(--muted);list-style:none}
+.evbox summary::-webkit-details-marker{display:none}
+.evbox summary::before{content:"＋";display:inline-block;width:1.2em;color:var(--gold)}
+.evbox[open] summary::before{content:"－"}
+.evbox summary small{font-weight:400;margin-left:8px;color:var(--dim);font-size:.76rem}
+.evbox .tbl-wrap{margin-top:8px}
+.evt{min-width:0}.evt thead th{position:static;cursor:default;background:transparent;padding:4px 8px}.evt tbody td{white-space:normal;padding:5px 8px}.evt tbody tr{cursor:default}.evt tbody tr:hover td{background:transparent}
+.evsum{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:8px;font-size:.82rem;color:var(--muted)}
+.evsum b{color:var(--text);font-weight:600;margin-left:4px}
+
+/* ===== Card scroller（横スクロール・トップ10） ===== */
+.strip{margin-bottom:14px}
+.strip .hd{display:flex;align-items:baseline;gap:10px;margin:0 0 8px}
+.strip h2{margin:0;font-size:1rem;font-weight:700}
+.strip .hd span{color:var(--muted);font-size:.78rem}
+.strip .nav{margin-left:auto;display:flex;gap:6px}
+.strip .nav button{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--text)}
+.rail{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 2px 10px;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.rail::-webkit-scrollbar{height:8px}.rail::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+.cc{flex:0 0 190px;scroll-snap-align:start;background:var(--panel);border:1px solid var(--line-soft);border-radius:var(--r-lg);padding:10px;text-align:left;color:var(--text);display:grid;gap:6px;transition:border-color .15s,transform .15s}
+.cc:hover{border-color:var(--gold);transform:translateY(-2px)}
+.cc .rk{position:absolute;left:8px;top:8px;background:rgba(15,21,36,.85);color:var(--gold);font-weight:700;font-size:.72rem;padding:1px 7px;border-radius:999px;border:1px solid var(--line)}
+.cc .nm{font-weight:600;font-size:.9rem;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cc .no{color:var(--muted);font-size:.74rem;display:flex;justify-content:space-between;align-items:center}
+.cc .row{display:flex;justify-content:space-between;align-items:center;font-size:.82rem;color:var(--muted)}
+.cc .row b{font-weight:700;font-size:1rem;color:var(--text)}
+@media (max-width:700px){.cc{flex-basis:160px}}
+
+/* ===== Card frame（画像がある時は画像、無い時は独自のプレースホルダー） ===== */
+.frame{position:relative;aspect-ratio:63/88;border-radius:8px;overflow:hidden;background:linear-gradient(160deg,#1E2A48 0%,#121A2E 55%,#0E1424 100%);border:1px solid var(--line);isolation:isolate}
+.frame::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.07) 48%,transparent 60%);pointer-events:none}
+.frame img{width:100%;height:100%;object-fit:cover;display:block}
+.frame .ph{position:absolute;inset:0;display:grid;grid-template-rows:auto 1fr auto;padding:9% 9% 8%;gap:4px}
+.frame .ph .n{font-size:.62rem;color:var(--muted);letter-spacing:.06em;display:flex;justify-content:space-between}
+.frame .ph .c{display:grid;place-items:center;text-align:center}
+.frame .ph .c b{display:block;font-size:1.05rem;font-weight:700;line-height:1.2;letter-spacing:-.01em;word-break:break-all}
+.frame .ph .c span{display:block;margin-top:6px;font-size:.66rem;font-weight:700;letter-spacing:.14em;color:var(--rc,var(--muted))}
+.frame .ph .f{font-size:.56rem;color:var(--dim);letter-spacing:.08em;text-align:center}
+.frame.rar-RGB{border-image:linear-gradient(90deg,var(--rgb-r),var(--rgb-g),var(--rgb-b)) 1;--rc:#fff}
+.frame.rar-FUR{border-color:var(--fur);--rc:var(--fur)} .frame.rar-SAR{border-color:var(--sar);--rc:var(--sar)} .frame.rar-AR{border-color:var(--ar);--rc:var(--ar)}
+.frame.rar-CLS{border-color:var(--cls);--rc:var(--cls)} .frame.rar-RR{border-color:var(--rr);--rc:var(--rr)} .frame.rar-PIKA{border-color:var(--pika);--rc:var(--pika)} .frame.rar-TR{--rc:var(--tr)}
+.frame.lg .ph .c b{font-size:1.5rem}.frame.lg .ph .n{font-size:.78rem}.frame.lg .ph .c span{font-size:.8rem}.frame.lg .ph .f{font-size:.7rem}
+
+/* ===== Tabs + table ===== */
+.panel{background:var(--panel);border:1px solid var(--line-soft);border-radius:var(--r-lg);padding:12px 14px}
+.tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);margin:-4px 0 10px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{border:0;background:transparent;color:var(--muted);padding:8px 12px;font-size:.84rem;font-weight:500;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab[aria-selected="true"]{color:var(--text);border-bottom-color:var(--gold);font-weight:600}
+.tab small{color:var(--dim);margin-left:4px;font-size:.72rem}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+.toolbar .cnt{margin-left:auto;color:var(--muted);font-size:.78rem}
+.tbl-scroll{overflow:auto;max-height:70vh;min-height:360px;border:1px solid var(--line-soft);border-radius:var(--r-md)}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:.86rem;min-width:900px}
+thead th{position:sticky;top:0;z-index:1;background:var(--panel-2);color:var(--muted);font-weight:500;font-size:.74rem;text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
+thead th.r{text-align:right}
+thead th[aria-sort]{color:var(--text)}
+thead th[aria-sort="descending"]::after{content:" ↓";color:var(--gold)} thead th[aria-sort="ascending"]::after{content:" ↑";color:var(--gold)}
+tbody td{padding:6px 10px;border-bottom:1px solid var(--line-soft);white-space:nowrap;vertical-align:middle}
+tbody td.r{text-align:right}
+tbody tr{cursor:pointer}
+tbody tr:hover td{background:var(--hover)}
+td .thumb{display:inline-block;width:28px;vertical-align:middle;margin-right:10px}
+td .thumb .frame{border-radius:3px}
+td .thumb .ph{display:none}
+td.dim{color:var(--dim)}
+td svg{display:block;width:64px;height:18px;overflow:visible}
+.rar{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:18px;padding:0 6px;border-radius:4px;font-size:.66rem;font-weight:700;letter-spacing:.02em;color:#0F1524;background:var(--rr)}
+.rar-FUR{background:var(--fur)} .rar-SAR{background:var(--sar)} .rar-AR{background:var(--ar)} .rar-RR{background:var(--rr)} .rar-CLS{background:var(--cls)} .rar-PIKA{background:var(--pika)} .rar-TR{background:var(--tr)}
+.rar-REG{background:transparent;color:var(--dim);border:1px solid var(--line)}
+.rar-RGB{background:linear-gradient(90deg,var(--rgb-r) 0 33.3%,var(--rgb-g) 33.3% 66.6%,var(--rgb-b) 66.6% 100%);color:#fff;text-shadow:0 0 3px rgba(0,0,0,.5)}
+
+/* ===== Modal ===== */
+.modal{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(6,10,20,.72);backdrop-filter:blur(6px)}
+.modal.open{display:flex}
+.mbox{position:relative;width:min(1040px,100%);max-height:calc(100vh - 40px);overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px 22px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.mbox .close{position:absolute;right:12px;top:12px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);border-radius:999px;width:34px;height:34px;z-index:1}
+.mgrid{display:grid;grid-template-columns:260px minmax(0,1fr);gap:22px}
+@media (max-width:760px){.modal{padding:0;align-items:flex-end}.mbox{max-height:92vh;border-radius:16px 16px 0 0;padding:16px 14px 24px}.mgrid{grid-template-columns:1fr;gap:14px}.mleft .frame{max-width:220px;margin:0 auto}}
+.mleft{display:grid;gap:10px;align-content:start}
+.links{display:flex;flex-wrap:wrap;gap:6px}
+.links a{font-size:.76rem;color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:2px 10px}
+.links a:hover{color:var(--gold);border-color:var(--gold)}
+.conds{display:grid;gap:4px;font-size:.82rem}
+.conds .row{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid var(--line-soft);padding:3px 0}
+.conds .row span:first-child{color:var(--muted)}
+.d-head h3{margin:0;font-size:1.45rem;font-weight:700;letter-spacing:-.01em;padding-right:40px}
+.d-head .no{color:var(--muted);font-size:.8rem;margin-top:2px;display:flex;align-items:center;gap:8px}
+.hero{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 22px;margin:10px 0}
+.hero .big .l{color:var(--muted);font-size:.74rem}
+.hero .big .v{font-size:2.3rem;font-weight:800;letter-spacing:-.03em;line-height:1.05}
+.mini-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.mini-kpis div{background:var(--panel-2);border-radius:8px;padding:7px 9px}
+.mini-kpis .l{color:var(--muted);font-size:.7rem}
+.mini-kpis .v{font-weight:600;font-size:.95rem;margin-top:2px}
+.ranges{display:flex;gap:4px;margin:2px 0 6px}
+.ranges button{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:6px;padding:2px 9px;font-size:.74rem}
+.ranges button[aria-pressed="true"]{background:var(--panel-2);color:var(--text)}
+.legend{display:flex;flex-wrap:wrap;gap:3px 12px;margin:0 0 6px}
+.legend button{display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;padding:2px 0;font-size:.74rem;color:var(--text)}
+.legend button[aria-pressed="false"]{opacity:.4;text-decoration:line-through}
+.legend button:disabled{opacity:.25;text-decoration:none;cursor:default}
+.sw{width:14px;height:0;border-top:3px solid currentColor;border-radius:2px}
+.sw.dash{border-top-style:dashed}.sw.dot{width:8px;height:8px;border:0;border-radius:50%;background:currentColor}
+.chart-wrap{position:relative}
+.chart-wrap svg{display:block;width:100%;height:auto;overflow:visible}
+.axis text{fill:var(--dim);font-size:11px;font-family:inherit}
+.gridline{stroke:var(--line-soft)}
+.release{stroke:var(--gold);stroke-dasharray:3 4}
+.release-label{fill:var(--gold);font-size:11px;font-weight:600}
+.tip{position:absolute;pointer-events:none;background:#0B1020;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:7px 10px;font-size:.76rem;line-height:1.45;min-width:180px;display:none;z-index:2}
+.tip b{display:block;margin-bottom:3px;font-weight:600}
+.tip .r{display:flex;justify-content:space-between;gap:12px}
+.tip .r i{font-style:normal;display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.note{color:var(--muted);font-size:.74rem;margin:6px 0 0}
+.sec{margin-top:12px;border-top:1px solid var(--line-soft);padding-top:10px}
+.sec h4{margin:0 0 6px;font-size:.84rem;font-weight:600;color:var(--muted)}
+.sec h4 b{color:var(--text);font-weight:600}
+.sec table{min-width:0;font-size:.82rem}
+.sec thead th{position:static;background:transparent;padding:4px 6px;cursor:default}
+.sec tbody td{padding:5px 6px;white-space:normal}
+.sec tbody tr{cursor:default}
+.sec tbody tr:hover td{background:transparent}
+td .src{display:block;color:var(--dim);font-size:.7rem}
+.mini{border:1px solid var(--line);background:transparent;border-radius:5px;padding:1px 8px;font-size:.74rem;color:var(--muted)}
+.mini:hover{color:var(--up);border-color:var(--up)}
+details.sec summary{cursor:pointer;font-size:.84rem;font-weight:600;color:var(--muted);list-style:none}
+details.sec summary::-webkit-details-marker{display:none}
+details.sec summary::before{content:"＋";display:inline-block;width:1.2em;color:var(--gold)}
+details.sec[open] summary::before{content:"－"}
+details.sec > *:not(summary){margin-top:8px}
+.form{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;align-items:end}
+.form label{display:grid;gap:3px;font-size:.74rem;color:var(--muted)}
+.form input,.form select{border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--panel-2);color:var(--text);width:100%}
+.btn{border:1px solid var(--gold);background:var(--gold);color:#1A1200;border-radius:6px;padding:6px 14px;font-weight:600}
+.btn.ghost{background:transparent;color:var(--text);border-color:var(--line)}
+.msg{font-size:.78rem;color:var(--muted);min-height:1.2em;margin-top:6px}
+.io{display:grid;gap:8px}
+.io textarea{width:100%;min-height:80px;border:1px solid var(--line);border-radius:6px;padding:8px;background:var(--panel-2);color:var(--text);font-size:.76rem}
+.io .row{display:flex;flex-wrap:wrap;gap:8px}
+.foot{max-width:1440px;margin:0 auto;padding:0 20px 40px;color:var(--dim);font-size:.74rem;line-height:1.6}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><div class="mark">M6a</div><b>30th CELEBRATION</b><span>相場ダッシュボード</span></div>
+  <input type="search" id="q" placeholder="カード名・番号で検索" aria-label="カード名・番号で検索">
+  <div class="upd" id="upd"><i></i>価格データ 9/15〜9/17</div>
+</header>
+
+<div class="wrap">
+  <section class="kpis" id="kpis" aria-label="サマリー"></section>
+  <section id="ev" aria-label="BOX期待値の内訳"></section>
+  <section class="strip" id="stripDown" aria-label="下落トップ10"></section>
+  <section class="strip" id="stripUp" aria-label="上昇トップ10"></section>
+  <section class="panel">
+    <div class="tabs" id="tabs" role="tablist" aria-label="レアリティ"></div>
+    <div class="toolbar"><span class="note" style="margin:0">行をクリックすると詳細が開きます。列名クリックで並べ替え。</span><span class="cnt" id="cnt"></span></div>
+    <div class="tbl-scroll"><table id="tbl"><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
+  </section>
+</div>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="mbox" id="mbox"></div></div>
+
+<footer class="foot">
+  価格は各サイト掲載時点の数値で、実際の店頭・取引価格とは異なる場合があります。カードラッシュの販売・買取は攻略大百科（9/16 14:00）とポケカ当たり.jp（9/17）の掲載値、フリマ相場は攻略大百科（9/15フラゲ・9/16 1:00）、店舗平均はポケカ当たり.jpの10店舗以上の平均、DMMマイカの最安値と出品は通販サイト（myca.dmm.com）の9/17午後の掲載値、未追跡カードの買取目安はトレカプロが遊々亭・カードラッシュの9/17 7時台の買取価格から集計したレンジです。同じ場所に prices.json（collect.py の出力）があれば自動で読み、各店の直接取得値で更新します。カード画像はファン運営のデータベース TCGdex（api.tcgdex.net）から取得して表示しています（非公式・非商用の個人利用）。画像の権利は ©Pokémon/Nintendo/Creatures/GAME FREAK に帰属します。画像が無いカードは独自のプレースホルダーを表示し、claude.ai上では外部画像を読めないためプレースホルダーのままになります。
+  出典：<a href="https://premium.gamepedia.jp/pokeca/archives/24665" target="_blank" rel="noopener">攻略大百科</a>／<a href="https://pokeka-atari.jp/expansion/30th-celebration" target="_blank" rel="noopener">ポケカ当たり.jp</a>／<a href="https://myca.dmm.com/pokemon-trading-card-game/list?cardseries=%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0MEGA&myca_primary_pack_id=6374" target="_blank" rel="noopener">DMMマイカ</a>／<a href="https://tcgpro.co.jp/media/pokeka-30th-atari/30th-card-list/" target="_blank" rel="noopener">トレカプロ</a>／画像 <a href="https://tcgdex.dev/" target="_blank" rel="noopener">TCGdex</a>
+</footer>
+
+<script>
+(function(){
+'use strict';
+const T = {s0:'2026-09-15T12:00:00+09:00', s1:'2026-09-16T01:00:00+09:00', s2:'2026-09-16T14:00:00+09:00', s3:'2026-09-17T09:00:00+09:00', s4:'2026-09-17T15:00:00+09:00'};
+const RELEASE = '2026-09-16T00:00:00+09:00';
+const SERIES = {
+  flea:  {label:'フリマ相場', color:'var(--s-flea)', style:'dash', src:'攻略大百科（メルカリ等）'},
+  rush:  {label:'カードラッシュ 販売', color:'var(--s-rush)', style:'solid', src:'カードラッシュ'},
+  dmm:   {label:'DMMマイカ 最安', color:'var(--s-dmm)', style:'solid', src:'DMMマイカ'},
+  avg:   {label:'店舗平均', color:'var(--s-avg)', style:'solid', src:'ポケカ当たり.jp集計'},
+  buy:   {label:'買取（カードラッシュ）', color:'var(--s-buy)', style:'dot', src:'カードラッシュ'},
+  custom:{label:'自分の記録', color:'var(--s-custom)', style:'solid', src:'自分で追加'}
+};
+const SALE_ORDER = ['dmm','rush','avg','flea','custom'];
+const RAR = {RGB:'RGB', FUR:'FUR', SAR:'SAR', AR:'AR', RR:'RR', CLS:'復刻版', PIKA:'ピカチュウ30種', TR:'トレーナーズ', '':'ノーマル'};
+const FULL = [["001", "タマタマ", "", "", 0, 0, ""], ["002", "アローラナッシー", "", "", 0, 0, ""], ["003", "バルビート", "", "", 0, 0, ""], ["004", "イルミーゼ", "", "", 0, 0, ""], ["005", "ビビヨン", "", "", 0, 0, ""], ["006", "ファイヤー", "", "", 0, 0, ""], ["007", "ホウオウ", "", "", 0, 0, ""], ["008", "レシラム", "", "", 0, 0, ""], ["009", "ホゲータex", "RR", "約10円", 0, 0, ""], ["010", "ヤドン", "", "約10円", 0, 0, ""], ["011", "ラプラス", "", "", 0, 0, ""], ["012", "フリーザー", "", "", 0, 0, ""], ["013", "カイオーガ", "", "", 0, 0, ""], ["014", "パルキア", "", "", 0, 0, ""], ["015", "ゲッコウガex", "RR", "約10円", 0, 0, ""], ["016", "ヨワシ", "", "", 0, 0, ""], ["017", "ピカチュウ（1/30）", "PIKA", "30〜150円", 373466, 0, ""], ["018", "ピカチュウ（2/30）", "PIKA", "10〜100円", 373469, 0, ""], ["019", "ピカチュウ（3/30）", "PIKA", "20〜100円", 373472, 0, ""], ["020", "ピカチュウ（4/30）", "PIKA", "50〜300円", 373475, 0, ""], ["021", "ピカチュウ（5/30）", "PIKA", "30〜200円", 373478, 0, ""], ["022", "ピカチュウ（6/30）", "PIKA", "50〜300円", 373481, 0, ""], ["023", "ピカチュウ（7/30）", "PIKA", "20〜200円", 373484, 0, ""], ["024", "ピカチュウ（8/30）", "PIKA", "20〜150円", 373487, 0, ""], ["025", "ピカチュウ（9/30）", "PIKA", "10〜100円", 0, 0, ""], ["026", "ピカチュウ（10/30）", "PIKA", "50〜400円", 373493, 0, ""], ["027", "ピカチュウ（11/30）", "PIKA", "30〜200円", 373496, 0, ""], ["028", "ピカチュウ（12/30）", "PIKA", "50〜200円", 373499, 0, ""], ["029", "ピカチュウ（13/30）", "PIKA", "20〜100円", 373502, 0, ""], ["030", "ピカチュウ（14/30）", "PIKA", "50〜400円", 373505, 0, ""], ["031", "ピカチュウ（15/30）", "PIKA", "10〜100円", 373515, 0, ""], ["032", "ピカチュウ（16/30）", "PIKA", "30〜200円", 373525, 0, ""], ["033", "ピカチュウ（17/30）", "PIKA", "10〜100円", 373535, 0, ""], ["034", "ピカチュウ（18/30）", "PIKA", "30〜200円", 373545, 0, ""], ["035", "ピカチュウ（19/30）", "PIKA", "10〜100円", 373555, 0, ""], ["036", "ピカチュウ（20/30）", "PIKA", "10〜100円", 373565, 0, ""], ["037", "ピカチュウ（21/30）", "PIKA", "50〜600円", 373575, 0, ""], ["038", "ピカチュウ（22/30）", "PIKA", "20〜100円", 373585, 0, ""], ["039", "ピカチュウ（23/30）", "PIKA", "10〜100円", 0, 0, ""], ["040", "ピカチュウ（24/30）", "PIKA", "20〜150円", 0, 0, ""], ["041", "ピカチュウ（25/30）", "PIKA", "30〜150円", 373615, 0, ""], ["042", "ピカチュウ（26/30）", "PIKA", "30〜200円", 373625, 0, ""], ["043", "ピカチュウ（27/30）", "PIKA", "20〜100円", 0, 0, ""], ["044", "ピカチュウ（28/30）", "PIKA", "20〜100円", 373645, 0, ""], ["045", "ピカチュウ（29/30）", "PIKA", "20〜100円", 0, 0, ""], ["046", "ピカチュウ（30/30）", "PIKA", "10〜150円", 373665, 0, ""], ["047", "ピカチュウex", "RR", "20〜150円", 373675, 0, ""], ["048", "ピカチュウex", "RR", "20〜150円", 373685, 0, ""], ["049", "サンダー", "", "", 0, 0, ""], ["050", "ゼクロム", "", "", 0, 0, ""], ["051", "ストリンダー", "", "", 0, 0, ""], ["052", "モルペコ", "", "", 0, 0, ""], ["053", "ミライドン", "", "", 0, 0, ""], ["054", "ミュウツー", "", "", 373745, 0, ""], ["055", "ミュウツーex", "RR", "約10円", 0, 0, ""], ["056", "ミュウ", "", "約30円", 0, 0, ""], ["057", "ミュウex", "RR", "100〜300円", 373765, 0, ""], ["058", "エーフィ", "", "約10円", 373785, 0, ""], ["059", "ニンフィアex", "RR", "約10円", 0, 0, ""], ["060", "アンノーン", "", "", 373805, 0, ""], ["061", "フワンテ", "", "", 0, 0, ""], ["062", "シャンデラ", "", "", 0, 0, ""], ["063", "ゼルネアス", "", "", 0, 0, ""], ["064", "コスモッグ", "", "", 0, 0, ""], ["065", "コスモウム", "", "", 0, 0, ""], ["066", "ルナアーラ", "", "", 0, 0, ""], ["067", "コレクレー", "", "", 0, 0, ""], ["068", "グラードン", "", "", 0, 0, ""], ["069", "ルカリオ", "", "", 0, 0, ""], ["070", "ガマゲロゲ", "", "", 0, 0, ""], ["071", "ルガルガン", "", "", 0, 0, ""], ["072", "コライドン", "", "", 0, 0, ""], ["073", "ニドラン♀", "", "", 0, 0, ""], ["074", "ニドリーナ", "", "", 0, 0, ""], ["075", "アローラニャース", "", "", 0, 0, ""], ["076", "ゲンガーex", "RR", "10〜50円", 373965, 0, ""], ["077", "ブラッキー", "", "約30円", 373975, 0, ""], ["078", "ズルッグ", "", "", 0, 0, ""], ["079", "イベルタル", "", "", 0, 0, ""], ["080", "ガラルニャース", "", "", 0, 0, ""], ["081", "ジラーチex", "RR", "約10円", 0, 0, ""], ["082", "ディアルガ", "", "", 0, 0, ""], ["083", "ナットレイ", "", "", 0, 0, ""], ["084", "ソルガレオ", "", "", 0, 0, ""], ["085", "ザシアン", "", "", 0, 0, ""], ["086", "ザマゼンタ", "", "", 0, 0, ""], ["087", "サーフゴー", "", "", 0, 0, ""], ["088", "ボーマンダex", "RR", "約10円", 0, 0, ""], ["089", "ジャラコ", "", "", 0, 0, ""], ["090", "ジャランゴ", "", "", 0, 0, ""], ["091", "ジャラランガ", "", "", 0, 0, ""], ["092", "ニャース", "", "", 374125, 0, ""], ["093", "メタモン", "", "", 374135, 0, ""], ["094", "イーブイ", "", "", 0, 0, ""], ["095", "カビゴン", "", "", 374155, 0, ""], ["096", "ププリン", "", "", 0, 0, ""], ["097", "ルギア", "", "約30円", 374175, 0, ""], ["098", "ヒスイゾロア", "", "", 0, 0, ""], ["099", "ヒスイゾロアーク", "", "", 0, 0, ""], ["100", "イッカネズミ", "", "", 0, 0, ""], ["101", "ハイパーボール", "TR", "約50円", 374215, 0, ""], ["102", "ポケパッド", "TR", "約50円", 374225, 0, ""], ["103", "ポケモンいれかえ", "TR", "", 374235, 0, ""], ["104", "アローラナッシー", "AR", "30〜200円", 0, 0, ""], ["105", "ファイヤー", "AR", "200〜700円", 0, 85210, ""], ["106", "ラプラス", "AR", "200〜600円", 0, 85211, ""], ["107", "フリーザー", "AR", "200〜800円", 0, 85212, ""], ["108", "サンダー", "AR", "200〜500円", 0, 85213, ""], ["109", "ストリンダー", "AR", "30〜200円", 0, 0, ""], ["110", "モルペコ", "AR", "100〜200円", 0, 0, ""], ["111", "フワンテ", "AR", "50〜200円", 0, 0, ""], ["112", "シャンデラ", "AR", "100〜200円", 0, 0, ""], ["113", "ルガルガン", "AR", "30〜200円", 0, 0, ""], ["114", "ニドリーナ", "AR", "30〜200円", 0, 0, ""], ["115", "アローラニャース", "AR", "200〜300円", 0, 85220, ""], ["116", "ズルッグ", "AR", "30〜200円", 0, 0, ""], ["117", "ガラルニャース", "AR", "200〜300円", 0, 85222, ""], ["118", "サーフゴー", "AR", "30〜200円", 0, 0, ""], ["119", "ジャラランガ", "AR", "30〜200円", 0, 0, ""], ["120", "ニャース", "AR", "200〜500円", 0, 85225, ""], ["121", "メタモン", "AR", "150〜400円", 0, 85226, ""], ["122", "ヒスイゾロア", "AR", "150〜400円", 0, 85227, ""], ["123", "イッカネズミ", "AR", "200〜800円", 0, 85228, ""], ["124", "ホゲータex", "SAR", "400〜1,000円", 0, 85229, ""], ["125", "ゲッコウガex", "SAR", "1,400〜2,500円", 374455, 85230, ""], ["126", "ピカチュウex（ピカピカパレード・昼）", "SAR", "5,000〜8,000円", 0, 85231, ""], ["127", "ピカチュウex（ビリビリフィーバー・夜）", "SAR", "5,000〜8,000円", 374475, 85232, ""], ["128", "ミュウツーex", "SAR", "2,400〜4,000円", 0, 85233, ""], ["129", "ミュウex", "SAR", "4,000〜6,000円", 0, 85234, ""], ["130", "ニンフィアex", "SAR", "2,200〜4,000円", 374505, 85235, ""], ["131", "ゲンガーex", "SAR", "3,200〜5,000円", 0, 85236, ""], ["132", "ジラーチex", "SAR", "2,200〜3,500円", 374525, 85237, ""], ["133", "ボーマンダex", "SAR", "500〜1,000円", 0, 85238, ""], ["134", "ミュウツーex", "FUR", "5,000〜10,000円", 374545, 85239, ""], ["135", "ミュウex", "FUR", "6,000〜14,000円", 374555, 85240, ""], ["136", "ピカチュウ LV.12", "CLS", "1,500〜3,000円", 374565, 85111, ""], ["137", "リザードン LV.76", "CLS", "4,500〜8,000円", 374575, 85112, ""], ["138", "カスミ", "CLS", "600〜1,200円", 374585, 85113, ""], ["139", "エリカのプリン LV.13", "CLS", "150〜700円", 374595, 85114, ""], ["140", "ニューラ LV.34", "CLS", "150〜700円", 374605, 85115, ""], ["141", "ひかるセレビィ LV.18", "CLS", "1,000〜3,000円", 374615, 85116, ""], ["142", "ルギア", "CLS", "6,000〜10,000円", 0, 85117, ""], ["143", "エネコロロ", "CLS", "150〜700円", 374635, 85118, ""], ["144", "わるいバンギラス", "CLS", "400〜1,500円", 374645, 85119, ""], ["145", "ハッサムex", "CLS", "150〜700円", 374655, 85120, ""], ["146", "メタグロス δ-デルタ種", "CLS", "150〜700円", 374665, 85121, ""], ["147", "パルキア LV.X", "CLS", "150〜700円", 374675, 85122, ""], ["148", "ユクシー LV.55", "CLS", "150〜700円", 374685, 85123, ""], ["149", "クロバットG LV.44", "CLS", "150〜700円", 374695, 85124, ""], ["150", "ゲンガー", "CLS", "2,000〜5,000円", 374705, 85125, ""], ["151", "ダークライ＆クレセリアLEGEND（上）", "CLS", "800〜4,000円", 374713, 85126, ""], ["152", "ダークライ＆クレセリアLEGEND（下）", "CLS", "約800円", 374714, 0, ""], ["153", "N", "CLS", "700〜1,500円", 374735, 85127, ""], ["154", "レックウザEX", "CLS", "700〜1,300円", 374745, 85128, ""], ["155", "ゲノセクトEX", "CLS", "100〜700円", 374755, 85129, ""], ["156", "MサーナイトEX", "CLS", "300〜700円", 374765, 85130, ""], ["157", "ゲッコウガBREAK", "CLS", "300〜700円", 374775, 85131, ""], ["158", "ソルガレオGX", "CLS", "100〜700円", 374785, 85132, ""], ["159", "マッシブーンGX", "CLS", "100〜700円", 374795, 85133, ""], ["160", "ピカチュウ＆ゼクロムGX", "CLS", "700〜1,300円", 374805, 85134, ""], ["161", "ザシアンV", "CLS", "100〜700円", 374815, 85135, ""], ["162", "ライコウ", "CLS", "200〜700円", 374825, 85136, ""], ["163", "ミュウVMAX", "CLS", "600〜1,300円", 374835, 85137, ""], ["164", "アルセウスVSTAR", "CLS", "150〜700円", 374845, 85138, ""], ["165", "コイキング", "CLS", "2,000〜5,000円", 374855, 85139, ""], ["R/RGB", "ミュウ（赤）", "RGB", "", 0, 85241, ""], ["G/RGB", "ミュウ（緑）", "RGB", "", 0, 85242, ""], ["B/RGB", "ミュウ（青）", "RGB", "", 374885, 85243, ""]];
+const TRACKED = [
+ {id:'mew-r', myca:'R/RGB', name:'ミュウ', sub:'R（赤）', rarity:'RGB', no:'M6a-R/RGB', order:1001,
+  data:{flea:[['s1',600000]], rush:[['s2',1280000],['s3',748000]], buy:[['s2',1000000]], avg:[['s3',774000]]},
+  shops:[['晴れる屋2',800000,'9/17'],['カードラッシュ',748000,'9/17']]},
+ {id:'mew-b', myca:'B/RGB', name:'ミュウ', sub:'B（青）', rarity:'RGB', no:'M6a-B/RGB', order:1002,
+  data:{dmm:[['s4',398000,'状態B']], flea:[['s1',600000]], rush:[['s2',1180000]], buy:[['s2',800000]], avg:[['s3',900000]]},
+  shops:[['晴れる屋2',900000,'9/16']]},
+ {id:'mew-g', myca:'G/RGB', name:'ミュウ', sub:'G（緑）', rarity:'RGB', no:'M6a-G/RGB', order:1003,
+  data:{flea:[['s1',600000]], rush:[['s2',998000]], buy:[['s2',500000]], avg:[['s3',500000]]},
+  shops:[]},
+
+ {id:'mew-ex-fur', myca:'135/103', name:'ミュウex', sub:'FUR', rarity:'FUR', no:'M6a-135/103', order:135,
+  data:{dmm:[['s4',18800,'状態A']], flea:[['s0',60000],['s1',37000]], rush:[['s2',29800],['s3',18800]], buy:[['s2',22000]], avg:[['s2',30778],['s3',19067]]},
+  shops:[['カーナベル',49800,'9/16'],['晴れる屋2',28000,'9/17'],['遊々亭',24800,'9/16'],['カードラボ',21800,'9/17'],['カードラッシュ',18800,'9/17'],['トレカキャンプ',16800,'9/17'],['マナソース',15000,'9/17'],['アメニティドリーム',14000,'9/17']],
+  dmmShops:{date:'9/17', listings:[['P&Pポケカ専門店',18800,'A'],['トレカ ビッグホーン',22000,'A'],['ポケモンカード専門店ゼロイチ',17800,'A-'],['株式会社アヴァンツァーレ_路地裏オタロード本店',15147,'A-'],['カードショップLight',14450,'A-'],['カードショップ ラフテリア',16200,'B'],['カードショップ彩々アミュプラザ鹿児島店',15120,'B'],['ポケモンカード専門店Theトレカ',13800,'B']]}},
+ {id:'mewtwo-ex-fur', myca:'134/103', name:'ミュウツーex', sub:'FUR', rarity:'FUR', no:'M6a-134/103', order:134,
+  data:{dmm:[['s4',13320,'状態A']], flea:[['s0',55000],['s1',30000]], rush:[['s2',19800],['s3',14800]], buy:[['s2',14000]], avg:[['s2',21889],['s3',11900]]},
+  shops:[['カーナベル',29800,'9/16'],['遊々亭',19800,'9/16'],['カードラッシュ',14800,'9/17'],['カードラボ',14800,'9/17'],['トレカキャンプ',12800,'9/17'],['アメニティドリーム',11000,'9/17'],['マナソース',10000,'9/17'],['晴れる屋2',8000,'9/17']]},
+
+ {id:'pikachu-ex-day', myca:'126/103', name:'ピカチュウex', sub:'SAR・ピカピカパレード（昼）', rarity:'SAR', no:'M6a-126/103', order:126,
+  data:{flea:[['s0',36000],['s1',18000]], rush:[['s2',21800],['s3',11800]], buy:[['s2',17000]], avg:[['s2',16778],['s3',14067]]},
+  shops:[['晴れる屋2',20000,'9/17'],['カードラボ',16800,'9/17'],['カーナベル',15800,'9/17'],['遊々亭',14800,'9/16'],['カードラッシュ',11800,'9/17'],['トレカキャンプ',10800,'9/17'],['マナソース',10000,'9/17'],['アメニティドリーム',10000,'9/17']]},
+ {id:'pikachu-ex-night', myca:'127/103', name:'ピカチュウex', sub:'SAR・ビリビリフィーバー（夜）', rarity:'SAR', no:'M6a-127/103', order:127,
+  data:{dmm:[['s4',12800,'状態A']], flea:[['s0',38000],['s1',20000]], rush:[['s2',21800],['s3',12800]], buy:[['s2',17000]], avg:[['s3',13720]]},
+  shops:[['カーナベル',23800,'9/16'],['晴れる屋2',20000,'9/17'],['カードラボ',16800,'9/17'],['遊々亭',14800,'9/16'],['カードラッシュ',12800,'9/17'],['アメニティドリーム',10000,'9/17'],['マナソース',9000,'9/17']]},
+ {id:'mew-ex-sar', myca:'129/103', name:'ミュウex', sub:'SAR', rarity:'SAR', no:'M6a-129/103', order:129,
+  data:{flea:[['s0',30000],['s1',13000]], rush:[['s2',14800],['s3',8980]], buy:[['s2',10000]], avg:[['s2',13525],['s3',10897]]},
+  shops:[['晴れる屋2',15000,'9/17'],['遊々亭',12800,'9/16'],['カードラボ',10800,'9/17'],['カーナベル',10800,'9/17'],['アメニティドリーム',10000,'9/17'],['マナソース',9800,'9/17'],['カードラッシュ',8980,'9/17']]},
+ {id:'gengar-ex-sar', myca:'131/103', name:'ゲンガーex', sub:'SAR', rarity:'SAR', no:'M6a-131/103', order:131,
+  data:{flea:[['s0',20000],['s1',16000]], rush:[['s2',13800],['s3',7480]], buy:[['s2',10000]], avg:[['s3',8074]]},
+  shops:[['遊々亭',9980,'9/16'],['カードラボ',9980,'9/17'],['カーナベル',9980,'9/17'],['晴れる屋2',8000,'9/17'],['カードラッシュ',7480,'9/17'],['アメニティドリーム',7000,'9/17'],['マナソース',6000,'9/17']]},
+ {id:'mewtwo-ex-sar', myca:'128/103', name:'ミュウツーex', sub:'SAR', rarity:'SAR', no:'M6a-128/103', order:128,
+  data:{flea:[['s1',11000]], rush:[['s2',8980],['s3',5980]], buy:[['s2',6000]], avg:[['s3',6540]]},
+  shops:[['カーナベル',8280,'9/17'],['晴れる屋2',8000,'9/17'],['遊々亭',7980,'9/16'],['カードラボ',6980,'9/17'],['カードラッシュ',5980,'9/17'],['マナソース',5000,'9/17'],['アメニティドリーム',5000,'9/17']]},
+ {id:'sylveon-ex-sar', myca:'130/103', name:'ニンフィアex', sub:'SAR', rarity:'SAR', no:'M6a-130/103', order:130,
+  data:{dmm:[['s4',4980,'状態A']], flea:[['s0',15000],['s1',9000]], rush:[['s2',7980],['s3',5980]], buy:[['s2',6000]], avg:[['s3',5857]]},
+  shops:[['晴れる屋2',7000,'9/17'],['遊々亭',6980,'9/16'],['カードラボ',6980,'9/17'],['カーナベル',6980,'9/17'],['カードラッシュ',5980,'9/17'],['アメニティドリーム',4200,'9/17'],['マナソース',4000,'9/17']]},
+ {id:'jirachi-ex-sar', myca:'132/103', name:'ジラーチex', sub:'SAR', rarity:'SAR', no:'M6a-132/103', order:132,
+  data:{dmm:[['s4',4480,'状態A']], flea:[['s0',12000],['s1',8000]], rush:[['s2',8480],['s3',4980]], buy:[['s2',5500]], avg:[['s3',4940]]},
+  shops:[['遊々亭',6980,'9/16'],['カードラボ',5980,'9/17'],['カーナベル',5980,'9/17'],['カードラッシュ',4980,'9/17'],['アメニティドリーム',4500,'9/17'],['晴れる屋2',4200,'9/17'],['マナソース',4000,'9/17']]},
+ {id:'greninja-ex-sar', myca:'125/103', name:'ゲッコウガex', sub:'SAR', rarity:'SAR', no:'M6a-125/103', order:125,
+  data:{dmm:[['s4',2480,'状態A']], flea:[['s0',11000],['s1',5000]], rush:[['s2',4480],['s3',3280]], buy:[['s2',3200]], avg:[['s3',3524]]},
+  shops:[['カーナベル',4580,'9/17'],['遊々亭',3980,'9/16'],['カードラボ',3980,'9/17'],['晴れる屋2',3800,'9/17'],['アメニティドリーム',3500,'9/17'],['カードラッシュ',3280,'9/17'],['マナソース',2000,'9/17']]},
+ {id:'salamence-ex-sar', myca:'133/103', name:'ボーマンダex', sub:'SAR', rarity:'SAR', no:'M6a-133/103', order:133,
+  data:{rush:[['s2',2180],['s3',1480]], buy:[['s2',1500]], avg:[['s3',1332]]},
+  shops:[['カーナベル',3580,'9/16'],['遊々亭',1780,'9/16'],['カードラボ',1680,'9/17'],['晴れる屋2',1500,'9/17'],['カードラッシュ',1480,'9/17'],['マナソース',1000,'9/17'],['アメニティドリーム',1000,'9/17']]},
+ {id:'fuecoco-ex-sar', myca:'124/103', name:'ホゲータex', sub:'SAR', rarity:'SAR', no:'M6a-124/103', order:124,
+  data:{rush:[['s2',1580],['s3',1380]], buy:[['s2',1000]], avg:[['s3',1040]]},
+  shops:[['トレカキャンプ',1680,'9/16'],['遊々亭',1480,'9/16'],['カーナベル',1480,'9/17'],['カードラッシュ',1380,'9/17'],['カードラボ',1280,'9/17'],['マナソース',1000,'9/17'],['アメニティドリーム',1000,'9/17'],['晴れる屋2',100,'9/17']]},
+
+ {id:'lugia-cls', myca:'142/103', name:'ルギア', sub:'復刻版', rarity:'CLS', no:'M6a-142/103', order:142,
+  data:{flea:[['s0',40000],['s1',16000]], rush:[['s2',22800],['s3',14800]], buy:[['s2',18000]], avg:[['s3',15567]]},
+  shops:[['カードラボ',19800,'9/17'],['遊々亭',17800,'9/16'],['晴れる屋2',17000,'9/17'],['カーナベル',15800,'9/17'],['カードラッシュ',14800,'9/17'],['アメニティドリーム',14000,'9/17'],['マナソース',12000,'9/17']]},
+ {id:'charizard-cls', myca:'137/103', name:'リザードン LV.76', sub:'復刻版', rarity:'CLS', no:'M6a-137/103', order:137,
+  data:{dmm:[['s4',10500,'状態B']], flea:[['s0',27000],['s1',15000]], rush:[['s2',16800],['s3',13800]], buy:[['s2',11000]], avg:[['s3',14267]]},
+  shops:[['カーナベル',19800,'9/16'],['晴れる屋2',16000,'9/17'],['カードラボ',15800,'9/16'],['トレカキャンプ',14800,'9/16'],['カードラッシュ',13800,'9/17'],['アメニティドリーム',13000,'9/17'],['遊々亭',12800,'9/16']]},
+ {id:'magikarp-cls', myca:'165/103', name:'コイキング', sub:'復刻版', rarity:'CLS', no:'M6a-165/103', order:165,
+  data:{dmm:[['s4',6800,'状態A']], flea:[['s0',15000],['s1',8000]], rush:[['s2',10800],['s3',7480]], buy:[['s2',8500]], avg:[['s3',7615]]},
+  shops:[['カーナベル',11800,'9/16'],['カードラボ',8980,'9/17'],['アメニティドリーム',7500,'9/17'],['カードラッシュ',7480,'9/17'],['遊々亭',6980,'9/16'],['マナソース',6500,'9/17'],['トレカキャンプ',5980,'9/16'],['晴れる屋2',5800,'9/16']]},
+ {id:'gengar-cls', myca:'150/103', name:'ゲンガー', sub:'復刻版', rarity:'CLS', no:'M6a-150/103', order:150,
+  data:{dmm:[['s4',6000,'状態A']], flea:[['s0',25000],['s1',10000]], rush:[['s2',9480],['s3',6980]], buy:[['s2',7000]], avg:[['s3',6988]]},
+  shops:[['カーナベル',8480,'9/17'],['カードラボ',7980,'9/17'],['マナソース',7500,'9/16'],['晴れる屋2',7000,'9/17'],['カードラッシュ',6980,'9/17'],['遊々亭',5980,'9/16'],['アメニティドリーム',4500,'9/17']]},
+ {id:'pikachu-cls', myca:'136/103', name:'ピカチュウ LV.12', sub:'復刻版', rarity:'CLS', no:'M6a-136/103', order:136,
+  data:{dmm:[['s4',3800,'状態A']], flea:[['s0',13000],['s1',8000]], rush:[['s2',5280],['s3',3980]], buy:[['s2',3500]], avg:[['s3',3975]]},
+  shops:[['遊々亭',4980,'9/16'],['カードラボ',4980,'9/17'],['カーナベル',4580,'9/17'],['アメニティドリーム',4000,'9/17'],['カードラッシュ',3980,'9/17'],['トレカキャンプ',3780,'9/17'],['晴れる屋2',3500,'9/17'],['マナソース',3000,'9/17']]},
+ {id:'celebi-cls', myca:'141/103', name:'ひかるセレビィ LV.18', sub:'復刻版', rarity:'CLS', no:'M6a-141/103', order:141,
+  data:{dmm:[['s4',2000,'状態A']], flea:[['s0',10000]], rush:[['s2',5280],['s3',3480]], buy:[['s2',3500]], avg:[['s3',3590]]},
+  shops:[['カードラボ',4480,'9/17'],['カーナベル',3980,'9/17'],['晴れる屋2',3800,'9/17'],['カードラッシュ',3480,'9/17'],['アメニティドリーム',3000,'9/17'],['遊々亭',2980,'9/16'],['マナソース',2800,'9/17']]},
+ {id:'darkrai-cresselia-cls', name:'ダークライ＆クレセリアLEGEND', sub:'復刻版・2枚セット価格', rarity:'CLS', no:'M6a-151/103＋152/103', order:151,
+  data:{flea:[['s0',20000]], rush:[['s2',8980]], buy:[['s2',6000]]},
+  shops:[]},
+ {id:'mew-vmax-cls', myca:'163/103', name:'ミュウVMAX', sub:'復刻版', rarity:'CLS', no:'M6a-163/103', order:163,
+  data:{dmm:[['s4',1480,'状態A']], flea:[['s0',25000],['s1',6000]], rush:[['s2',2380]], buy:[['s2',1300]]},
+  shops:[]},
+ {id:'pika-zekrom-cls', myca:'160/103', name:'ピカチュウ＆ゼクロムGX', sub:'復刻版', rarity:'CLS', no:'M6a-160/103', order:160,
+  data:{dmm:[['s4',1680,'状態A']], flea:[['s0',14000],['s1',5000]], rush:[['s2',2780]], buy:[['s2',1500]]},
+  shops:[]},
+ {id:'rayquaza-cls', myca:'154/103', name:'レックウザEX', sub:'復刻版', rarity:'CLS', no:'M6a-154/103', order:154,
+  data:{dmm:[['s4',2100,'状態A']], flea:[['s1',7000]], rush:[['s2',3480]], buy:[['s2',2000]]},
+  shops:[]},
+ {id:'m-gardevoir-cls', myca:'156/103', name:'MサーナイトEX', sub:'復刻版', rarity:'CLS', no:'M6a-156/103', order:156,
+  data:{dmm:[['s4',700,'状態A']], flea:[['s0',19000]], rush:[['s2',1580]], buy:[['s2',800]]},
+  shops:[]},
+ {id:'raikou-cls', myca:'162/103', name:'ライコウ', sub:'復刻版', rarity:'CLS', no:'M6a-162/103', order:162,
+  data:{dmm:[['s4',600,'状態A']], flea:[['s0',11000]], rush:[['s2',1580]], buy:[['s2',800]]},
+  shops:[]},
+ {id:'n-cls', myca:'153/103', name:'N', sub:'復刻版', rarity:'CLS', no:'M6a-153/103', order:153,
+  data:{dmm:[['s4',1280,'状態A']], rush:[['s2',3280]], buy:[['s2',2000]]},
+  shops:[]},
+ {id:'misty-cls', myca:'138/103', name:'カスミ', sub:'復刻版', rarity:'CLS', no:'M6a-138/103', order:138,
+  data:{dmm:[['s4',680,'状態A']], rush:[['s2',2980]], buy:[['s2',1500]]},
+  shops:[]},
+ {id:'dark-tyranitar-cls', myca:'144/103', name:'わるいバンギラス', sub:'復刻版', rarity:'CLS', no:'M6a-144/103', order:144,
+  data:{dmm:[['s4',980,'状態A']], rush:[['s2',2480]], buy:[['s2',1600]]},
+  shops:[]}
+];
+
+// DMMマイカ 9/17午後の最安値（追跡系列を持たないカード用）: key → [価格, 状態]
+const SPOT = {'165/103':[6800,'A'],'164/103':[700,'A'],'163/103':[1480,'A'],'162/103':[600,'A'],'161/103':[480,'A'],'160/103':[1680,'A'],'159/103':[480,'A'],'158/103':[480,'A'],'157/103':[680,'A'],'156/103':[700,'A'],'155/103':[300,'A'],'154/103':[2100,'A'],'153/103':[1280,'A'],'152/103':[1680,'A'],'151/103':[1680,'A'],'150/103':[6000,'A'],'149/103':[480,'A'],'148/103':[480,'A'],'147/103':[580,'A'],'146/103':[480,'A'],'145/103':[500,'A'],'144/103':[980,'A'],'143/103':[350,'A'],'141/103':[2000,'A'],'140/103':[480,'A'],'139/103':[690,'A'],'138/103':[680,'A'],'137/103':[10500,'B'],'136/103':[3800,'A'],
+ '017/103':[280,'A'],'018/103':[230,'A'],'019/103':[230,'A'],'020/103':[230,'A'],'021/103':[230,'A'],'022/103':[380,'A'],'023/103':[230,'A'],'024/103':[230,'A'],'026/103':[230,'A'],'027/103':[230,'A'],'028/103':[280,'A'],'029/103':[200,'A'],'030/103':[230,'A'],'031/103':[200,'A'],'032/103':[230,'A'],'033/103':[230,'A'],'034/103':[380,'A'],'035/103':[230,'A'],'036/103':[230,'A'],'037/103':[300,'A'],'038/103':[230,'A'],'041/103':[230,'A'],'042/103':[280,'A'],'044/103':[230,'A'],'046/103':[230,'A'],
+ '047/103':[280,'A'],'048/103':[250,'A'],'057/103':[300,'A'],'076/103':[180,'A'],'054/103':[60,'A'],'058/103':[50,'A'],'060/103':[50,'A'],'077/103':[60,'A'],'092/103':[50,'A'],'093/103':[50,'A'],'095/103':[50,'A'],'097/103':[80,'A'],'101/103':[80,'A'],'102/103':[120,'A'],'103/103':[50,'A']};
+// 1BOX（20パック）あたりの封入枚数と種類数。出典：ポケカ当たり.jp（SAR・復刻版・AR・RR・ピカチュウ）、攻略大百科（FUR 6BOXに約1枚）、トレカプロ（RGB 120BOXに1枚・実測1件）
+const RATE = {RGB:{perBox:1/120, kinds:3, note:'120BOXに1枚（実測1件のみ）'}, FUR:{perBox:1/6, kinds:2, note:'6BOXに約1枚'}, SAR:{perBox:1, kinds:10, note:'1BOXに1枚確定'}, CLS:{perBox:2, kinds:30, note:'1BOXに2枚確定'}, AR:{perBox:4, kinds:20, note:'1BOXに4枚確定'}, RR:{perBox:5, kinds:10, note:'1BOXに5枚確定'}, PIKA:{perBox:20, kinds:30, note:'1パックに1枚（BOX内で被りなし）'}};
+const BOX_PRICE = 7200, BOX_MARKET = 24900;
+const DMM_LIST = 'https://myca.dmm.com/pokemon-trading-card-game/list?cardseries=%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0MEGA&myca_primary_pack_id=6374';
+const keyOf = no => String(no).replace('M6a-','').split('＋')[0];
+const TR_BY_KEY = {}; TRACKED.forEach(t => { TR_BY_KEY[keyOf(t.no)] = t; });
+const ALL = FULL.map(([no,name,rar,buy,dmmId,rushId,img]) => { const key = /^\d+$/.test(no) ? no+'/103' : no; return {
+  key, no, name, rarity:rar, buy, dmmId, rushId, img: img||'', tracked: TR_BY_KEY[key] || null,
+  order: /^\d+$/.test(no) ? +no : 1000 + ['R/RGB','G/RGB','B/RGB'].indexOf(no) }; });
+const byKey = k => ALL.find(c => c.key===k);
+
+const LS_KEY = 'pk30th-dash-custom-v1';
+const state = { tab:'all', sort:{col:'no', dir:'asc'}, q:'', selected:null, range:'all',
+  enabled:{flea:true, rush:true, dmm:true, avg:true, buy:true, custom:true}, custom:loadCustom(), loaded:{}, loadedShops:{}, loadedAt:null };
+function loadCustom(){ try{ const o=JSON.parse(localStorage.getItem(LS_KEY)||'{}'); return (o&&typeof o==='object')?o:{}; }catch(e){ return {}; } }
+function saveCustom(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state.custom)); return true; }catch(e){ return false; } }
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const yen = v => '¥' + Math.round(v).toLocaleString('ja-JP');
+function axisYen(v){ if(v>=10000){ const m=v/10000; return (Number.isInteger(m)?m:+m.toFixed(1)).toLocaleString('ja-JP')+'万'; } return Math.round(v).toLocaleString('ja-JP'); }
+const ms = iso => new Date(iso).getTime();
+function jst(t){ const d=new Date(t+9*3600*1000); return {m:d.getUTCMonth()+1, d:d.getUTCDate(), h:d.getUTCHours(), mi:d.getUTCMinutes()}; }
+const fmtDT = t => { const j=jst(t); return `${j.m}/${j.d} ${j.h}:${String(j.mi).padStart(2,'0')}`; };
+const pct = (a,b) => (b-a)/a*100;
+function chg(p){ if(p==null||!isFinite(p)) return '<span class="chg flat">—</span>'; const c=p>0.05?'up':p<-0.05?'down':'flat', a=p>0.05?'▲':p<-0.05?'▼':'±'; return `<span class="chg ${c} num">${a}${Math.abs(p).toFixed(1)}%</span>`; }
+const buyMax = c => { const m=String(c.buy||'').replace(/,/g,'').match(/(\d+)円?$/); return m?+m[1]:0; };
+const noLabel = c => /^\d+$/.test(c.no) ? 'No.'+c.no : c.no;
+
+function points(c){
+  const out=[];
+  if(c.tracked) for(const s of Object.keys(c.tracked.data)) for(const [slot,v,note] of c.tracked.data[s]) out.push({s, t:ms(T[slot]), v, src:SERIES[s].src+(note?'・'+note:''), custom:false});
+  if(!c.tracked && SPOT[c.key]) out.push({s:'dmm', t:ms(T.s4), v:SPOT[c.key][0], src:'DMMマイカ・状態'+SPOT[c.key][1], custom:false});
+  for(const p of (state.loaded[c.key]||[])) out.push(p);
+  (state.custom[c.key]||[]).forEach((p,i)=>{ const t=ms(p.t); if(isFinite(t)&&isFinite(p.v)) out.push({s:(p.s in SERIES)?p.s:'custom', t, v:+p.v, src:p.memo?'自分で追加：'+p.memo:'自分で追加', custom:true, idx:i}); });
+  return out.sort((a,b)=>a.t-b.t);
+}
+const latestOf=(c,s)=>{ const ps=points(c).filter(p=>p.s===s); return ps.length?ps[ps.length-1]:null; };
+function latestSale(c){ for(const s of SALE_ORDER){ const p=latestOf(c,s); if(p) return p; } return null; }
+function change(c){ for(const s of ['rush','dmm']){ const ps=points(c).filter(p=>p.s===s); if(ps.length>=2) return {p:pct(ps[ps.length-2].v, ps[ps.length-1].v), s, a:ps[ps.length-2], b:ps[ps.length-1]}; } return null; }
+function fleaDiff(c){ const f=points(c).find(p=>p.s==='flea'); const s=latestSale(c); return (f&&s&&s.t>f.t)?pct(f.v,s.v):null; }
+function listingsOf(c){ if(state.loadedShops[c.key]) return state.loadedShops[c.key].filter(r=>r.src!=='直接取得'); return (c.tracked&&c.tracked.dmmShops)?c.tracked.dmmShops.listings.map(([n,v,cond])=>({shop:n,price:v,cond})):[]; }
+function spark(c){
+  const ps=points(c).filter(p=>p.s==='rush'); const src=ps.length>=2?ps:points(c).filter(p=>p.s==='dmm'); if(src.length<2) return '';
+  const xs=src.map(p=>p.t), ys=src.map(p=>p.v), x0=Math.min(...xs), x1=Math.max(...xs), y0=Math.min(...ys), y1=Math.max(...ys);
+  const pts=src.map(p=>`${((p.t-x0)/(x1-x0||1)*60+2).toFixed(1)},${(16-(p.v-y0)/(y1-y0||1)*14+2).toFixed(1)}`).join(' ');
+  const col=ys[ys.length-1]<ys[0]?'var(--down)':ys[ys.length-1]>ys[0]?'var(--up)':'var(--muted)';
+  return `<svg viewBox="0 0 64 20" aria-hidden="true"><polyline fill="none" stroke="${col}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="${pts}"/></svg>`;
+}
+function frame(c, lg){ // 画像があれば画像、無ければ独自プレースホルダー
+  const src = lg ? (c.imgHi||c.img) : c.img;
+  return `<div class="frame ${lg?'lg':''} rar-${c.rarity||'REG'}">${src?`<img src="${esc(src)}" alt="${esc(c.name)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`:
+    `<div class="ph"><div class="n"><span>${esc(noLabel(c))}</span><span>M6a</span></div><div class="c"><b>${esc(c.name)}</b><span>${c.rarity||'NORMAL'}</span></div><div class="f">30th CELEBRATION</div></div>`}</div>`;
+}
+
+/* ---- BOX期待値 ---- */
+function evBreakdown(){
+  const rows=[];
+  for(const [rar,r] of Object.entries(RATE)){
+    const cards=ALL.filter(c=>c.rarity===rar);
+    const priced=cards.map(c=>SPOT[c.key]?{v:SPOT[c.key][0]}:latestSale(c)).filter(Boolean); // 単品価格を優先（復刻版ダークライは2枚セット価格を避ける）
+    const avg=priced.length?priced.reduce((a,p)=>a+p.v,0)/priced.length:null;
+    rows.push({rar, perBox:r.perBox, kinds:r.kinds, priced:priced.length, avg, ev:avg==null?null:avg*r.perBox, note:r.note});
+  }
+  const sum=keys=>rows.filter(x=>keys.includes(x.rar)&&x.ev!=null).reduce((a,x)=>a+x.ev,0);
+  return {rows, sarPlus:sum(['RGB','FUR','SAR']), sarPlusNoRgb:sum(['FUR','SAR']), withCls:sum(['RGB','FUR','SAR','CLS']), all:sum(Object.keys(RATE))};
+}
+function renderEv(){
+  const b=evBreakdown();
+  const fmtPer=x=>x>=1?x+'枚':'1/'+Math.round(1/x)+'枚';
+  $('#ev').innerHTML=`<details class="panel evbox"><summary>BOX期待値の内訳<small>各レアリティの「1BOXあたり枚数 × 価格データがあるカードの平均最安」。SAR以上＝RGB＋FUR＋SAR</small></summary>
+    <div class="tbl-wrap"><table class="evt"><thead><tr><th>レア</th><th class="r">1BOXあたり</th><th class="r">価格データ</th><th class="r">平均最安</th><th class="r">期待値</th><th>封入率の根拠</th></tr></thead><tbody>${
+      b.rows.map(x=>`<tr><td><span class="rar rar-${x.rar}">${x.rar}</span></td><td class="r num">${fmtPer(x.perBox)}</td><td class="r num">${x.priced} / ${x.kinds}種</td><td class="r num">${x.avg==null?'—':yen(x.avg)}</td><td class="r num"><b>${x.ev==null?'—':yen(x.ev)}</b></td><td class="dim">${esc(x.note)}</td></tr>`).join('')
+    }</tbody></table></div>
+    <div class="evsum"><span>SAR以上 <b class="num">${yen(b.sarPlus)}</b></span><span>RGBを除く <b class="num">${yen(b.sarPlusNoRgb)}</b></span><span>復刻版まで含む <b class="num">${yen(b.withCls)}</b></span><span>価格データのある全レア <b class="num">${yen(b.all)}</b></span><span>定価 <b class="num">${yen(BOX_PRICE)}</b></span><span>実勢 <b class="num">${yen(BOX_MARKET)}</b>（DMMマイカ 9/17）</span></div>
+    <p class="note">ARは価格データが無いため未計算。RGBは実測1件の封入率なので幅を持って見る。単価の低いカードを1枚ずつ売るのは現実的でないため、売買判断には「SAR以上」か「復刻版まで含む」の値を使う。</p>
+  </details>`;
+}
+
+/* ---- KPI ---- */
+function renderKpis(){
+  const b=evBreakdown();
+  const tracked=ALL.filter(c=>c.tracked);
+  const chs=tracked.map(c=>({c,ch:change(c)})).filter(x=>x.ch&&x.ch.s==='rush');
+  const vals=chs.map(x=>x.ch.p).sort((a,b)=>a-b), n=vals.length, med=n?(n%2?vals[(n-1)/2]:(vals[n/2-1]+vals[n/2])/2):null;
+  const sum=tracked.reduce((a,c)=>{ const p=latestOf(c,'dmm')||latestSale(c); return a+(p?p.v:0); },0);
+  const fd=tracked.map(fleaDiff).filter(x=>x!=null).sort((a,b)=>a-b), fn=fd.length, fmed=fn?(fn%2?fd[(fn-1)/2]:(fd[fn/2-1]+fd[fn/2])/2):null;
+  $('#kpis').innerHTML=`
+    <div class="kpi"><div class="l">BOX期待値（SAR以上）vs 定価</div><div class="v num">${yen(b.sarPlus)}<small class="${b.sarPlus>BOX_PRICE?'up':'down'}" style="font-size:.9rem;margin-left:8px">${b.sarPlus>BOX_PRICE?'定価+':'定価'}${yen(b.sarPlus-BOX_PRICE)}</small></div><div class="s">RGB除く ${yen(b.sarPlusNoRgb)}・復刻版まで含む ${yen(b.withCls)}・定価 ¥7,200・実勢 ¥24,900</div></div>
+    <div class="kpi"><div class="l">前日比の中央値</div><div class="v">${med==null?'—':chg(med)}</div><div class="s">カードラッシュ販売 9/16昼→9/17・${chs.filter(x=>x.ch.p<-0.05).length}枚下落 ${chs.filter(x=>x.ch.p>0.05).length}枚上昇</div></div>
+    <div class="kpi"><div class="l">発売前フラゲ相場からの下落（中央値）</div><div class="v">${fmed==null?'—':chg(fmed)}</div><div class="s">9/15のフリマ相場 → 現在の最安</div></div>
+    <div class="kpi"><div class="l">実勢BOX価格で開けた場合</div><div class="v num">${yen(b.withCls-BOX_MARKET)}</div><div class="s">復刻版まで含む期待値 ${yen(b.withCls)} − 実勢 ¥24,900（DMMマイカ 9/17）</div></div>`;
+}
+
+/* ---- 横スクロールのカード帯 ---- */
+function ccHTML(x,i){ const c=x.c, s=latestSale(c);
+  return `<button class="cc" data-key="${esc(c.key)}" style="position:relative"><span class="rk num">#${i+1}</span>${frame(c)}
+    <div class="nm">${esc(c.name)}</div><div class="no"><span>${esc(noLabel(c))}</span><span class="rar rar-${c.rarity||'REG'}">${c.rarity||'—'}</span></div>
+    <div class="row"><span>最安</span><b class="num">${s?yen(s.v):'—'}</b></div><div class="row"><span>前日比</span>${chg(x.ch.p)}</div></button>`; }
+function renderStrips(){
+  const chs=ALL.filter(c=>c.tracked).map(c=>({c,ch:change(c)})).filter(x=>x.ch);
+  const down=chs.slice().sort((a,b)=>a.ch.p-b.ch.p).slice(0,10);
+  const upAll=chs.filter(x=>x.ch.p>0.05).sort((a,b)=>b.ch.p-a.ch.p);
+  const up=(upAll.length?upAll:chs.slice().sort((a,b)=>b.ch.p-a.ch.p)).slice(0,10);
+  const strip=(id,title,sub,list)=>{ $(id).innerHTML=`<div class="hd"><h2>${title}</h2><span>${sub}</span><div class="nav"><button data-dir="-1" aria-label="左へ">‹</button><button data-dir="1" aria-label="右へ">›</button></div></div><div class="rail">${list.map(ccHTML).join('')||'<div class="empty">データなし</div>'}</div>`; };
+  strip('#stripDown','下落トップ10','前日比が大きい順',down);
+  strip('#stripUp', upAll.length?'上昇トップ10':'下落が小さい順 トップ10', upAll.length?'前日比が大きい順':'今日は上昇したカードがありません', up);
+}
+
+/* ---- タブ + 表 ---- */
+const TABS=[['all','すべて'],['priced','価格あり'],['RGB','RGB'],['FUR','FUR'],['SAR','SAR'],['AR','AR'],['CLS','復刻版'],['RR','RR'],['PIKA','ピカチュウ30種'],['REG','ノーマル・トレーナーズ']];
+const tabFilter=(c,t)=> t==='all'?true : t==='priced'?!!latestSale(c) : t==='REG'?(c.rarity===''||c.rarity==='TR') : c.rarity===t;
+const COLS=[['no','No.',''],['name','カード',''],['rarity','レア',''],['dmm','DMM最安','r'],['rush','カードラッシュ','r'],['buy','買取','r'],['chg','前日比','r'],['flea','フラゲ比','r'],['lst','出品','r'],['spark','推移','']];
+function renderTabs(){ $('#tabs').innerHTML=TABS.map(([k,l])=>`<button class="tab" role="tab" data-t="${k}" aria-selected="${state.tab===k}">${l}<small>${ALL.filter(c=>tabFilter(c,k)).length}</small></button>`).join(''); }
+function colVal(c,col){
+  switch(col){
+    case 'no': return c.order; case 'name': return c.name;
+    case 'rarity': return ['RGB','FUR','SAR','AR','CLS','RR','PIKA','TR',''].indexOf(c.rarity);
+    case 'dmm': { const p=latestOf(c,'dmm'); return p?p.v:-1; }
+    case 'rush': { const p=latestOf(c,'rush'); return p?p.v:-1; }
+    case 'buy': { const p=latestOf(c,'buy'); return p?p.v:buyMax(c)?buyMax(c)-0.5:-1; }
+    case 'chg': { const x=change(c); return x?x.p:-1e9; }
+    case 'flea': { const x=fleaDiff(c); return x==null?-1e9:x; }
+    case 'lst': return listingsOf(c).length;
+    default: return 0;
+  }
+}
+function visible(){
+  let arr=ALL.filter(c=>tabFilter(c,state.tab));
+  if(state.q){ const q=state.q.toLowerCase(); arr=arr.filter(c=>(c.name+' '+c.no+' '+RAR[c.rarity]).toLowerCase().includes(q)); }
+  const {col,dir}=state.sort, m=dir==='asc'?1:-1;
+  arr.sort((a,b)=>{ const x=colVal(a,col), y=colVal(b,col); return (typeof x==='string'? x.localeCompare(y,'ja') : x-y)*m || a.order-b.order; });
+  return arr;
+}
+function renderTable(){
+  $('#thead').innerHTML='<tr>'+COLS.map(([k,l,cls])=>`<th class="${cls}" data-col="${k}" ${state.sort.col===k?`aria-sort="${state.sort.dir==='asc'?'ascending':'descending'}"`:''}>${l}</th>`).join('')+'</tr>';
+  const arr=visible(); $('#cnt').textContent=`${arr.length}枚`;
+  if(!arr.length){ $('#tbody').innerHTML=`<tr><td colspan="${COLS.length}" class="empty">該当するカードがありません</td></tr>`; return; }
+  $('#tbody').innerHTML=arr.map(c=>{
+    const d=latestOf(c,'dmm'), r=latestOf(c,'rush'), b=latestOf(c,'buy'), ch=change(c), fd=fleaDiff(c), n=listingsOf(c).length;
+    return `<tr data-key="${esc(c.key)}">
+      <td class="num dim">${/^\d+$/.test(c.no)?c.no:esc(c.no)}</td>
+      <td><span class="thumb">${frame(c)}</span>${esc(c.name)}</td>
+      <td><span class="rar rar-${c.rarity||'REG'}">${c.rarity||'—'}</span></td>
+      <td class="r num ${d?'':'dim'}">${d?yen(d.v):'—'}</td>
+      <td class="r num ${r?'':'dim'}">${r?yen(r.v):'—'}</td>
+      <td class="r num ${b?'':'dim'}">${b?yen(b.v):(c.buy?esc(c.buy):'—')}</td>
+      <td class="r">${ch?chg(ch.p):'<span class="dim">—</span>'}</td>
+      <td class="r">${fd==null?'<span class="dim">—</span>':chg(fd)}</td>
+      <td class="r num ${n?'':'dim'}">${n||'—'}</td>
+      <td>${spark(c)}</td></tr>`;
+  }).join('');
+}
+
+/* ---- モーダル（カード詳細） ---- */
+const card=()=>byKey(state.selected);
+function shopRows(c){
+  if(state.loadedShops[c.key]) return state.loadedShops[c.key].slice().sort((a,b)=>a.price-b.price);
+  const rows=[];
+  if(c.tracked&&c.tracked.shops) for(const [n,v,d] of c.tracked.shops) rows.push({shop:n, price:v, cond:'—', when:d, src:'各店掲載値（ポケカ当たり.jp経由）'});
+  if(c.tracked&&c.tracked.dmmShops) for(const [n,v,cond] of c.tracked.dmmShops.listings) rows.push({shop:n, price:v, cond, when:c.tracked.dmmShops.date, src:'DMMマイカ出品'});
+  return rows.sort((a,b)=>a.price-b.price);
+}
+function rangeFilter(ps){ if(state.range==='all') return ps; const days={'3d':3,'7d':7,'30d':30}[state.range]; const now=Math.max(Date.now(), ...ps.map(p=>p.t)); return ps.filter(p=>p.t>=now-days*86400000); }
+function openModal(key){ state.selected=key; renderModal(); $('#modal').classList.add('open'); document.body.classList.add('lock'); $('#mbox').scrollTop=0; const cl=$('#closeModal'); if(cl) cl.focus(); }
+function closeModal(){ $('#modal').classList.remove('open'); document.body.classList.remove('lock'); state.selected=null; }
+function renderModal(){
+  const c=card(); if(!c) return;
+  const ps=points(c), sale=latestSale(c), ch=change(c), fd=fleaDiff(c), buy=latestOf(c,'buy');
+  const ls=listingsOf(c); const conds={}; for(const l of ls){ if(l.cond&&l.cond!=='—') conds[l.cond]=Math.min(conds[l.cond]||Infinity, l.price); }
+  const condHTML=Object.keys(conds).length?Object.entries(conds).sort((a,b)=>a[1]-b[1]).map(([k,v])=>`<div class="row"><span>状態 ${esc(k)} の最安</span><span class="num">${yen(v)}</span></div>`).join(''):`<div class="row"><span>状態別の最安</span><span class="dim">出品データなし</span></div>`;
+  const legend=Object.keys(SERIES).map(s=>{ const has=ps.some(p=>p.s===s); return `<button data-s="${s}" aria-pressed="${state.enabled[s]}" ${has?'':'disabled'} style="color:${SERIES[s].color}"><span class="sw ${SERIES[s].style}"></span><span style="color:var(--text)">${SERIES[s].label}</span></button>`; }).join('');
+  const rows=shopRows(c);
+  const shopHTML=rows.length?`<table><thead><tr><th>店舗</th><th class="r">販売価格</th><th>状態</th><th>取得</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.shop)}<span class="src">${esc(r.src)}</span></td><td class="r num">${yen(r.price)}</td><td>${esc(r.cond||'—')}</td><td class="num">${esc(r.when)}</td></tr>`).join('')}</tbody></table>`:`<div class="note">店舗別の価格はまだありません。collect.py を回すと各店の値が入ります。</div>`;
+  const ptRows=ps.map(p=>`<tr><td class="num">${fmtDT(p.t)}</td><td>${esc(SERIES[p.s].label)}</td><td class="r num">${yen(p.v)}</td><td>${esc(p.src)}</td><td class="r">${p.custom?`<button class="mini" data-del="${p.idx}">削除</button>`:''}</td></tr>`).join('');
+  const now=new Date(Date.now()+9*3600*1000).toISOString().slice(0,16);
+  const official='https://www.pokemon-card.com/card-search/index.php?keyword='+encodeURIComponent(c.name.replace(/（.*?）|\s?LV\.\S+|\s?δ.*$/g,'').trim());
+  const dmm=c.dmmId?`https://myca.dmm.com/pokemon-trading-card-game/items/single-card/${c.dmmId}`:DMM_LIST;
+  const rush=c.rushId?`https://www.cardrush-pokemon.jp/product/${c.rushId}`:null;
+  $('#mbox').innerHTML=`
+    <button class="close" id="closeModal" aria-label="閉じる">✕</button>
+    <div class="mgrid">
+      <div class="mleft">${frame(c,true)}
+        <div class="links"><a href="${official}" target="_blank" rel="noopener">公式カード検索</a><a href="${dmm}" target="_blank" rel="noopener">DMMマイカ</a>${rush?`<a href="${rush}" target="_blank" rel="noopener">カードラッシュ</a>`:''}</div>
+        <div class="conds">${condHTML}</div>
+      </div>
+      <div class="mright">
+        <div class="d-head"><h3 id="mTitle">${esc(c.name)}</h3><div class="no">${/^\d+$/.test(c.no)?'No.'+c.no+' / 103':esc(c.no)}<span class="rar rar-${c.rarity||'REG'}">${c.rarity||'ノーマル'}</span><span>${RAR[c.rarity]}</span></div></div>
+        <div class="hero"><div class="big"><div class="l">${sale?SERIES[sale.s].label+'・'+fmtDT(sale.t):'価格データ'}</div><div class="v num">${sale?yen(sale.v):'—'}</div></div><div>${ch?`<div class="note" style="margin:0">前日比</div>${chg(ch.p)}`:(c.buy?`<div class="note" style="margin:0">買取目安（遊々亭・カードラッシュ）</div><b>${esc(c.buy)}</b>`:'<span class="dim">未追跡</span>')}</div></div>
+        <div class="mini-kpis">
+          <div><div class="l">発売前フラゲ相場比</div><div class="v">${fd==null?'—':chg(fd)}</div></div>
+          <div><div class="l">買取（カードラッシュ）</div><div class="v num">${buy?yen(buy.v):(c.buy?esc(c.buy):'—')}</div></div>
+          <div><div class="l">出品数（DMMマイカ）</div><div class="v num">${ls.length||'—'}</div></div>
+        </div>
+        <div class="ranges" id="ranges">${[['3d','3日'],['7d','1週'],['30d','1か月'],['all','全期間']].map(([k,l])=>`<button data-r="${k}" aria-pressed="${state.range===k}">${l}</button>`).join('')}</div>
+        <div class="legend" id="legend">${legend}</div>
+        <div class="chart-wrap" id="chart"></div>
+        <p class="note">${ps.length?'縦の点線は発売日（9/16 0:00）。点にカーソルで各時点の価格。':'まだ価格を追跡していないカードです。下の「価格を追加」で自分の記録を付けるか、collect.py の CARDS に番号を足すと追跡対象になります。'}</p>
+        <section class="sec"><h4>店舗別 販売価格 <b>安い順</b></h4>${shopHTML}</section>
+        <details class="sec"><summary>データ点一覧（${ps.length}件）</summary><table><thead><tr><th>日時</th><th>系列</th><th class="r">価格</th><th>出典</th><th></th></tr></thead><tbody>${ptRows||'<tr><td colspan="5" class="dim">データなし</td></tr>'}</tbody></table></details>
+        <details class="sec"><summary>価格を追加・記録の書き出し</summary>
+          <form class="form" id="addForm">
+            <label>日時<input type="datetime-local" name="t" value="${now}" required></label>
+            <label>系列<select name="s">${Object.keys(SERIES).map(s=>`<option value="${s}" ${s==='custom'?'selected':''}>${SERIES[s].label}</option>`).join('')}</select></label>
+            <label>価格（円）<input type="number" name="v" min="1" step="1" inputmode="numeric" placeholder="例：18800" required></label>
+            <label>メモ<input type="text" name="memo" placeholder="店名など（任意）" maxlength="40"></label>
+            <button class="btn" type="submit">追加する</button>
+          </form>
+          <div class="msg" id="msg"></div>
+          <div class="io"><textarea id="ioText" aria-label="記録のJSON" placeholder="「JSONを表示」でこの端末の記録を出力。別の端末に貼って「読み込む」で移せます。"></textarea>
+          <div class="row"><button class="btn ghost" type="button" id="btnExport">JSONを表示</button><button class="btn ghost" type="button" id="btnImport">貼り付けたJSONを読み込む</button><button class="btn ghost" type="button" id="btnClear">このカードの記録を消す</button></div></div>
+        </details>
+      </div>
+    </div>`;
+  renderChart();
+}
+
+/* ---- チャート ---- */
+function niceStep(range,n){ const raw=range/n, mag=Math.pow(10,Math.floor(Math.log10(raw))), f=raw/mag; return (f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*mag; }
+function renderChart(){
+  const c=card(); if(!c) return; const host=$('#chart'), all=rangeFilter(points(c)), vis=all.filter(p=>state.enabled[p.s]);
+  if(!all.length){ host.innerHTML='<div class="empty">この期間の価格データはありません</div>'; return; }
+  if(!vis.length){ host.innerHTML='<div class="empty">凡例で系列をオンにしてください</div>'; return; }
+  const W=720,H=280,L=58,R=14,TOP=16,B=38,iw=W-L-R,ih=H-TOP-B;
+  const ts=[...new Set(all.map(p=>p.t))].sort((a,b)=>a-b);
+  let tmin=Math.min(ts[0],ms(RELEASE)), tmax=Math.max(ts[ts.length-1],ms(RELEASE)); const span=Math.max(tmax-tmin,12*3600*1000); tmin-=span*.06; tmax+=span*.06;
+  const vmax0=Math.max(...vis.map(p=>p.v)), vmin0=Math.min(...vis.map(p=>p.v));
+  const step=niceStep(Math.max(vmax0-Math.min(vmin0,vmax0*.999), vmax0*.2),5);
+  let vmin=Math.max(0,Math.floor(vmin0/step)*step-step), vmax=Math.ceil(vmax0/step)*step+(vmax0%step===0?step:0); if(vmax===vmin) vmax=vmin+step;
+  const x=t=>L+(t-tmin)/(tmax-tmin)*iw, y=v=>TOP+(1-(v-vmin)/(vmax-vmin))*ih;
+  let g='';
+  for(let v=vmin; v<=vmax+1e-9; v+=step) g+=`<line class="gridline" x1="${L}" x2="${W-R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><g class="axis"><text x="${L-8}" y="${(y(v)+4).toFixed(1)}" text-anchor="end">${axisYen(v)}</text></g>`;
+  const every=ts.length>6?Math.ceil(ts.length/6):1; ts.forEach((t,i)=>{ if(i%every) return; g+=`<g class="axis"><text x="${x(t).toFixed(1)}" y="${H-B+18}" text-anchor="middle">${fmtDT(t)}</text></g>`; });
+  const rx=x(ms(RELEASE)); if(rx>=L&&rx<=W-R) g+=`<line class="release" x1="${rx.toFixed(1)}" x2="${rx.toFixed(1)}" y1="${TOP}" y2="${TOP+ih}" stroke-width="1.5"/><text class="release-label" x="${(rx+5).toFixed(1)}" y="${TOP+12}">発売日</text>`;
+  for(const s of Object.keys(SERIES)){
+    if(!state.enabled[s]) continue; const ps=vis.filter(p=>p.s===s); if(!ps.length) continue;
+    const col=SERIES[s].color, dash=SERIES[s].style==='dash'?'stroke-dasharray="6 5"':SERIES[s].style==='dot'?'stroke-dasharray="2 5"':'';
+    if(ps.length>1) g+=`<polyline fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" ${dash} points="${ps.map(p=>x(p.t).toFixed(1)+','+y(p.v).toFixed(1)).join(' ')}"/>`;
+    ps.forEach(p=>{ g+=`<circle cx="${x(p.t).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="${p.custom?5:4}" fill="${col}" stroke="var(--panel)" stroke-width="2"/>`; });
+  }
+  g+=`<line id="guide" x1="0" x2="0" y1="${TOP}" y2="${TOP+ih}" stroke="var(--muted)" stroke-width="1" style="display:none"/><rect id="hit" x="${L}" y="${TOP}" width="${iw}" height="${ih}" fill="transparent"/>`;
+  host.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(c.name)} の価格推移">${g}</svg><div class="tip" id="tip"></div>`;
+  const svg=host.querySelector('svg'), hit=host.querySelector('#hit'), guide=host.querySelector('#guide'), tip=host.querySelector('#tip');
+  const tsVis=[...new Set(vis.map(p=>p.t))].sort((a,b)=>a-b);
+  function show(evt){
+    const rect=svg.getBoundingClientRect(), px=(evt.clientX-rect.left)*(W/rect.width);
+    let best=tsVis[0], bd=Infinity; for(const t of tsVis){ const d=Math.abs(x(t)-px); if(d<bd){bd=d;best=t;} }
+    guide.setAttribute('x1',x(best)); guide.setAttribute('x2',x(best)); guide.style.display='';
+    tip.innerHTML=`<b>${fmtDT(best)}</b>`+vis.filter(p=>p.t===best).map(p=>`<div class="r"><span><i style="background:${SERIES[p.s].color}"></i>${esc(SERIES[p.s].label)}</span><span class="num">${yen(p.v)}</span></div>`).join('');
+    tip.style.display='block'; const cx=x(best)/W*rect.width, tw=tip.offsetWidth; tip.style.left=Math.max(0,Math.min(rect.width-tw,cx+(cx>rect.width*.6?-tw-14:14)))+'px'; tip.style.top='8px';
+  }
+  const hide=()=>{ guide.style.display='none'; tip.style.display='none'; };
+  hit.addEventListener('mousemove',show); hit.addEventListener('mouseleave',hide);
+  hit.addEventListener('touchstart',e=>show(e.touches[0]),{passive:true}); hit.addEventListener('touchmove',e=>show(e.touches[0]),{passive:true});
+}
+
+/* ---- イベント ---- */
+document.addEventListener('click',e=>{
+  const nav=e.target.closest('.strip .nav [data-dir]'); if(nav){ const rail=nav.closest('.strip').querySelector('.rail'); rail.scrollBy({left:+nav.dataset.dir*rail.clientWidth*0.8, behavior:'smooth'}); return; }
+  const cc=e.target.closest('.rail [data-key]'); if(cc){ openModal(cc.dataset.key); return; }
+});
+$('#tabs').addEventListener('click',e=>{ const b=e.target.closest('[data-t]'); if(!b) return; state.tab=b.dataset.t; renderTabs(); renderTable(); });
+$('#q').addEventListener('input',e=>{ state.q=e.target.value.trim(); renderTable(); });
+$('#thead').addEventListener('click',e=>{ const th=e.target.closest('[data-col]'); if(!th) return; const col=th.dataset.col; if(col==='spark') return;
+  if(state.sort.col===col) state.sort.dir=state.sort.dir==='asc'?'desc':'asc'; else state.sort={col, dir:['no','name','rarity'].includes(col)?'asc':'desc'}; renderTable(); });
+$('#tbody').addEventListener('click',e=>{ const tr=e.target.closest('tr[data-key]'); if(tr) openModal(tr.dataset.key); });
+$('#modal').addEventListener('click',e=>{
+  if(e.target===$('#modal')||e.target.id==='closeModal'){ closeModal(); return; }
+  const rg=e.target.closest('#ranges [data-r]'); if(rg){ state.range=rg.dataset.r; renderModal(); return; }
+  const lg=e.target.closest('#legend [data-s]'); if(lg){ state.enabled[lg.dataset.s]=!state.enabled[lg.dataset.s]; lg.setAttribute('aria-pressed',state.enabled[lg.dataset.s]); renderChart(); return; }
+  const del=e.target.closest('[data-del]'); if(del){ const c=card(); const arr=state.custom[c.key]||[]; arr.splice(+del.dataset.del,1); state.custom[c.key]=arr; saveCustom(); renderAll(); renderModal(); return; }
+  if(e.target.id==='btnExport'){ $('#ioText').value=JSON.stringify(state.custom,null,1); $('#msg').textContent='この端末の記録をJSONで表示しました。'; return; }
+  if(e.target.id==='btnImport'){ try{ const o=JSON.parse($('#ioText').value); if(!o||typeof o!=='object'||Array.isArray(o)) throw 0; for(const k of Object.keys(o)) if(!Array.isArray(o[k])) throw 0; state.custom=o; saveCustom(); renderAll(); renderModal(); $('#msg').textContent='読み込みました。'; }catch(err){ $('#msg').textContent='読み込めませんでした。「JSONを表示」で出力した形式のまま貼り付けてください。'; } return; }
+  if(e.target.id==='btnClear'){ const c=card(); delete state.custom[c.key]; saveCustom(); renderAll(); renderModal(); $('#msg').textContent='このカードの記録を消しました。'; return; }
+});
+$('#modal').addEventListener('submit',e=>{
+  if(e.target.id!=='addForm') return; e.preventDefault();
+  const f=e.target, c=card(), t=f.t.value, s=f.s.value, v=+f.v.value, memo=f.memo.value.trim();
+  if(!t||!(v>0)){ $('#msg').textContent='日時と価格を入力してください。'; return; }
+  (state.custom[c.key]=state.custom[c.key]||[]).push({t:t+':00+09:00', s, v, memo}); const ok=saveCustom(); renderAll(); renderModal();
+  $('#msg').textContent= ok?`追加しました：${fmtDT(ms(t+':00+09:00'))} ${SERIES[s].label} ${yen(v)}`:'追加しましたが、このブラウザには保存できませんでした。';
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && $('#modal').classList.contains('open')) closeModal(); });
+
+/* ---- TCGdex（非公式ファンDB）からカード画像URLを引く ---- */
+const TCGDEX_SET_IDS = ['M6a','m6a'];
+async function applyTcgdex(set){
+  let n=0;
+  for(const cd of (set.cards||[])){
+    if(!cd.image) continue;
+    const lid=String(cd.localId||'');
+    const key=/^[RGB]$/i.test(lid) ? lid.toUpperCase()+'/RGB' : /^\d+$/.test(lid) ? lid.padStart(3,'0')+'/103' : null;
+    const c=key&&byKey(key); if(!c||c.img) continue;
+    c.img=cd.image+'/low.webp'; c.imgHi=cd.image+'/high.webp'; n++;
+  }
+  return n;
+}
+async function loadTcgdex(){
+  const urls=['./tcgdex-M6a.json', ...TCGDEX_SET_IDS.map(id=>`https://api.tcgdex.net/v2/ja/sets/${id}`)];
+  for(const u of urls){
+    try{ const r=await fetch(u,{cache:'no-store'}); if(!r.ok) continue; const set=await r.json(); if(!set||!Array.isArray(set.cards)) continue;
+      const n=await applyTcgdex(set); if(n){ state.imgCount=n; renderAll(); if(state.selected) renderModal(); } return n;
+    }catch(e){ /* claude.ai 上（外部fetch不可）や未収録時はプレースホルダーのまま */ }
+  }
+  return 0;
+}
+
+/* ---- prices.json ---- */
+async function loadPricesJson(){
+  try{
+    const r=await fetch('./prices.json',{cache:'no-store'}); if(!r.ok) return;
+    const snaps=await r.json(); if(!Array.isArray(snaps)||!snaps.length) return;
+    const loaded={}, shops={}; let last=null; const lastSnap=snaps[snaps.length-1];
+    const SHOP={cardrush:'カードラッシュ', hareruya2:'晴れる屋2', torecacamp:'トレカキャンプ', clabo:'カードラボ', kanabell:'カーナベル', manasource:'マナソース', amenitydream:'アメニティドリーム'};
+    for(const snap of snaps){
+      const t=ms(snap.fetched_at); if(!isFinite(t)) continue; last=Math.max(last||0,t);
+      for(const hit of (snap.cards||[])){
+        const key=hit.key||(String(hit.name||'').match(/(\d{3}\/103|[RGB]\/RGB)/)||[])[1]; if(!key||!byKey(key)) continue;
+        const add=(s,v,src)=>{ if(v) (loaded[key]=loaded[key]||[]).push({s,t,v,src,custom:false}); };
+        const P=hit.prices||{}; const dmmSrc=P.dmm||(hit.lowest?{lowest:hit.lowest,cond:hit.cond,listings:hit.listings}:null);
+        if(dmmSrc) add('dmm',dmmSrc.lowest,'DMMマイカ（prices.json）'+(dmmSrc.cond?'・状態'+dmmSrc.cond:''));
+        if(P.cardrush){ add('rush',P.cardrush.sell,'カードラッシュ（prices.json）'); add('buy',P.cardrush.buy,'カードラッシュ 買取（prices.json）'); }
+        if(snap===lastSnap){
+          const rows=[]; for(const [k,label] of Object.entries(SHOP)) if(P[k]&&P[k].sell) rows.push({shop:label, price:P[k].sell, cond:P[k].cond||'—', when:fmtDT(t), src:'直接取得'});
+          if(dmmSrc&&dmmSrc.listings) for(const l of dmmSrc.listings) rows.push({shop:l.shop, price:l.price, cond:l.cond||'—', when:fmtDT(t), src:'DMMマイカ出品'});
+          if(rows.length) shops[key]=rows;
+        }
+      }
+    }
+    state.loaded=loaded; state.loadedShops=shops; state.loadedAt=last;
+    if(last) $('#upd').innerHTML=`<i></i>価格データ 9/15〜${fmtDT(last)}（自動更新）`;
+    renderAll();
+  }catch(e){ /* prices.json が無い環境では何もしない */ }
+}
+function renderAll(){ renderKpis(); renderEv(); renderStrips(); renderTabs(); renderTable(); }
+renderAll(); loadPricesJson(); loadTcgdex();
+})();
+</script>
+</body>
+</html>
