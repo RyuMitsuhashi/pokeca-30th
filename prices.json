@@ -1,0 +1,1263 @@
+[
+ {
+  "fetched_at": "2026-09-18T00:37+09:00",
+  "cards": [
+   {
+    "key": "R/RGB",
+    "name": "ミュウ（赤）",
+    "prices": {
+     "cardrush": {
+      "sell": 698000,
+      "buy": null,
+      "soldout": false,
+      "verify": false
+     }
+    }
+   },
+   {
+    "key": "G/RGB",
+    "name": "ミュウ（緑）",
+    "prices": {
+     "cardrush": {
+      "sell": 448000,
+      "buy": null,
+      "soldout": true,
+      "verify": false
+     }
+    }
+   },
+   {
+    "key": "B/RGB",
+    "name": "ミュウ（青）",
+    "prices": {
+     "dmm": {
+      "lowest": 398000,
+      "cond": "B",
+      "listings": [
+       {
+        "shop": "JOKER TCG",
+        "price": 398000,
+        "cond": "B"
+       }
+      ]
+     },
+     "cardrush": {
+      "sell": 548000,
+      "buy": null,
+      "soldout": true,
+      "verify": false
+     },
+     "hareruya2": {
+      "sell": 550000,
+      "title": "ミュウ:青(RGB){超}〈B/RGB〉[M6a]"
+     }
+    }
+   },
+   {
+    "key": "135/103",
+    "name": "ミュウex FUR",
+    "prices": {
+     "dmm": {
+      "lowest": 13800,
+      "cond": "B",
+      "listings": [
+       {
+        "shop": "トレカ　ビッグホーン",
+        "price": 22000,
+        "cond": "A"
+       },
+       {
+        "shop": "黒札-KUROFUDA-",
+        "price": 22000,
+        "cond": "A"
+       },
+       {
+        "shop": "カードショップLight",
+        "price": 14450,
+        "cond": "A-"
+       },
+       {
+        "shop": "株式会社アヴァンツァーレ_路地裏オタロード本店",
+        "price": 15989,
+        "cond": "A-"
+       },
+       {
+        "shop": "ポケモンカード専門店ゼロイチ",
+        "price": 17800,
+        "cond": "A-"
+       },
+       {
+        "shop": "ポケモンカード専門店Theトレカ",
+        "price": 13800,
+        "cond": "B"
+       },
+       {
+        "shop": "カードショップ彩々アミュプラザ鹿児島店",
+        "price": 15120,
+        "cond": "B"
+       },
+       {
+        "shop": "カードショップ ラフテリア",
+        "price": 16200,
+        "cond": "B"
+       }
+      ]
+     },
+     "cardrush": {
+      "sell": 15800,
+      "buy": null,
+      "soldout": false,
+      "verify": false
+     },
+     "hareruya2": {
+      "sell": 16000,
+      "title": "ミュウex(FUR){超}〈135/103〉[M6a]"
+     },
+     "torecacamp": {
+      "sell": 8980,
+      "title": "ミュウex FUR M6a 135/103"
+     }
+    }
+   },
+   {
+    "key": "134/103",
+    "name": "ミュウツーex FUR",
+    "prices": {
+     "dmm": {
+      "lowest": 9180,
+      "cond": "B",
+      "listings": [
+       {
+        "shop": "アドチャン。",
+        "price": 14000,
+        "cond": "A"
+       },
+       {
+        "shop": "株式会社アヴァンツァーレ_路地裏オタロード本店",
+        "price": 14060,
+        "cond": "A"
+       },
+       {
+        "shop": "Pocket Center岡山本店",
+        "price": 14800,
+        "cond": "A"
+       },
+       {
+        "shop": "黒札-KUROFUDA-",
+        "price": 15800,
+        "cond": "A"
+       },
+       {
+        "shop": "リサイクルハウス",
+        "price": 18870,
+        "cond": "A"
+       },
+       {
+        "shop": "カードショップLight",
+        "price": 11050,
+        "cond": "A-"
+       },
+       {
+        "shop": "リサイクルハウス",
+        "price": 14208,
+        "cond": "A-"
+       },
+       {
+        "shop": "TCG BASE",
+        "price": 9180,
+        "cond": "B"
+       }
+      ]
+     },
+     "cardrush": {
+      "sell": 12800,
+      "buy": null,
+      "soldout": false,
+      "verify": false
+     },
+     "torecacamp": {
+      "sell": 7980,
+      "title": "ミュウツーex FUR M6a 134/103"
+     }
+    }
+   },
+   {
+    "key": "126/103",
+    "name": "ピカチュウex SAR 昼",
+    "prices": {
+     "cardrush": {
+      "sell": 11800,
+      "buy": null,
+      "soldout": false,
+      "verify": false
+     },
+     "hareruya2": {
+      "sell": 11000,
+      "title": "ピカチュウex(SAR){雷}〈126/103〉[M6a]"
+     },
+     "torecacamp": {
+      "sell": 8980,
+      "title": "ピカチュウex SAR M6a 126/103"
+     }
+    }
+   },
+   {
+    "key": "127/103",
+    "name": "ピカチュウex SAR 夜",
+    "prices": {
+     "dmm": {
+      "lowest": 9180,
+      "cond": "A-",
+      "listings": [
+       {
+        "shop": "カードショップきりん 大阪天満橋店",
+        "price": 12800,
+        "cond": "A"
+       },
+       {
+        "shop": "アドチャン。",
+        "price": 21800,
+        "cond": "A"
+       },
+       {
+        "shop": "トレカショップ VOW",
+        "price": 9180,
+        "cond": "A-"
+       },
+       {
+        "shop": "リサイクルハウス",
+        "price": 10878,
+        "cond": "A-"
+       },
+       {
+        "shop": "カードショップ ラフテリア",
+        "price": 9900,
+        "cond": "B"
+       }
+      ]
+     },
+     "cardrush": {
+      "sell": 12800,
+      "buy": null,
+      "soldout": false,
+      "verify": false
+     },
+     "hareruya2": {
+      "sell": 12000,
+      "title": "ピカチュウex(SAR){雷}〈127/103〉[M6a]"
+     }
+    }
+   },
+   {
+    "key": "129/103",
+    "name": "ミュウex SAR",
+    "prices": {
+     "cardrush": {
+      "sell": 9980,
+      "buy": null,
+      "soldout": false,
+      "verify": false
+     },
+     "hareruya2": {
+      "sell": 9000,
+      "title": "ミュウex(SAR){超}〈129/103〉[M6a]"
+     }
+    }
+   },
+   {
+    "key": "131/103",
+    "name": "ゲンガーex SAR",
+    "prices": {
+     "cardrush": {
+      "sell": 5980,
+      "buy": null,
+      "soldout": true,
+      "verify": false
+     },
+     "hareruya2": {
+      "sell": 7500,
+      "title": "ゲンガーex(SAR){悪}〈131/103〉[M6a]"
+     }
+    }
+   },
+   {
+    "key": "128/103",
+    "name": "ミュウツーex SAR",
+    "prices": {
+     "cardrush": {
+      "sell": 4780,
+      "buy": null,
+      "soldout": false,
+      "verify": false
+     },
+     "hareruya2": {
+      "sell": 6000,
+      "title": "ミュウツーex(SAR){超}〈128/103〉[M6a]"
+     }
+    }
+   },
+   {
+    "key": "130/103",
+    "name": "ニンフィアex SAR",
+    "prices": {
+     "dmm": {
+      "lowest": 4590,
+      "cond": "A-",
+      "listings": [
+       {
+        "shop": "カードショップねすと",
+        "price": 4980,
+        "cond": "A"
+       },
+       {
+        "shop": "カードショップきりん 大阪天満橋店",
+        "price": 4980,
+        "cond": "A"
+       },
+       {
+        "shop": "P&Pポケカ専門店",
+        "price": 5000,
+        "cond": "A"
+       },
+       {
+        "shop": "遊楽舎 姫路花田店",
+        "price": 5000,
+        "cond": "A"
+       },
+       {
+        "shop": "リサイクルハウス",
+        "price": 5861,
+        "cond": "A"
+       },
+       {
+        "shop": "株式会社アヴァンツァーレ_路地裏オタロード本店",
+        "price": 6156,
+        "cond": "A"
+       },
+       {
+        "shop": "黒札-KUROFUDA-",
+        "price": 7100,
+        "cond": "A"
+       },
+       {
+        "shop": "カードショップLight",
+        "price": 4590,
+        "cond": "A-"
+       }
+      ]
+     },
+     "cardrush": {
+      "sell": 4980,
+      "buy": null,
+      "soldout": false,
+      "verify": false
+     },
+     "hareruya2": {
+      "sell": 5500,
+      "title": "ニンフィアex(SAR){超}〈130/103〉[M6a]"
+     }
+    }
+   },
+   {
+    "key": "132/103",
+    "name": "ジラーチex SAR",
+    "prices": {
+     "dmm": {
+      "lowest": 3390,
+      "cond": "A-",
+      "listings": [
+       {
+        "shop": "カードショップきりん 大阪天満橋店",
+        "price": 4480,
+        "cond": "A"
+       },
+       {
+        "shop": "黒札-KUROFUDA-",
+        "price": 4480,
+        "cond": "A"
+       },
+       {
+        "shop": "P&Pポケカ専門店",
+        "price": 4500,
+        "cond": "A"
+       },
+       {
+        "shop": "リサイクルハウス",
+        "price": 4751,
+        "cond": "A"
+       },
+       {
+        "shop": "Pocket Center岡山本店",
+        "price": 4932,
+        "cond": "A"
+       },
+       {
+        "shop": "株式会社アヴァンツァーレ_路地裏オタロード本店",
+        "price": 5206,
+        "cond": "A"
+       },
+       {
+        "shop": "トレカ ぷれぞんす",
+        "price": 5480,
+        "cond": "A"
+       },
+       {
+        "shop": "アドチャン。",
+        "price": 6800,
+        "cond": "A"
+       },
+       {
+        "shop": "トレカショップ VOW",
+        "price": 3390,
+        "cond": "A-"
+       },
+       {
+        "shop": "カードショップLight",
+        "price": 3740,
+        "cond": "A-"
+       },
+       {
+        "shop": "トレカパレット",
+        "price": 3700,
+        "cond": "B"
+       }
+      ]
+     },
+     "cardrush": {
+      "sell": 3480,
+      "buy": null,
+      "soldout": false,
+      "verify": false
+     },
+     "hareruya2": {
+      "sell": 4000,
+      "title": "ジラーチex(SAR){鋼}〈132/103〉[M6a]"
+     }
+    }
+   },
+   {
+    "key": "125/103",
+    "name": "ゲッコウガex SAR",
+    "prices": {
+     "dmm": {
+      "lowest": 2380,
+      "cond": "A-",
+      "listings": [
+       {
+        "shop": "カードショップきりん 大阪天満橋店",
+        "price": 2480,
+        "cond": "A"
+       },
+       {
+        "shop": "遊楽舎 姫路花田店",
+        "price": 2500,
+        "cond": "A"
+       },
+       {
+        "shop": "カードショップLight",
+        "price": 2800,
+        "cond": "A"
+       },
+       {
+        "shop": "黒札-KUROFUDA-",
+        "price": 2800,
+        "cond": "A"
+       },
+       {
+        "shop": "Pocket Center岡山本店",
+        "price": 3132,
+        "cond": "A"
+       },
+       {
+        "shop": "株式会社アヴァンツァーレ_路地裏オタロード本店",
+        "price": 3306,
+        "cond": "A"
+       },
+       {
+        "shop": "アドチャン。",
+        "price": 3500,
+        "cond": "A"
+       },
+       {
+        "shop": "トレカ ぷれぞんす",
+        "price": 4180,
+        "cond": "A"
+       },
+       {
+        "shop": "リサイクルハウス",
+        "price": 4418,
+        "cond": "A"
+       },
+       {
+        "shop": "カードショップLight",
+        "price": 2380,
+        "cond": "A-"
+       },
+       {
+        "shop": "トレカ　ビッグホーン",
+        "price": 3500,
+        "cond": "A-"
+       }
+      ]
+     },
+     "cardrush": {
+      "sell": 2480,
+      "buy": null,
+      "soldout": false,
+      "verify": false
+     },
+     "hareruya2": {
+      "sell": 3000,
+      "title": "ゲッコウガex(SAR){水}〈125/103〉[M6a]"
+     }
+    }
+   },
+   {
+    "key": "133/103",
+    "name": "ボーマンダex SAR",
+    "prices": {
+     "cardrush": {
+      "sell": 1180,
+      "buy": null,
+      "soldout": false,
+      "verify": false
+     },
+     "hareruya2": {
+      "sell": 1400,
+      "title": "ボーマンダex(SAR){ドラゴン}〈133/103〉[M6a]"
+     }
+    }
+   },
+   {
+    "key": "124/103",
+    "name": "ホゲータex SAR",
+    "prices": {
+     "cardrush": {
+      "sell": 1180,
+      "buy": null,
+      "soldout": false,
+      "verify": false
+     }
+    }
+   },
+   {
+    "key": "142/103",
+    "name": "ルギア 復刻版",
+    "prices": {
+     "cardrush": {
+      "sell": 19800,
+      "buy": null,
+      "soldout": true,
+      "verify": false
+     },
+     "hareruya2": {
+      "sell": 20000,
+      "title": "ルギア:クリスタルタイプ(-){無}〈142/103〉[M6a]"
+     }
+    }
+   },
+   {
+    "key": "137/103",
+    "name": "リザードン 復刻版",
+    "prices": {
+     "dmm": {
+      "lowest": 16800,
+      "cond": "A",
+      "listings": [
+       {
+        "shop": "黒札-KUROFUDA-",
+        "price": 16800,
+        "cond": "A"
+       }
+      ]
+     },
+     "cardrush": {
+      "sell": 17800,
+      "buy": null,
+      "soldout": true,
+      "verify": false
+     },
+     "hareruya2": {
+      "sell": 18000,
+      "title": "リザードン(-){炎}〈137/103〉[M6a]"
+     },
+     "torecacamp": {
+      "sell": 11800,
+      "title": "リザードン M6a 137/103"
+     }
+    }
+   },
+   {
+    "key": "165/103",
+    "name": "コイキング 復刻版",
+    "prices": {
+     "dmm": {
+      "lowest": 6638,
+      "cond": "A-",
+      "listings": [
+       {
+        "shop": "カードショップLight",
+        "price": 6800,
+        "cond": "A"
+       },
+       {
+        "shop": "カードショップきりん 大阪天満橋店",
+        "price": 6800,
+        "cond": "A"
+       },
+       {
+        "shop": "黒札-KUROFUDA-",
+        "price": 6800,
+        "cond": "A"
+       },
+       {
+        "shop": "株式会社アヴァンツァーレ_路地裏オタロード本店",
+        "price": 7581,
+        "cond": "A"
+       },
+       {
+        "shop": "リサイクルハウス",
+        "price": 7748,
+        "cond": "A"
+       },
+       {
+        "shop": "リサイクルハウス",
+        "price": 6638,
+        "cond": "A-"
+       }
+      ]
+     },
+     "cardrush": {
+      "sell": 5980,
+      "buy": null,
+      "soldout": true,
+      "verify": false
+     },
+     "hareruya2": {
+      "sell": 7000,
+      "title": "コイキング(-){水}〈165/103〉[M6a]"
+     },
+     "torecacamp": {
+      "sell": 3980,
+      "title": "コイキング M6a 165/103"
+     }
+    }
+   },
+   {
+    "key": "150/103",
+    "name": "ゲンガー 復刻版",
+    "prices": {
+     "dmm": {
+      "lowest": 3150,
+      "cond": "B",
+      "listings": [
+       {
+        "shop": "カードショップJOE大阪本店",
+        "price": 7480,
+        "cond": "A"
+       },
+       {
+        "shop": "POKE MANI 8",
+        "price": 3150,
+        "cond": "B"
+       }
+      ]
+     },
+     "cardrush": {
+      "sell": 5780,
+      "buy": null,
+      "soldout": true,
+      "verify": false
+     },
+     "hareruya2": {
+      "sell": 7000,
+      "title": "ゲンガー(-){超}〈150/103〉[M6a]"
+     }
+    }
+   },
+   {
+    "key": "136/103",
+    "name": "ピカチュウ 復刻版",
+    "prices": {
+     "dmm": {
+      "lowest": 2000,
+      "cond": "A",
+      "listings": [
+       {
+        "shop": "1枚",
+        "price": 2980,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 3800,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 3200,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 3200,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 2700,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 2700,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 2700,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 2700,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 3000,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 5480,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 3800,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 2000,
+        "cond": "A"
+       },
+       {
+        "shop": "3枚",
+        "price": 7500,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 3680,
+        "cond": "A"
+       }
+      ]
+     },
+     "cardrush": {
+      "sell": 3980,
+      "buy": null,
+      "soldout": true,
+      "verify": false
+     },
+     "hareruya2": {
+      "sell": 3700,
+      "title": "ピカチュウ(-){雷}〈136/103〉[M6a]"
+     },
+     "torecacamp": {
+      "sell": 2280,
+      "title": "ピカチュウ M6a 136/103"
+     }
+    }
+   },
+   {
+    "key": "141/103",
+    "name": "ひかるセレビィ 復刻版",
+    "prices": {
+     "dmm": {
+      "lowest": 2380,
+      "cond": "A-",
+      "listings": [
+       {
+        "shop": "リサイクルハウス",
+        "price": 3308,
+        "cond": "A"
+       },
+       {
+        "shop": "ポケカん！",
+        "price": 3980,
+        "cond": "A"
+       },
+       {
+        "shop": "カードショップLight",
+        "price": 2380,
+        "cond": "A-"
+       },
+       {
+        "shop": "カードショップ彩々鹿児島店",
+        "price": 2610,
+        "cond": "B"
+       }
+      ]
+     },
+     "cardrush": {
+      "sell": 3280,
+      "buy": null,
+      "soldout": false,
+      "verify": false
+     },
+     "hareruya2": {
+      "sell": 2800,
+      "title": "ひかるセレビィ(-){草}〈141/103〉[M6a]"
+     }
+    }
+   },
+   {
+    "key": "151/103",
+    "name": "ダークライ&クレセリア 復刻版（上）",
+    "prices": {
+     "dmm": {
+      "lowest": null,
+      "cond": null,
+      "listings": []
+     },
+     "cardrush": {
+      "sell": 4480,
+      "buy": null,
+      "soldout": false,
+      "verify": false
+     },
+     "hareruya2": {
+      "sell": 2200,
+      "title": "ダークライ＆クレセリアLEGEND:上(-){悪}〈151/103〉[M6a]"
+     }
+    }
+   },
+   {
+    "key": "163/103",
+    "name": "ミュウVMAX 復刻版",
+    "prices": {
+     "dmm": {
+      "lowest": 1200,
+      "cond": "A-",
+      "listings": [
+       {
+        "shop": "ポケモンカード専門店Theトレカ",
+        "price": 1200,
+        "cond": "A-"
+       },
+       {
+        "shop": "カードショップLight",
+        "price": 1450,
+        "cond": "A-"
+       }
+      ]
+     },
+     "cardrush": {
+      "sell": 1580,
+      "buy": null,
+      "soldout": false,
+      "verify": false
+     }
+    }
+   },
+   {
+    "key": "160/103",
+    "name": "ピカチュウ&ゼクロムGX 復刻版",
+    "prices": {
+     "dmm": {
+      "lowest": 1200,
+      "cond": "A",
+      "listings": [
+       {
+        "shop": "1枚",
+        "price": 1980,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 1980,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 1680,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 1980,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 1780,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 1200,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 1480,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 1500,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 1680,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 1800,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 2700,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 5500,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 3000,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 3000,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 3000,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 2198,
+        "cond": "A"
+       },
+       {
+        "shop": "1枚",
+        "price": 1580,
+        "cond": "A"
+       }
+      ]
+     },
+     "cardrush": {
+      "sell": 1880,
+      "buy": null,
+      "soldout": true,
+      "verify": false
+     }
+    }
+   },
+   {
+    "key": "154/103",
+    "name": "レックウザEX 復刻版",
+    "prices": {
+     "dmm": {
+      "lowest": 2100,
+      "cond": "A",
+      "listings": [
+       {
+        "shop": "カードショップLight",
+        "price": 2100,
+        "cond": "A"
+       },
+       {
+        "shop": "ポケモンカード専門店ゼロイチ",
+        "price": 2280,
+        "cond": "A"
+       },
+       {
+        "shop": "カードショップJOE大阪本店",
+        "price": 2480,
+        "cond": "A"
+       },
+       {
+        "shop": "黒札-KUROFUDA-",
+        "price": 2500,
+        "cond": "A"
+       },
+       {
+        "shop": "カードショップきりん 大阪天満橋店",
+        "price": 2980,
+        "cond": "A"
+       },
+       {
+        "shop": "トレカ ぷれぞんす",
+        "price": 3280,
+        "cond": "A"
+       }
+      ]
+     },
+     "cardrush": {
+      "sell": 1780,
+      "buy": null,
+      "soldout": true,
+      "verify": false
+     }
+    }
+   },
+   {
+    "key": "156/103",
+    "name": "MサーナイトEX 復刻版",
+    "prices": {
+     "dmm": {
+      "lowest": 580,
+      "cond": "A-",
+      "listings": [
+       {
+        "shop": "カードショップきりん 大阪天満橋店",
+        "price": 780,
+        "cond": "A"
+       },
+       {
+        "shop": "黒札-KUROFUDA-",
+        "price": 780,
+        "cond": "A"
+       },
+       {
+        "shop": "カードショップLight",
+        "price": 1000,
+        "cond": "A"
+       },
+       {
+        "shop": "Pocket Center岡山本店",
+        "price": 1062,
+        "cond": "A"
+       },
+       {
+        "shop": "カードショップ彩々アミュプラザ鹿児島店",
+        "price": 1100,
+        "cond": "A"
+       },
+       {
+        "shop": "トレカショップ VOW",
+        "price": 580,
+        "cond": "A-"
+       }
+      ]
+     },
+     "cardrush": {
+      "sell": 980,
+      "buy": null,
+      "soldout": false,
+      "verify": false
+     }
+    }
+   },
+   {
+    "key": "162/103",
+    "name": "ライコウ 復刻版",
+    "prices": {
+     "dmm": {
+      "lowest": 650,
+      "cond": "A",
+      "listings": [
+       {
+        "shop": "P&Pポケカ専門店",
+        "price": 650,
+        "cond": "A"
+       },
+       {
+        "shop": "トレカショップ VOW",
+        "price": 680,
+        "cond": "A"
+       },
+       {
+        "shop": "カードショップ ラフテリア",
+        "price": 700,
+        "cond": "A"
+       },
+       {
+        "shop": "トレカパレット",
+        "price": 700,
+        "cond": "A"
+       },
+       {
+        "shop": "D-Cent game&card",
+        "price": 780,
+        "cond": "A"
+       },
+       {
+        "shop": "カードショップLight",
+        "price": 1000,
+        "cond": "A"
+       },
+       {
+        "shop": "アドチャン。",
+        "price": 1000,
+        "cond": "A"
+       },
+       {
+        "shop": "Pocket Center岡山本店",
+        "price": 1062,
+        "cond": "A"
+       },
+       {
+        "shop": "カードショップ彩々アミュプラザ鹿児島店",
+        "price": 1100,
+        "cond": "A"
+       }
+      ]
+     },
+     "cardrush": {
+      "sell": 980,
+      "buy": null,
+      "soldout": false,
+      "verify": false
+     }
+    }
+   },
+   {
+    "key": "153/103",
+    "name": "N 復刻版",
+    "prices": {
+     "dmm": {
+      "lowest": 1400,
+      "cond": "B",
+      "listings": [
+       {
+        "shop": "カードショップきりん 大阪天満橋店",
+        "price": 1980,
+        "cond": "A"
+       },
+       {
+        "shop": "黒札-KUROFUDA-",
+        "price": 1980,
+        "cond": "A"
+       },
+       {
+        "shop": "カードショップLight",
+        "price": 2000,
+        "cond": "A"
+       },
+       {
+        "shop": "リサイクルハウス",
+        "price": 2198,
+        "cond": "A"
+       },
+       {
+        "shop": "株式会社アヴァンツァーレ_路地裏オタロード本店",
+        "price": 2356,
+        "cond": "A"
+       },
+       {
+        "shop": "ポケカん！",
+        "price": 2480,
+        "cond": "A"
+       },
+       {
+        "shop": "カードショップLight",
+        "price": 1700,
+        "cond": "A-"
+       },
+       {
+        "shop": "カードショップLight",
+        "price": 1400,
+        "cond": "B"
+       }
+      ]
+     },
+     "cardrush": {
+      "sell": 1780,
+      "buy": null,
+      "soldout": false,
+      "verify": false
+     }
+    }
+   },
+   {
+    "key": "138/103",
+    "name": "カスミ 復刻版",
+    "prices": {
+     "dmm": {
+      "lowest": 980,
+      "cond": "A",
+      "listings": [
+       {
+        "shop": "TCG BASE",
+        "price": 980,
+        "cond": "A"
+       },
+       {
+        "shop": "カードショップ彩々アミュプラザ鹿児島店",
+        "price": 1200,
+        "cond": "A"
+       },
+       {
+        "shop": "Pocket Center岡山本店",
+        "price": 1422,
+        "cond": "A"
+       },
+       {
+        "shop": "株式会社アヴァンツァーレ_路地裏オタロード本店",
+        "price": 1501,
+        "cond": "A"
+       },
+       {
+        "shop": "リサイクルハウス",
+        "price": 2198,
+        "cond": "A"
+       }
+      ]
+     },
+     "cardrush": {
+      "sell": 1280,
+      "buy": null,
+      "soldout": false,
+      "verify": false
+     }
+    }
+   },
+   {
+    "key": "144/103",
+    "name": "わるいバンギラス 復刻版",
+    "prices": {
+     "dmm": {
+      "lowest": 1480,
+      "cond": "A",
+      "listings": [
+       {
+        "shop": "JOKER TCG",
+        "price": 1480,
+        "cond": "A"
+       },
+       {
+        "shop": "カードショップLight",
+        "price": 1700,
+        "cond": "A"
+       },
+       {
+        "shop": "カードショップJOE大阪本店",
+        "price": 1980,
+        "cond": "A"
+       }
+      ]
+     },
+     "cardrush": {
+      "sell": 1680,
+      "buy": null,
+      "soldout": false,
+      "verify": false
+     }
+    }
+   }
+  ]
+ }
+]
