@@ -13,7 +13,7 @@
   --bg:#0F1012; --panel:#151719; --panel-2:#1B1E22; --line:#2A2E34; --line-soft:#212429; --hover:#1F2327;
   --text:#ECEAE4; --muted:#9BA0A8; --dim:#6B7078; --gold:#ECEAE4; --focus:#ECEAE4;
   --up:#2ECC71; --down:#E5484D;
-  --s-flea:#D9B24A; --s-rush:#ECEAE4; --s-dmm:#5FCB84; --s-avg:#4C8DF5; --s-buy:#8B9099; --s-custom:#E77C8E;
+  --s-flea:#D9B24A; --s-rush:#ECEAE4; --s-dmm:#5FCB84; --s-avg:#4C8DF5; --s-buy:#8B9099; --s-custom:#E77C8E; --s-psa:#C77DFF;
   --rgb-r:#E5484D; --rgb-g:#3FB56E; --rgb-b:#4C8DF5; --fur:#2FB8C7; --sar:#A58CF2; --ar:#5FCB84; --rr:#8B9099; --cls:#D0964A; --pika:#E8C53A; --tr:#7A8088; --reg:#3A3F47;
   --grid:rgba(255,255,255,.055); --home-bg:#111214; --tick-bg:#10201B; --pop:#2FD4A5; --shadow:rgba(0,0,0,.6);
   --mono:"IBM Plex Mono","Menlo",monospace;
@@ -22,7 +22,7 @@
   --bg:#F6F6F3; --panel:#FFFFFF; --panel-2:#F1F1EE; --line:#E1E2E6; --line-soft:#ECEDF0; --hover:#F5F5F2;
   --text:#1B1D22; --muted:#6B7078; --dim:#9AA0A8; --gold:#1B1D22; --focus:#1B1D22;
   --up:#16A34A; --down:#D93A3F;
-  --s-flea:#B8860B; --s-rush:#1B1D22; --s-dmm:#1F9D55; --s-avg:#2F6FE0; --s-buy:#8B9099; --s-custom:#D6497A;
+  --s-flea:#B8860B; --s-rush:#1B1D22; --s-dmm:#1F9D55; --s-avg:#2F6FE0; --s-buy:#8B9099; --s-custom:#D6497A; --s-psa:#8E3BD6;
   --sar:#8B6FE8; --ar:#3FAF6A; --cls:#C9862E; --pika:#E0B400; --reg:#CBD0D6;
   --grid:rgba(0,0,0,.05); --home-bg:#F4F3EE; --tick-bg:#E6FBF4; --shadow:rgba(0,0,0,.35);
 }
@@ -34,6 +34,10 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:"BIZ UDPGothic"
 /* ホーム：トレカ屋のバインダー（9ポケット）を思わせる薄い罫線 */
 body.v-home{background-color:var(--home-bg);background-image:repeating-linear-gradient(0deg,transparent 0 91px,var(--grid) 91px 92px),repeating-linear-gradient(90deg,transparent 0 65px,var(--grid) 65px 66px);background-position:center top}
 body.v-home .ticker{background:var(--tick-bg)}
+.basis{display:flex;border:1px solid var(--line)}
+.basis button{border:0;background:transparent;color:var(--muted);padding:4px 10px;font-size:.8rem;font-family:var(--mono)}
+.basis button+button{border-left:1px solid var(--line)}
+.basis button[aria-pressed="true"]{background:var(--brand);color:#0F1012}
 .tbtn{border:1px solid var(--line);background:transparent;color:var(--muted);width:30px;height:30px;font-size:.9rem}
 .tbtn:hover{color:var(--text)}
 .h2::before{content:"";display:inline-block;width:8px;height:14px;background:var(--pop);margin-right:8px;vertical-align:-1px}
@@ -75,14 +79,17 @@ button{cursor:pointer}
 @media (max-width:900px){.hband{grid-template-columns:repeat(2,1fr)}}
 .hband>div{padding:12px 14px;border-right:1px solid var(--line)}.hband>div:last-child{border-right:0}
 .hband .l{color:var(--muted);font-size:.72rem;letter-spacing:.06em}.hband .v{font-size:1.5rem;font-family:var(--mono);margin-top:4px}.hband .s{color:var(--muted);font-size:.74rem;margin-top:4px}
-.ranks{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px}
-@media (max-width:900px){.ranks{grid-template-columns:1fr}}
+.ranks{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}
+@media (max-width:1200px){.ranks{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:700px){.ranks{grid-template-columns:1fr}}
 .rank{background:var(--panel);border:1px solid var(--line)}
 .rank h2{margin:0;font-size:.9rem;padding:8px 12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:baseline}
 .rank h2 small{color:var(--muted);font-weight:400;font-size:.72rem}
 .rank ol{list-style:none;margin:0;padding:0}
 .rank li{display:grid;grid-template-columns:22px minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:6px 12px;border-bottom:1px solid var(--line-soft);cursor:pointer;font-size:.84rem}
 .rank li:hover{background:var(--hover)}
+.rank li.none{display:block;padding:18px 12px;color:var(--dim);font-size:.82rem;cursor:default;text-align:center;border-bottom:0}
+.rank li.none:hover{background:transparent}
 .rank li .i{color:var(--dim);font-family:var(--mono);font-size:.72rem}
 .rank li .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rank li .n small{color:var(--muted);margin-left:6px;font-family:var(--mono);font-size:.7rem}
 .rank li .p{font-family:var(--mono)}
@@ -285,6 +292,7 @@ details.sec > *:not(summary){margin-top:8px}
   <select id="setSel" class="setsel" aria-label="シリーズを選ぶ"></select>
   <div class="searchbox"><input type="search" id="q" placeholder="カード名・番号で検索（全シリーズ）" aria-label="カード名・番号で検索" autocomplete="off"><div class="sugg" id="sugg" hidden></div></div>
   <div class="upd" id="upd"><i></i>価格データ 9/15〜9/17</div>
+  <div class="basis" id="basis" role="group" aria-label="価格の基準"><button data-b="raw" aria-pressed="true">素体</button><button data-b="psa10" aria-pressed="false">PSA10</button></div>
   <button class="tbtn" id="themeBtn" aria-label="ダーク／ライト切替" title="ダーク／ライト切替">☀</button>
 </header>
 
@@ -330,7 +338,8 @@ const SERIES = {
   rush:  {label:'カードラッシュ 販売', color:'var(--s-rush)', style:'solid', src:'カードラッシュ'},
   dmm:   {label:'DMMマイカ 最安', color:'var(--s-dmm)', style:'solid', src:'DMMマイカ'},
   avg:   {label:'店舗平均', color:'var(--s-avg)', style:'solid', src:'ポケカ当たり.jp集計'},
-  buy:   {label:'買取（カードラッシュ）', color:'var(--s-buy)', style:'dot', src:'カードラッシュ'},
+  buy:   {label:'買取（最高）', color:'var(--s-buy)', style:'dot', src:'カードラッシュ'},
+  psa:   {label:'PSA10 最安', color:'var(--s-psa)', style:'solid', src:'DMMマイカ 鑑定品'},
 };
 const SALE_ORDER = ['dmm','rush','avg','flea'];
 const BUY_LABEL = {yuyu:'遊々亭', shinsoku:'シンソク', kanabell:'カーナベル', cardrush:'カードラッシュ'};
@@ -483,7 +492,7 @@ const setListUrl = id => `https://myca.dmm.com/pokemon-trading-card-game/list?ca
 
 const LS_KEY = 'pk30th-dash-custom-v1';
 const state = { tab:'all', sort:{col:'no', dir:'asc'}, q:'', selected:null, range:'all',
-  enabled:{flea:true, rush:true, dmm:true, avg:true, buy:true}, loaded:{}, loadedShops:{}, loadedBuy:{}, loadedAt:null };
+  basis:'raw', enabled:{flea:true, rush:true, dmm:true, avg:true, buy:true, psa:true}, loaded:{}, loadedShops:{}, loadedBuy:{}, loadedAt:null };
 function loadCustom(){ try{ const o=JSON.parse(localStorage.getItem(LS_KEY)||'{}'); return (o&&typeof o==='object')?o:{}; }catch(e){ return {}; } }
 function saveCustom(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state.custom)); return true; }catch(e){ return false; } }
 
@@ -507,8 +516,10 @@ function points(c){
   return out.sort((a,b)=>a.t-b.t);
 }
 const latestOf=(c,s)=>{ const ps=points(c).filter(p=>p.s===s); return ps.length?ps[ps.length-1]:null; };
-function latestSale(c){ for(const s of SALE_ORDER){ const p=latestOf(c,s); if(p) return p; } return null; }
-function change(c){ for(const s of ['rush','dmm']){ const ps=points(c).filter(p=>p.s===s); if(ps.length>=2) return {p:pct(ps[ps.length-2].v, ps[ps.length-1].v), s, a:ps[ps.length-2], b:ps[ps.length-1]}; } return null; }
+function rawSale(c){ for(const s of SALE_ORDER){ const p=latestOf(c,s); if(p) return p; } return null; }
+function latestSale(c){ return state.basis==='psa10' ? latestOf(c,'psa') : rawSale(c); }
+function psaRatio(c){ const r=rawSale(c), p=latestOf(c,'psa'); return (r&&p&&r.v>0)?{x:p.v/r.v, raw:r.v, psa:p.v}:null; }
+function change(c){ for(const s of (state.basis==='psa10'?['psa']:['rush','dmm'])){ const ps=points(c).filter(p=>p.s===s); if(ps.length>=2) return {p:pct(ps[ps.length-2].v, ps[ps.length-1].v), s, a:ps[ps.length-2], b:ps[ps.length-1]}; } return null; }
 function fleaDiff(c){ const f=points(c).find(p=>p.s==='flea'); const s=latestSale(c); return (f&&s&&s.t>f.t)?pct(f.v,s.v):null; }
 function listingsOf(c){ const ls=(state.loadedShops[CUR]||{})[c.key]; if(ls) return ls.filter(r=>r.src!=='直接取得'); return (c.tracked&&c.tracked.dmmShops)?c.tracked.dmmShops.listings.map(([n,v,cond])=>({shop:n,price:v,cond})):[]; }
 function spark(c){
@@ -610,7 +621,7 @@ function renderStrips(){
 /* ---- タブ + 表 ---- */
 const TABS=[['all','すべて'],['priced','価格あり'],['RGB','RGB'],['FUR','FUR'],['SAR','SAR'],['AR','AR'],['CLS','復刻版'],['RR','RR'],['PIKA','ピカチュウ30種'],['REG','ノーマル・トレーナーズ']];
 const tabFilter=(c,t)=> t==='all'?true : t==='priced'?!!latestSale(c) : t==='REG'?(c.rarity===''||(CUR==='M6a'&&c.rarity==='TR')) : c.rarity===t;
-const COLS=[['no','No.',''],['name','カード',''],['rarity','レア',''],['dmm','DMM最安','r'],['rush','カードラッシュ','r'],['buy','買取最高','r'],['spread','スプレッド','r'],['chg','前日比','r'],['flea','フラゲ比','r'],['lst','出品','r'],['spark','推移','']];
+const COLS=[['no','No.',''],['name','カード',''],['rarity','レア',''],['dmm','素体最安','r'],['psa','PSA10','r'],['ratio','PSA倍率','r'],['buy','買取最高','r'],['spread','スプレッド','r'],['chg','前日比','r'],['flea','フラゲ比','r'],['lst','出品','r'],['spark','推移','']];
 const RANK=['RGB','FUR','SAR','SR','UR','ACE','HR','CSR','CHR','SSR','AR','RR','R','U','C','PIKA','CLS','TR',''];
 function tabsFor(){ if(CUR==='M6a') return TABS; const rs=[...new Set(ALL.map(c=>c.rarity||''))].sort((a,b)=>(RANK.indexOf(a)<0?99:RANK.indexOf(a))-(RANK.indexOf(b)<0?99:RANK.indexOf(b))); return [['all','すべて'],['priced','価格あり'],...rs.map(r=>[r||'REG', r||'その他'])]; }
 function renderTabs(){ const tabs=tabsFor(); if(!tabs.some(t=>t[0]===state.tab)) state.tab='all'; $('#tabs').innerHTML=tabs.map(([k,l])=>`<button class="tab" role="tab" data-t="${k}" aria-selected="${state.tab===k}">${l}<small>${ALL.filter(c=>tabFilter(c,k)).length}</small></button>`).join(''); }
@@ -618,8 +629,9 @@ function colVal(c,col){
   switch(col){
     case 'no': return c.order; case 'name': return c.name;
     case 'rarity': return ['RGB','FUR','SAR','AR','CLS','RR','PIKA','TR',''].indexOf(c.rarity);
-    case 'dmm': { const p=latestOf(c,'dmm'); return p?p.v:-1; }
-    case 'rush': { const p=latestOf(c,'rush'); return p?p.v:-1; }
+    case 'dmm': { const p=rawSale(c); return p?p.v:-1; }
+    case 'psa': { const p=latestOf(c,'psa'); return p?p.v:-1; }
+    case 'ratio': { const x=psaRatio(c); return x?x.x:-1; }
     case 'buy': { const r=buyRows(c); return r.length?r[0].price:(buyMax(c)?buyMax(c)-0.5:-1); }
     case 'spread': { const x=spread(c); return x?x.p:1e9; }
     case 'chg': { const x=change(c); return x?x.p:-1e9; }
@@ -640,13 +652,14 @@ function renderTable(){
   const arr=visible(); $('#cnt').textContent=`${arr.length}枚`;
   if(!arr.length){ $('#tbody').innerHTML=`<tr><td colspan="${COLS.length}" class="empty">該当するカードがありません</td></tr>`; return; }
   $('#tbody').innerHTML=arr.map(c=>{
-    const d=latestOf(c,'dmm'), r=latestOf(c,'rush'), br=buyRows(c), sp=spread(c), ch=change(c), fd=fleaDiff(c), n=listingsOf(c).length;
+    const d=rawSale(c), ps=latestOf(c,'psa'), rt=psaRatio(c), br=buyRows(c), sp=spread(c), ch=change(c), fd=fleaDiff(c), n=listingsOf(c).length;
     return `<tr data-key="${esc(c.key)}">
       <td class="num dim">${/^\d+$/.test(c.no)?c.no:esc(c.no)}</td>
       <td><span class="thumb">${frame(c)}</span>${esc(c.name)}</td>
       <td><span class="rar rar-${c.rarity||'REG'}">${c.rarity||'—'}</span></td>
       <td class="r num ${d?'':'dim'}">${d?yen(d.v):'—'}</td>
-      <td class="r num ${r?'':'dim'}">${r?yen(r.v):'—'}</td>
+      <td class="r num ${ps?'':'dim'}">${ps?yen(ps.v):'—'}</td>
+      <td class="r num ${rt?'':'dim'}">${rt?rt.x.toFixed(1)+'×':'—'}</td>
       <td class="r num ${br.length?'':'dim'}" title="${br.length?esc(br[0].shop):''}">${br.length?yen(br[0].price):(c.buy?esc(c.buy):'—')}</td>
       <td class="r num ${sp?'':'dim'}">${sp?sp.p.toFixed(0)+'%':'—'}</td>
       <td class="r">${ch?chg(ch.p):'<span class="dim">—</span>'}</td>
@@ -670,12 +683,13 @@ function openModal(key){ const want='#/card/'+CUR+'/'+encodeURIComponent(key); i
 function closeModal(){ $('#modal').classList.remove('open'); document.body.classList.remove('lock'); state.selected=null; if(location.hash.startsWith('#/card/')) history.replaceState(null,'','#/set/'+CUR); }
 function renderModal(){
   const c=card(); if(!c) return;
-  const ps=points(c), sale=latestSale(c), ch=change(c), fd=fleaDiff(c), buy=latestOf(c,'buy'), br=buyRows(c), sp=spread(c);
+  const ps=points(c), sale=rawSale(c), ch=change(c), fd=fleaDiff(c), buy=latestOf(c,'buy'), br=buyRows(c), sp=spread(c), psaP=latestOf(c,'psa'), ratio=psaRatio(c);
   const ls=listingsOf(c); const conds={}; for(const l of ls){ if(l.cond&&l.cond!=='—') conds[l.cond]=Math.min(conds[l.cond]||Infinity, l.price); }
   const condHTML=Object.keys(conds).length?Object.entries(conds).sort((a,b)=>a[1]-b[1]).map(([k,v])=>`<div class="row"><span>状態 ${esc(k)} の最安</span><span class="num">${yen(v)}</span></div>`).join(''):`<div class="row"><span>状態別の最安</span><span class="dim">出品データなし</span></div>`;
   const legend=Object.keys(SERIES).filter(s=>ps.some(p=>p.s===s)).map(s=>`<button data-s="${s}" aria-pressed="${state.enabled[s]}" style="color:${SERIES[s].color}"><span class="sw ${SERIES[s].style}"></span><span style="color:var(--text)">${SERIES[s].label}</span></button>`).join('');
   const rows=shopRows(c);
-  const shopHTML=rows.length?`<table><thead><tr><th>店舗</th><th class="r">販売価格</th><th>状態</th><th>取得</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.shop)}<span class="src">${esc(r.src)}</span></td><td class="r num">${yen(r.price)}</td><td>${esc(r.cond||'—')}</td><td class="num">${esc(r.when)}</td></tr>`).join('')}</tbody></table>`:`<div class="note">店舗別の価格はまだありません。collect.py を回すと各店の値が入ります。</div>`;
+  const dmmLow=latestOf(c,'dmm');
+  const shopHTML=rows.length?`<table><thead><tr><th>店舗</th><th class="r">販売価格</th><th class="r">DMM最安比</th><th>状態</th><th>取得</th></tr></thead><tbody>${rows.map(r=>{ const d=dmmLow?r.price-dmmLow.v:null; return `<tr><td>${esc(r.shop)}<span class="src">${esc(r.src)}</span></td><td class="r num">${yen(r.price)}</td><td class="r num ${d==null?'dim':d>0?'down':d<0?'up':''}">${d==null?'—':(d>0?'+':'')+yen(d).replace('¥-','-¥')}</td><td>${esc(r.cond||'—')}</td><td class="num">${esc(r.when)}</td></tr>`; }).join('')}</tbody></table>`:`<div class="note">店舗別の価格はまだありません。collect.py を回すと各店の値が入ります。</div>`;
   const official='https://www.pokemon-card.com/card-search/index.php?keyword='+encodeURIComponent(c.name.replace(/（.*?）|\s?LV\.\S+|\s?δ.*$/g,'').trim());
   const dmm=c.dmmId?`https://myca.dmm.com/pokemon-trading-card-game/items/single-card/${c.dmmId}`:setListUrl(CUR);
   const rush=c.rushId?`https://www.cardrush-pokemon.jp/product/${c.rushId}`:null;
@@ -688,7 +702,10 @@ function renderModal(){
       </div>
       <div class="mright">
         <div class="d-head"><h3 id="mTitle">${esc(c.name)}</h3><div class="no">${/^\d+$/.test(c.no)?'No.'+c.no+' / 103':esc(c.no)}<span class="rar rar-${c.rarity||'REG'}">${c.rarity||'ノーマル'}</span><span>${RAR[c.rarity]}</span></div></div>
-        <div class="hero"><div class="big"><div class="l">${sale?SERIES[sale.s].label+'・'+fmtDT(sale.t):'価格データ'}</div><div class="v num">${sale?yen(sale.v):'—'}</div></div><div>${ch?`<div class="note" style="margin:0">前日比</div>${chg(ch.p)}`:(c.buy?`<div class="note" style="margin:0">買取目安（遊々亭・カードラッシュ）</div><b>${esc(c.buy)}</b>`:'<span class="dim">未追跡</span>')}</div></div>
+        <div class="hero"><div class="big"><div class="l">素体 ${sale?SERIES[sale.s].label+'・'+fmtDT(sale.t):''}</div><div class="v num">${sale?yen(sale.v):'—'}</div></div>
+      <div class="big"><div class="l">PSA10 最安${psaP?'・'+fmtDT(psaP.t):''}</div><div class="v num" style="color:var(--s-psa)">${psaP?yen(psaP.v):'—'}</div></div>
+      <div><div class="note" style="margin:0">PSA倍率</div><b class="num" style="font-size:1.1rem">${ratio?ratio.x.toFixed(2)+'×':'—'}</b></div>
+      <div>${ch?`<div class="note" style="margin:0">前日比</div>${chg(ch.p)}`:(c.buy?`<div class="note" style="margin:0">買取目安</div><b>${esc(c.buy)}</b>`:'<span class="dim">未追跡</span>')}</div></div>
         <div class="mini-kpis">
           <div><div class="l">発売前フラゲ相場比</div><div class="v">${fd==null?'—':chg(fd)}</div></div>
           <div><div class="l">買取最高${br.length?'・'+esc(br[0].shop):''}</div><div class="v num">${br.length?yen(br[0].price):(c.buy?esc(c.buy):'—')}</div></div>
@@ -831,11 +848,12 @@ async function loadPricesJson(){
     const r=await fetch('./prices.json',{cache:'no-store'}); if(!r.ok) return;
     const snaps=await r.json(); if(!Array.isArray(snaps)||!snaps.length) return;
     const loaded={}, shops={}; let last=null; const lastSnap=snaps[snaps.length-1]; state.loadedBuy={};
-    const SHOP={cardrush:'カードラッシュ', hareruya2:'晴れる屋2', torecacamp:'トレカキャンプ', clabo:'カードラボ', kanabell:'カーナベル', manasource:'マナソース', amenitydream:'アメニティドリーム'};
+    const SHOP={cardrush:'カードラッシュ', hareruya2:'晴れる屋2', torecacamp:'トレカキャンプ', shinsoku:'シンソク', torecalounge:'トレカラウンジ', clabo:'カードラボ', kanabell:'カーナベル', manasource:'マナソース', amenitydream:'アメニティドリーム'};
     const apply=(setId,key,P,t,isLast)=>{
       const add=(s,v,src)=>{ if(v) (((loaded[setId]=loaded[setId]||{})[key])=(loaded[setId][key]||[])).push({s,t,v,src,custom:false}); };
       const dmmSrc=P.dmm||null;
       if(dmmSrc) add('dmm',dmmSrc.lowest,'DMMマイカ（prices.json）'+(dmmSrc.cond?'・状態'+dmmSrc.cond:''));
+      if(P.psa10&&P.psa10.lowest) add('psa',P.psa10.lowest,'PSA10 最安（DMMマイカ鑑定品'+(P.psa10.shops&&P.psa10.shops.shinsoku?'・シンソク':'')+'）');
       const buys=[]; if(P.cardrush&&P.cardrush.buy) buys.push({shop:'カードラッシュ', price:P.cardrush.buy, when:fmtDT(t), src:''});
       for(const [k,v] of Object.entries(P.buy||{})) if(v&&v.price) buys.push({shop:buyLabel(k), price:v.price, when:v.when||fmtDT(t), src:v.src||''});
       if(P.cardrush&&!P.cardrush.soldout) add('rush',P.cardrush.sell,'カードラッシュ（prices.json）');
@@ -843,6 +861,8 @@ async function loadPricesJson(){
       if(isLast){
         const rows=[]; for(const [k,label] of Object.entries(SHOP)) if(P[k]&&P[k].sell) rows.push({shop:label, price:P[k].sell, cond:P[k].soldout?'売切':(P[k].cond||'—'), when:fmtDT(t), src:P[k].soldout?'直接取得・売り切れ時の値札':'直接取得'});
         if(dmmSrc&&dmmSrc.listings) for(const l of dmmSrc.listings) rows.push({shop:l.shop, price:l.price, cond:l.cond||'—', when:fmtDT(t), src:'DMMマイカ出品'});
+        if(P.psa10&&P.psa10.listings) for(const l of P.psa10.listings) rows.push({shop:l.shop, price:l.price, cond:'PSA10', when:fmtDT(t), src:'DMMマイカ出品（鑑定品）'});
+        if(P.psa10&&P.psa10.shops) for(const [k,v] of Object.entries(P.psa10.shops)) rows.push({shop:SHOP[k]||k, price:v, cond:'PSA10', when:fmtDT(t), src:'直接取得（鑑定品）'});
         if(rows.length) ((shops[setId]=shops[setId]||{})[key]=rows);
       }
     };
@@ -868,10 +888,11 @@ const isLight = () => document.documentElement.dataset.theme === 'light';
 function themeOf(id){ const t=SET_THEME[id]; if(t) return isLight()?t.light:t.dark; let h=0; for(const ch of id) h=(h*31+ch.charCodeAt(0))%360; return isLight()?`hsl(${h} 45% 95%)`:`hsl(${h} 22% 10%)`; }
 function applyTheme(t){ document.documentElement.dataset.theme = t; try{ localStorage.setItem('pk-theme', t); }catch(e){} const b=document.getElementById('themeBtn'); if(b) b.textContent = t==='light' ? '☾' : '☀'; if(location.hash.startsWith('#/set/')||location.hash.startsWith('#/card/')) document.body.style.backgroundColor = themeOf(CUR); }
 (function(){ let t='dark'; try{ t=localStorage.getItem('pk-theme')||'dark'; }catch(e){} applyTheme(t); })();
-document.addEventListener('click', e=>{ if(e.target.closest('#themeBtn')) applyTheme(isLight()?'dark':'light'); });   // BOX価格（実勢）・定価。シリーズを足したらここに追記
+document.addEventListener('click', e=>{ if(e.target.closest('#themeBtn')) applyTheme(isLight()?'dark':'light');
+  const bb=e.target.closest('#basis [data-b]'); if(bb){ state.basis=bb.dataset.b; document.querySelectorAll('#basis [data-b]').forEach(x=>x.setAttribute('aria-pressed', x.dataset.b===state.basis)); renderAll(); if($('#home').classList.contains('on')) renderHome(); if($('#buyview').classList.contains('on')) renderBuyView(); if(state.selected) renderModal(); } });   // BOX価格（実勢）・定価。シリーズを足したらここに追記
 const PERIODS = [['24h','24h',24],['7d','7日',24*7],['30d','30日',24*30],['rel','発売比',0]];
 let period = '24h';
-function salePts(c){ const ps=points(c); for(const s of ['dmm','rush']){ const q=ps.filter(p=>p.s===s); if(q.length) return q; } return []; }
+function salePts(c){ const ps=points(c); for(const s of (state.basis==='psa10'?['psa']:['dmm','rush'])){ const q=ps.filter(p=>p.s===s); if(q.length) return q; } return []; }
 function chgOver(c, key){ // 期間内の変化率。発売比はフラゲ相場（無ければ最初の点）が基準
   const q=salePts(c); if(!q.length) return null; const last=q[q.length-1];
   if(key==='rel'){ const f=points(c).find(p=>p.s==='flea')||q[0]; return f.t<last.t?{p:pct(f.v,last.v),a:f,b:last}:null; }
@@ -888,6 +909,7 @@ function renderHome(){
   const up=withCh.filter(x=>x.ch.p>0.05).sort((a,b)=>b.ch.p-a.ch.p).slice(0,10);
   const down=withCh.filter(x=>x.ch.p<-0.05).sort((a,b)=>a.ch.p-b.ch.p).slice(0,10);
   const liquid=all.filter(x=>x.sp&&x.sale.v>=1000).sort((a,b)=>a.sp.p-b.sp.p).slice(0,10);
+  const graded=[]; for(const id of Object.keys(SETS)) withSet(id, ()=>{ for(const c of ALL){ const r=psaRatio(c); if(r&&r.raw>=1000) graded.push({setId:id,c,sale:{v:r.raw},r}); } }); graded.sort((a,b)=>b.r.x-a.r.x);
   const ids=Object.keys(SETS).sort((a,b)=>String((SET_META[b]||{}).release||SETS[b].release||'').localeCompare(String((SET_META[a]||{}).release||SETS[a].release||''))||a.localeCompare(b));
   const idx=ids.map(id=>({id, i:setIndex(id,period)})).filter(x=>x.i);
   const mega = idx.length? idx.reduce((a,x)=>a+x.i.p,0)/idx.length : null;
@@ -903,9 +925,10 @@ function renderHome(){
     </div>
     <div class="periods">${PERIODS.map(([k,l])=>`<button data-p="${k}" aria-pressed="${period===k}">${l}</button>`).join('')}</div>
     <div class="ranks">
-      <section class="rank"><h2>高騰トップ10<small>${pl}・全シリーズ</small></h2><ol>${up.map((x,i)=>li(x,i,chg(x.ch.p))).join('')||'<li class="dim">上昇したカードなし</li>'}</ol></section>
-      <section class="rank"><h2>下落トップ10<small>${pl}・全シリーズ</small></h2><ol>${down.map((x,i)=>li(x,i,chg(x.ch.p))).join('')||'<li class="dim">下落したカードなし</li>'}</ol></section>
-      <section class="rank"><h2>買い時<small>スプレッドが小さい＝売買で損しにくい</small></h2><ol>${liquid.map((x,i)=>li(x,i,`<span class="p">${x.sp.p.toFixed(0)}%</span>`)).join('')||'<li class="dim">買取データが入ると表示</li>'}</ol></section>
+      <section class="rank"><h2>高騰トップ10<small>${pl}・全シリーズ</small></h2><ol>${up.map((x,i)=>li(x,i,chg(x.ch.p))).join('')||'<li class="none">まだ上昇したカードがありません</li>'}</ol></section>
+      <section class="rank"><h2>下落トップ10<small>${pl}・全シリーズ</small></h2><ol>${down.map((x,i)=>li(x,i,chg(x.ch.p))).join('')||'<li class="none">まだ下落したカードがありません</li>'}</ol></section>
+      <section class="rank"><h2>買い時<small>スプレッドが小さい＝売買で損しにくい</small></h2><ol>${liquid.map((x,i)=>li(x,i,`<span class="p">${x.sp.p.toFixed(0)}%</span>`)).join('')||'<li class="none">買取価格が集まると表示されます</li>'}</ol></section>
+      <section class="rank"><h2>鑑定価値<small>PSA10 ÷ 素体 が高い順</small></h2><ol>${graded.slice(0,10).map((x,i)=>li(x,i,`<span class="p" style="color:var(--s-psa)">${x.r.x.toFixed(1)}×</span>`)).join('')||'<li class="none">PSA10の出品が集まると表示されます</li>'}</ol></section>
     </div>
     <h2 class="h2">シリーズから探す</h2>
     <div class="sets">${ids.map(id=>{ const i24=setIndex(id,'24h'), i7=setIndex(id,'7d'), top=topCard(id), b=boxInfo(id);

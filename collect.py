@@ -139,9 +139,10 @@ def parse_list(html: str) -> list[dict]:
             k = CARDNO.search(name); key = k.group(1) if k else None; rarity = ""; setcode = ""
         if not key: continue
         p = PRICE.search(text); c = re.search(r"状態([A-Z][+\-]?)", text)
+        grade = "psa10" if re.search(r"PSA\s*10", name + " " + text, re.I) else ("psa9" if re.search(r"PSA\s*9\b", name + " " + text, re.I) else "raw")
         seen.add(cid)
         out.append({"key": key, "no": key.split("/")[0], "name": re.sub(r"\s*" + re.escape(key) + r"\s*", "", name).strip() or name,
-                    "rarity": rarity, "setcode": setcode, "dmmId": cid, "lowest": yen(p.group(1) or p.group(2)) if p else None, "cond": c.group(1) if c else None})
+                    "rarity": rarity, "setcode": setcode, "dmmId": cid, "lowest": yen(p.group(1) or p.group(2)) if p else None, "cond": c.group(1) if c else None, "grade": grade})
     return out
 
 
@@ -281,6 +282,50 @@ def ocr_buy_by_key() -> dict[str, list[dict]]:
     return out
 
 
+# ---------- 店の通販サイトを検索して販売価格を読む（汎用） ----------
+# base が空の店は取得しない。トレカラウンジは通販サイトのURLが分かったら入れる
+SHOPS_SEARCH = {
+    "shinsoku":     {"label": "シンソク",     "base": "https://www.cardshop-shinsoku.jp/"},
+    "torecalounge": {"label": "トレカラウンジ", "base": ""},
+}
+SEARCH_RARITY = HIGH_RARITY   # 検索型は1枚ずつ開くので、SAR以上だけ
+
+def shop_search_price(base: str, query: str, dump_name: str | None) -> dict | None:
+    """通販サイトのトップで検索 → 結果から『カード番号を含むブロック』の価格・売り切れを読む"""
+    page = browser().new_page(user_agent=HEADERS["User-Agent"], locale="ja-JP")
+    try:
+        page.goto(base, wait_until="networkidle", timeout=60000)
+        inp = page.query_selector("input[type=search], input[name*=keyword], input[name*=search], input[name=q], input[name=s], input[placeholder*=検索]")
+        if not inp: return None
+        inp.fill(query); inp.press("Enter")
+        try: page.wait_for_load_state("networkidle", timeout=30000)
+        except Exception: pass
+        html = page.content(); url = page.url
+    finally:
+        page.close()
+    if dump_name: DUMP.mkdir(exist_ok=True); (DUMP / dump_name).write_text(html, encoding="utf-8")
+    time.sleep(WAIT)
+    lines = [l.strip() for l in BeautifulSoup(html, "html.parser").get_text("\n", strip=True).split("\n") if l.strip()]
+    hits = []
+    for i, l in enumerate(lines):
+        if query not in l: continue
+        block = lines[max(0, i - 6): i + 7]
+        prices = [yen(m.group(1) or m.group(2)) for m in (PRICE.search(x) for x in block) if m]
+        prices = [v for v in prices if v and v >= 30]
+        if not prices: continue
+        sold = any(re.search(r"sold\s*out|売り切れ|在庫切れ|在庫なし", x, re.I) for x in block)
+        psa = any(re.search(r"PSA\s*10", x, re.I) for x in block)
+        hits.append({"sell": min(prices), "soldout": sold, "psa": psa})
+    if not hits: return None
+    out = {"url": url}
+    for grade, hs in (("raw", [h for h in hits if not h["psa"]]), ("psa10", [h for h in hits if h["psa"]])):
+        if not hs: continue
+        live = [h for h in hs if not h["soldout"]]; best = min(live or hs, key=lambda h: h["sell"])
+        if grade == "raw": out["sell"] = best["sell"]; out["soldout"] = not live
+        else: out["psa10"] = best["sell"]
+    return out if ("sell" in out or "psa10" in out) else None
+
+
 # ---------- TCGdex ----------
 def fetch_tcgdex(set_id: str) -> int:
     api = "https://api.tcgdex.net/v2"; h = {"User-Agent": HEADERS["User-Agent"]}
@@ -324,9 +369,18 @@ def main():
         entry["dmm_pack_id"] = pid; entry["name"] = names.get(tmp_id) or entry.get("name") or set_id
         prices = {}
         yuyu = yuyu_buylist(set_id, a.dump)
+        graded = [c for c in cards if c.get("grade") in ("psa10", "psa9")]
+        cards = [c for c in cards if c.get("grade", "raw") == "raw"]
+        for g in graded:   # 鑑定品：同じ番号の素体カードに psa10/psa9 として付ける
+            if g["grade"] != "psa10": continue
+            P = {"lowest": g["lowest"], "dmmId": g["dmmId"]}
+            if g["rarity"] in HIGH_RARITY or (g["lowest"] or 0) >= LISTING_MIN_PRICE:
+                ls = dmm_listings(g["dmmId"], a.dump)
+                if ls: low = min(ls, key=lambda l: l["price"]); P = {"lowest": low["price"], "dmmId": g["dmmId"], "listings": ls}
+            prices.setdefault(g["key"], {"prices": {}})["prices"]["psa10"] = P
         for c in cards:
             entry["cards"][c["key"]] = {"no": c["no"], "name": c["name"], "rarity": c["rarity"], "dmmId": c["dmmId"]}
-            P = {"dmm": {"lowest": c["lowest"], "cond": c["cond"]}}
+            P = prices.get(c["key"], {}).get("prices", {}); P["dmm"] = {"lowest": c["lowest"], "cond": c["cond"]}
             buy = {}
             if c["key"] in yuyu: buy["yuyu"] = {"price": yuyu[c["key"]]}
             if c["key"] in shinsoku: buy["shinsoku"] = {"price": shinsoku[c["key"]]}
@@ -341,6 +395,14 @@ def main():
                 ls = dmm_listings(c["dmmId"], a.dump)
                 if ls:
                     low = min(ls, key=lambda l: l["price"]); P["dmm"] = {"lowest": low["price"], "cond": low["cond"], "listings": ls}
+            if c["rarity"] in SEARCH_RARITY:
+                for sk, sc in SHOPS_SEARCH.items():
+                    if not sc["base"]: continue
+                    try:
+                        r = shop_search_price(sc["base"], c["key"], f"{sk}_{c['key'].replace('/', '-')}.html" if a.dump else None)
+                        if r: P[sk] = r
+                    except Exception as e:
+                        log(f"  {sk} {c['key']}: {e}")
             if set_id == "M6a" and c["key"] in M6A_SHOPS:
                 s = M6A_SHOPS[c["key"]]
                 try:
@@ -349,7 +411,11 @@ def main():
                     if s.get("torecacamp"): P["torecacamp"] = shopify_json(CAMP.format(id=s["torecacamp"]), f"camp_{c['key'].replace('/', '-')}.json", a.dump)
                 except Exception as e:
                     log(f"  {c['key']} shops: {e}")
+            if P.get("shinsoku", {}).get("psa10"):   # シンソクのPSA10はまとめ側にも反映
+                P.setdefault("psa10", {}); P["psa10"].setdefault("shops", {})["shinsoku"] = P["shinsoku"]["psa10"]
+                if not P["psa10"].get("lowest") or P["shinsoku"]["psa10"] < P["psa10"]["lowest"]: P["psa10"]["lowest"] = P["shinsoku"]["psa10"]
             prices[c["key"]] = {"prices": P}
+        log(f"  PSA10 付き: {sum(1 for v in prices.values() if v['prices'].get('psa10'))}枚")
         snap["sets"][set_id] = prices
         log(f"{set_id} {entry['name']}: {len(cards)}枚")
         fetch_tcgdex(set_id)
