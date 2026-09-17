@@ -18,7 +18,7 @@
 注意：各サイトの公開ページを個人利用の範囲で読む前提。アクセスは控えめに（WAIT 秒間隔、1日2回）。
 """
 from __future__ import annotations
-import argparse, datetime as dt, json, pathlib, re, sys, time
+import argparse, datetime as dt, json, os, pathlib, re, sys, time
 import requests
 from bs4 import BeautifulSoup
 
@@ -33,8 +33,9 @@ HARERUYA = "https://www.hareruya2.com/products/{id}.json"
 CAMP = "https://torecacamp-pokemon.com/products/{id}.json"
 
 # DMM のパックID。自動発見できなかった弾は、DMMの一覧でその弾を選んだときのURLの myca_primary_pack_id をここに書く
-DMM_PACK_IDS = {"M6a": 6374}
-SET_NAMES = {"M6a": "30th CELEBRATION"}   # 表示名（自動発見した弾は DMM の表記が入る）
+DMM_PACK_IDS = {"M6a": 6374, "M1L": 4761, "pack4762": 4762, "pack5250": 5250, "pack5873": 5873,
+                "pack6011": 6011, "pack6124": 6124, "pack6244": 6244, "pack6621": 6621, "pack6390": 6390, "pack6389": 6389}   # 名前が無い分は一覧の見出しから読む
+SET_NAMES = {"M6a": "30th CELEBRATION", "M1L": "メガブレイブ"}   # 表示名（自動発見した弾は DMM の表記が入る）
 HIGH_RARITY = {"SAR", "FUR", "RGB", "SR", "UR", "ACE", "HR", "CSR", "CHR", "SSR", "MUR", "BWR"}
 LISTING_MIN_PRICE = 3000   # この価格以上のカードも出品一覧まで取る
 MAX_LIST_PAGES = 12
@@ -116,52 +117,43 @@ PACK_JS = """() => { const out = {};
 
 
 def discover_packs(dump) -> dict[str, int]:
-    """DMM の一覧で絞り込み「封入パック」を開き、チェックを1つずつ入れて検索 → URL の myca_primary_pack_id を控える"""
+    """DMM の一覧（MEGA）で絞り込み「封入パック」を開き、ページが受け取ったパック一覧のデータ（IDと名前）を通信とページ内容から拾う"""
     url = f"{BASE}/{GENRE}/list?cardseries={requests.utils.quote(SERIES)}"
     packs: dict[str, int] = {}
+    blobs: list[str] = []
     page = browser().new_page(user_agent=HEADERS["User-Agent"], locale="ja-JP")
+    def on_response(resp):
+        try:
+            ct = resp.headers.get("content-type", "")
+            if "json" in ct or "text" in ct or "javascript" in ct:
+                body = resp.text()
+                if "pack" in body.lower() or "封入" in body: blobs.append(body)
+        except Exception: pass
+    page.on("response", on_response)
     try:
         try: page.goto(url, wait_until="domcontentloaded", timeout=60000)
         except Exception: pass
         page.wait_for_timeout(2500)
-        # 1) 「封入パック」の見出しを開く
-        hdr = page.get_by_text("封入パック", exact=True).first
-        try: hdr.click(); page.wait_for_timeout(1000)
+        try:
+            page.get_by_text("封入パック", exact=True).first.click(); page.wait_for_timeout(1500)
+            box = page.get_by_placeholder("封入パックを検索").first
+            if box: box.fill(""); page.wait_for_timeout(800)
         except Exception as e:
-            log(f"  封入パックの見出しが見つからない: {e}"); return packs
-        # 2) 見出しの近くのチェックボックスを集める（値が数字ならそれがID）
-        sec = hdr.locator("xpath=ancestor::*[.//input[@type='checkbox']][1]")
-        boxes = sec.locator("input[type=checkbox]")
-        n = boxes.count(); log(f"  封入パックの候補: {n}件")
-        items = []
-        for i in range(n):
-            b = boxes.nth(i)
-            label = b.evaluate("el => ((el.closest('label') || el.parentElement) ? (el.closest('label') || el.parentElement).innerText : '').trim()")
-            val = b.get_attribute("value") or ""
-            if label: items.append((i, label.split("\n")[0].strip(), val))
+            log(f"  封入パック: 開けず ({e.__class__.__name__})")
+        blobs.append(page.content())
         if dump: DUMP.mkdir(exist_ok=True); (DUMP / "series_list.html").write_text(page.content(), encoding="utf-8")
-        for i, label, val in items:
-            if val.isdigit(): packs[label] = int(val); continue
-        # 3) 値がIDでない場合：1つずつチェック→検索→URLを読む
-        pending = [(i, label) for i, label, val in items if not val.isdigit()]
-        for i, label in pending:
-            try:
-                page.goto(url, wait_until="domcontentloaded", timeout=60000); page.wait_for_timeout(2000)
-                page.get_by_text("封入パック", exact=True).first.click(); page.wait_for_timeout(800)
-                sec = page.get_by_text("封入パック", exact=True).first.locator("xpath=ancestor::*[.//input[@type='checkbox']][1]")
-                sec.locator("input[type=checkbox]").nth(i).check(); page.wait_for_timeout(300)
-                page.get_by_role("button", name="検索").first.click()
-                page.wait_for_url(re.compile(r"myca_primary_pack_id=\d+"), timeout=15000)
-                m = re.search(r"myca_primary_pack_id=(\d+)", page.url)
-                if m: packs[label] = int(m.group(1)); log(f"  封入パック: {label} → {m.group(1)}")
-            except Exception as e:
-                log(f"  封入パック {label}: 取れず ({e.__class__.__name__})")
-    except Exception as e:
-        log(f"pack discovery failed: {e}")
     finally:
         page.close()
-    log(f"dmm packs found: {len(packs)} → {list(packs.items())[:12]}")
-    return packs
+    # ID と名前の対を拾う（JSON でも RSC のペイロードでも、id と name が同じオブジェクト内に並ぶ）
+    pat_a = re.compile(r'"(?:id|packId|pack_id|primary_pack_id|myca_primary_pack_id|value)"\s*:\s*"?(\d{2,6})"?[^{}]{0,200}?"(?:name|label|title|pack_name|packName)"\s*:\s*"((?:[^"\\]|\\.){2,60})"')
+    pat_b = re.compile(r'"(?:name|label|title|pack_name|packName)"\s*:\s*"((?:[^"\\]|\\.){2,60})"[^{}]{0,200}?"(?:id|packId|pack_id|primary_pack_id|myca_primary_pack_id|value)"\s*:\s*"?(\d{2,6})"?')
+    for b in blobs:
+        for m in pat_a.finditer(b): packs.setdefault(m.group(2).encode().decode("unicode_escape", "ignore") if "\\u" in m.group(2) else m.group(2), int(m.group(1)))
+        for m in pat_b.finditer(b): packs.setdefault(m.group(1).encode().decode("unicode_escape", "ignore") if "\\u" in m.group(1) else m.group(1), int(m.group(2)))
+    # パックらしい名前だけ残す（拡張パック・ハイクラスパック・デッキ・BOX・プロモ など）
+    keep = {n: i for n, i in packs.items() if re.search(r"パック|デッキ|BOX|ボックス|セット|プロモ|コレクション|ex|ex|30th", n)}
+    log(f"dmm packs found: {len(keep)}（候補{len(packs)}） → {list(keep.items())[:15]}")
+    return keep
 
 
 PACKS_FILE = pathlib.Path("packs.json")   # 総当たりで見つけたパックIDのキャッシュ {setId: {name, pack_id}}
@@ -214,6 +206,8 @@ def parse_list(html: str) -> list[dict]:
     return out
 
 
+PAGE_TITLE = {}   # pack_id → 一覧の見出し（パック名）
+
 def collect_set_list(pack_id: int, dump: bool, tag: str) -> list[dict]:
     cards, seen = [], set()
     base = f"{BASE}/{GENRE}/list?cardseries={requests.utils.quote(SERIES)}&myca_primary_pack_id={pack_id}"
@@ -225,6 +219,9 @@ def collect_set_list(pack_id: int, dump: bool, tag: str) -> list[dict]:
             except Exception as e:
                 log(f"  list page {page} attempt {attempt+1} failed: {e}")
         if not html: break
+        if page == 1:
+            m = re.search(r"<h1[^>]*>(.*?)</h1>", html, re.S)
+            if m: PAGE_TITLE[pack_id] = BeautifulSoup(m.group(1), "html.parser").get_text(" ", strip=True)
         found = [c for c in parse_list(html) if c["dmmId"] not in seen]
         for c in found: seen.add(c["dmmId"])
         cards += found
@@ -454,7 +451,7 @@ def main():
     for name, pid in discover_packs(a.dump).items():
         if pid in packs.values(): continue
         packs[f"pack{pid}"] = pid; names[f"pack{pid}"] = name
-    if len(packs) <= 1:   # 絞り込みから拾えなかった → 総当たり（初回のみ）
+    if len(packs) <= 1 and os.environ.get("PROBE_PACKS") == "1":   # 総当たりは環境変数で明示したときだけ
         for code, info in probe_packs().items():
             if info["pack_id"] in packs.values(): continue
             packs[code] = info["pack_id"]; names[code] = info["name"]
@@ -472,7 +469,7 @@ def main():
         set_id = max(set(codes), key=codes.count) if codes else tmp_id   # 『…/FUR/M6a』の末尾が弾ID
         if only and set_id not in only and tmp_id not in only: continue
         entry = sets_db.setdefault(set_id, {"id": set_id, "name": names.get(tmp_id, set_id), "dmm_pack_id": pid, "cards": {}})
-        entry["dmm_pack_id"] = pid; entry["name"] = names.get(tmp_id) or entry.get("name") or set_id
+        entry["dmm_pack_id"] = pid; entry["name"] = names.get(tmp_id) or PAGE_TITLE.get(pid) or entry.get("name") or set_id
         prices = {}
         yuyu = yuyu_buylist(set_id, a.dump)
         graded = [c for c in cards if c.get("grade") in ("psa10", "psa9")]
