@@ -15,8 +15,8 @@
                  "cardrush": {"sell": 18800, "buy": 10000}, "hareruya2": {"sell": 28000}, "torecacamp": {"sell": 16800}}} ] }
 
 使い方
-  pip install requests beautifulsoup4
-  python collect.py                 # 全カード・全ソース
+  pip install requests beautifulsoup4 playwright && python -m playwright install chromium
+  python collect.py                 # 全カード・全ソース（TCGdexの画像URLも tcgdex-M6a.json に保存）
   python collect.py --only dmm      # ソースを絞る（カンマ区切り）
   python collect.py --dump          # 取得したHTML/JSONを ./dump/ に保存（解析が外れたときの調査用）
 """
@@ -68,7 +68,6 @@ CARDS = {
  "144/103": {"name":"わるいバンギラス 復刻版","dmm":374645, "cardrush":85119},
 }
 PRICE = re.compile(r"[¥￥]\s?([\d,]+)|([\d,]+)\s?円")
-LISTING = re.compile(r"(?P<shop>[^\n]+)\n(?:SALE中\n)?[¥￥](?P<price>[\d,]+)[^\n]*\n状態(?P<cond>[A-Z][+\-]?)")
 KEY = re.compile(r"(\d{3}/103|[RGB]/RGB)")
 LINK = re.compile(r'href="(?:https://myca\.dmm\.com)?/pokemon-trading-card-game/items/single-card/(\d+)"[^>]*>(.*?)</a>', re.S)
 
@@ -80,17 +79,73 @@ def get(url: str, dump_name: str | None) -> str:
     time.sleep(WAIT); return r.text
 
 
+_BROWSER = {"pw": None, "browser": None}
+def render(url: str, dump_name: str | None) -> str:
+    """JavaScript描画後のHTMLを返す（DMMマイカ用）。playwright が無ければ空文字。"""
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        print("  playwright が入っていないためブラウザ描画をスキップ", file=sys.stderr); return ""
+    if _BROWSER["browser"] is None:
+        _BROWSER["pw"] = sync_playwright().start()
+        _BROWSER["browser"] = _BROWSER["pw"].chromium.launch()
+    page = _BROWSER["browser"].new_page(user_agent=HEADERS["User-Agent"], locale="ja-JP")
+    try:
+        page.goto(url, wait_until="networkidle", timeout=60000)
+        html = page.content()
+    finally:
+        page.close()
+    if dump_name:
+        DUMP.mkdir(exist_ok=True); (DUMP / dump_name).write_text(html, encoding="utf-8")
+    time.sleep(WAIT); return html
+
+
+def close_browser():
+    if _BROWSER["browser"]: _BROWSER["browser"].close()
+    if _BROWSER["pw"]: _BROWSER["pw"].stop()
+
+
 def yen(s): return int(str(s).replace(",", "")) if s else None
 
 
 # ---- DMMマイカ ----
-def dmm_page(cid, dump):
-    html = get(DMM.format(id=cid), f"dmm_{cid}.html" if dump else None)
-    soup = BeautifulSoup(html, "html.parser"); text = soup.get_text("\n", strip=True)
+DMM_MODE = {"browser": False}  # 一度ブラウザ描画が必要と分かったら以後はブラウザで取る
+
+def parse_dmm(html: str) -> list[dict]:
+    """出品一覧を行ベースで拾う：『店舗名 → ¥価格 → (お買い得などの短い行) → 状態X』の並びを探す"""
+    text = BeautifulSoup(html, "html.parser").get_text("\n", strip=True)
     i = text.find("他の出品情報"); sec = text[i:] if i >= 0 else text
     j = sec.find("関連カード"); sec = sec[:j] if j > 0 else sec
-    ls = [{"shop": m["shop"].strip(), "price": yen(m["price"]), "cond": m["cond"]} for m in LISTING.finditer(sec)
-          if not m["shop"].startswith(("他の出品情報", "状態"))]
+    lines = [l.strip() for l in sec.split("\n") if l.strip()]
+    skip = ("SALE中", "お買い得", "状態", "他の出品情報", "在庫", "残り", "カートに入れる")
+    out = []
+    for k, l in enumerate(lines):
+        m = re.match(r"[¥￥]\s?([\d,]+)", l)
+        if not m: continue
+        shop = next((lines[b] for b in range(k - 1, max(-1, k - 4), -1)
+                     if not lines[b].startswith(skip) and not re.match(r"[¥￥]", lines[b])), None)
+        cond = None
+        for f in range(k + 1, min(len(lines), k + 5)):
+            c = re.match(r"状態([A-Z][+\-]?)", lines[f])
+            if c: cond = c.group(1); break
+            if re.match(r"[¥￥]", lines[f]): break
+        if shop and cond: out.append({"shop": shop, "price": yen(m.group(1)), "cond": cond})
+    return out
+
+
+def dmm_page(cid, dump):
+    url = DMM.format(id=cid)
+    html = render(url, f"dmm_{cid}.html" if dump else None) if DMM_MODE["browser"] else get(url, f"dmm_{cid}.html" if dump else None)
+    ls = parse_dmm(html)
+    if not ls and not DMM_MODE["browser"]:
+        # 素のHTMLに出品が無い → JS描画後のHTMLで再解析
+        html2 = render(url, f"dmm_{cid}_rendered.html" if dump else None)
+        if html2:
+            ls = parse_dmm(html2)
+            if ls: DMM_MODE["browser"] = True; html = html2
+            else:
+                t = BeautifulSoup(html2, "html.parser").get_text("\n", strip=True); k = t.find("他の出品情報")
+                print(f"  [dmm debug] 描画後も出品を解析できず。抜粋: {t[max(0,k):k+300] if k>=0 else t[:300]!r}", file=sys.stderr)
     low = min((l for l in ls if l["price"]), key=lambda l: l["price"], default=None)
     return {"lowest": low["price"] if low else None, "cond": low["cond"] if low else None, "listings": ls}, html
 
@@ -143,10 +198,36 @@ def shopify_json(url, dump_name, dump):
     return {"sell": int(price) if price else None, "title": p.get("title")}
 
 
+# ---- TCGdex（カード画像URL） ----
+def fetch_tcgdex(out: pathlib.Path = pathlib.Path("tcgdex-M6a.json")) -> bool:
+    api = "https://api.tcgdex.net/v2"
+    h = {"User-Agent": HEADERS["User-Agent"]}
+    try:
+        sets = requests.get(f"{api}/ja/sets", headers=h, timeout=30).json()
+    except Exception as e:
+        print(f"tcgdex: セット一覧を取得できず ({e})", file=sys.stderr); return False
+    cand = [x for x in sets if isinstance(x, dict) and ("m6a" in str(x.get("id", "")).lower() or "30th" in str(x.get("name", "")))]
+    if not cand:
+        recent = [x.get("id") for x in sets if isinstance(x, dict) and str(x.get("id", "")).lower().startswith("m")]
+        print(f"tcgdex: M6a が見つからない。M系のID: {recent[-12:]}", file=sys.stderr); return False
+    for x in cand:
+        try:
+            r = requests.get(f"{api}/ja/sets/{x['id']}", headers=h, timeout=30)
+            if r.ok and isinstance(r.json().get("cards"), list):
+                out.write_text(r.text, encoding="utf-8")
+                n = sum(1 for c in r.json()["cards"] if c.get("image"))
+                print(f"tcgdex: {x['id']} {x.get('name')} → {len(r.json()['cards'])}枚、画像あり {n}枚", file=sys.stderr); return True
+        except Exception as e:
+            print(f"tcgdex: {x.get('id')} 取得失敗 ({e})", file=sys.stderr)
+    return False
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", default="dmm,cardrush,hareruya2,torecacamp"); ap.add_argument("--dump", action="store_true")
+    ap.add_argument("--no-tcgdex", action="store_true")
     a = ap.parse_args(); only = set(a.only.split(","))
+    if not a.no_tcgdex: fetch_tcgdex()
     if "dmm" in only: dmm_discover(a.dump)
     cards = []
     for key, c in CARDS.items():
@@ -164,6 +245,7 @@ def main():
     hist = json.loads(OUT.read_text(encoding="utf-8")) if OUT.exists() else []
     hist.append(snap); OUT.write_text(json.dumps(hist, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"saved {OUT} ({len(hist)} snapshots)", file=sys.stderr)
+    close_browser()
 
 
 if __name__ == "__main__":
