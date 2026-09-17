@@ -326,6 +326,33 @@ def shop_search_price(base: str, query: str, dump_name: str | None) -> dict | No
     return out if ("sell" in out or "psa10" in out) else None
 
 
+# ---------- BOX の実勢価格（DMMマイカをシリーズ名で検索して BOX を含む商品の最安） ----------
+def dmm_box_price(series_name: str, dump: bool) -> int | None:
+    q = re.sub(r"^(拡張パック|強化拡張パック|ハイクラスパック)\s*", "", series_name).strip()
+    page = browser().new_page(user_agent=HEADERS["User-Agent"], locale="ja-JP")
+    try:
+        page.goto(BASE + "/", wait_until="networkidle", timeout=60000)
+        inp = page.query_selector("input[type=search], input[name*=keyword], input[name*=search], input[name=q], input[placeholder*=検索]")
+        if not inp: return None
+        inp.fill(q + " BOX"); inp.press("Enter")
+        try: page.wait_for_load_state("networkidle", timeout=30000)
+        except Exception: pass
+        html = page.content()
+    finally:
+        page.close()
+    if dump: DUMP.mkdir(exist_ok=True); (DUMP / f"box_{q}.html").write_text(html, encoding="utf-8")
+    time.sleep(WAIT)
+    lines = [l.strip() for l in BeautifulSoup(html, "html.parser").get_text("\n", strip=True).split("\n") if l.strip()]
+    cands = []
+    for i, l in enumerate(lines):
+        if "BOX" not in l.upper() or q.replace(" ", "") not in l.replace(" ", ""): continue
+        if re.search(r"カートン|パック\b|1パック|シュリンクなし|開封", l): continue
+        for x in lines[i: i + 6]:
+            m = PRICE.search(x)
+            if m: v = yen(m.group(1) or m.group(2)); cands.append(v) if v and v >= 2000 else None; break
+    return min(cands) if cands else None
+
+
 # ---------- TCGdex ----------
 def fetch_tcgdex(set_id: str) -> int:
     api = "https://api.tcgdex.net/v2"; h = {"User-Agent": HEADERS["User-Agent"]}
@@ -416,6 +443,12 @@ def main():
                 if not P["psa10"].get("lowest") or P["shinsoku"]["psa10"] < P["psa10"]["lowest"]: P["psa10"]["lowest"] = P["shinsoku"]["psa10"]
             prices[c["key"]] = {"prices": P}
         log(f"  PSA10 付き: {sum(1 for v in prices.values() if v['prices'].get('psa10'))}枚")
+        try:
+            bp = dmm_box_price(entry["name"], a.dump)
+            if bp: entry["box"] = {"price": bp, "when": snap["fetched_at"], "src": "DMMマイカ"}; log(f"  BOX 実勢: ¥{bp:,}")
+            else: log("  BOX 実勢: 見つからず")
+        except Exception as e:
+            log(f"  BOX: {e}")
         snap["sets"][set_id] = prices
         log(f"{set_id} {entry['name']}: {len(cards)}枚")
         fetch_tcgdex(set_id)
