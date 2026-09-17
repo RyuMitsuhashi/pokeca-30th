@@ -13,6 +13,7 @@ permissions:
 jobs:
   fetch:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -20,12 +21,15 @@ jobs:
           python-version: "3.12"
       - run: pip install requests beautifulsoup4 playwright
       - run: python -m playwright install --with-deps chromium
+      - name: OCR image buylists (needs ANTHROPIC_API_KEY secret)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python ocr_buylist.py
       - run: python collect.py
       - name: commit results
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          for f in prices.json ids.json tcgdex-M6a.json; do [ -f "$f" ] && git add "$f"; done
+          for f in prices.json ids.json sets.json buy_ocr.json tcgdex-*.json; do [ -f "$f" ] && git add "$f"; done
           git commit -m "prices: $(date -u +%Y-%m-%dT%H:%M)Z" || echo "no changes"
           git push
-
