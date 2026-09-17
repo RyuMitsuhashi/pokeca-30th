@@ -82,16 +82,16 @@ def browser():
     return _B["browser"]
 
 
-def render(url, dump_name=None, js=None, wait_for=None, scroll=0):
+def render(url, dump_name=None, js=None, wait_for=None, scroll=0, wait_ms=20000, settle_ms=1500):
     """JS描画後のHTML（js を渡せば page.evaluate の結果も）を返す。読み込み待ちは DOM 完成＋任意のセレクタ出現で判定"""
     page = browser().new_page(user_agent=HEADERS["User-Agent"], locale="ja-JP")
     try:
         try: page.goto(url, wait_until="domcontentloaded", timeout=60000)
         except Exception as e: log(f"  goto: {e.__class__.__name__}（取れた分で続行）")
         if wait_for:
-            try: page.wait_for_selector(wait_for, timeout=20000)
+            try: page.wait_for_selector(wait_for, timeout=wait_ms)
             except Exception: pass
-        page.wait_for_timeout(1500)
+        page.wait_for_timeout(settle_ms)
         for _ in range(scroll):   # 無限スクロール型の一覧を下まで読む
             page.mouse.wheel(0, 4000); page.wait_for_timeout(1200)
         html = page.content(); extra = page.evaluate(js) if js else None
@@ -148,9 +148,11 @@ def probe_packs(center: int = 6374, before: int = 140, after: int = 30) -> dict[
     found = json.loads(PACKS_FILE.read_text(encoding="utf-8")) if PACKS_FILE.exists() else {}
     if found: return found
     base = f"{BASE}/{GENRE}/list?cardseries={requests.utils.quote(SERIES)}&myca_primary_pack_id="
-    for pid in list(range(center - 1, center - before - 1, -1)) + list(range(center + 1, center + after + 1)):
+    ids = list(range(center - 1, center - before - 1, -1)) + list(range(center + 1, center + after + 1))
+    for n, pid in enumerate(ids, 1):
+        if n % 10 == 0: log(f"  probe 進行 {n}/{len(ids)}（見つかった: {len(found)}）")
         try:
-            html = render(base + str(pid), None, wait_for='a[href*="/items/single-card/"]')
+            html = render(base + str(pid), None, wait_for='a[href*="/items/single-card/"]', wait_ms=5000, settle_ms=300)
         except Exception as e:
             log(f"  probe {pid}: {e}"); continue
         cards = parse_list(html)
