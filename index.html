@@ -87,7 +87,7 @@ button{cursor:pointer}
 /* ===== Card frame（画像がある時は画像、無い時は独自のプレースホルダー） ===== */
 .frame{position:relative;aspect-ratio:63/88;border-radius:8px;overflow:hidden;background:linear-gradient(160deg,#1E2A48 0%,#121A2E 55%,#0E1424 100%);border:1px solid var(--line);isolation:isolate}
 .frame::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.07) 48%,transparent 60%);pointer-events:none}
-.frame img{width:100%;height:100%;object-fit:cover;display:block}
+.frame img.art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;z-index:1;background:var(--panel-2)}
 .frame .ph{position:absolute;inset:0;display:grid;grid-template-rows:auto 1fr auto;padding:9% 9% 8%;gap:4px}
 .frame .ph .n{font-size:.62rem;color:var(--muted);letter-spacing:.06em;display:flex;justify-content:space-between}
 .frame .ph .c{display:grid;place-items:center;text-align:center}
@@ -222,7 +222,7 @@ details.sec > *:not(summary){margin-top:8px}
 <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="mbox" id="mbox"></div></div>
 
 <footer class="foot">
-  価格は各サイト掲載時点の数値で、実際の店頭・取引価格とは異なる場合があります。カードラッシュの販売・買取は攻略大百科（9/16 14:00）とポケカ当たり.jp（9/17）の掲載値、フリマ相場は攻略大百科（9/15フラゲ・9/16 1:00）、店舗平均はポケカ当たり.jpの10店舗以上の平均、DMMマイカの最安値と出品は通販サイト（myca.dmm.com）の9/17午後の掲載値、未追跡カードの買取目安はトレカプロが遊々亭・カードラッシュの9/17 7時台の買取価格から集計したレンジです。同じ場所に prices.json（collect.py の出力）があれば自動で読み、各店の直接取得値で更新します。カード画像はファン運営のデータベース TCGdex（api.tcgdex.net）から取得して表示しています（非公式・非商用の個人利用）。画像の権利は ©Pokémon/Nintendo/Creatures/GAME FREAK に帰属します。画像が無いカードは独自のプレースホルダーを表示し、claude.ai上では外部画像を読めないためプレースホルダーのままになります。
+  価格は各サイト掲載時点の数値で、実際の店頭・取引価格とは異なる場合があります。カードラッシュの販売・買取は攻略大百科（9/16 14:00）とポケカ当たり.jp（9/17）の掲載値、フリマ相場は攻略大百科（9/15フラゲ・9/16 1:00）、店舗平均はポケカ当たり.jpの10店舗以上の平均、DMMマイカの最安値と出品は通販サイト（myca.dmm.com）の9/17午後の掲載値、未追跡カードの買取目安はトレカプロが遊々亭・カードラッシュの9/17 7時台の買取価格から集計したレンジです。同じ場所に prices.json（collect.py の出力）があれば自動で読み、各店の直接取得値で更新します。カード画像はファン運営のデータベース TCGdex（api.tcgdex.net）から取得して表示しています（非公式・非商用の個人利用）。画像の権利は ©Pokémon/Nintendo/Creatures/GAME FREAK に帰属します。画像が無いカードは独自のプレースホルダーを表示し、claude.ai上では外部画像を読めないためプレースホルダーのままになります。リポジトリの img/ に「番号.jpg」（例 img/135.jpg、RGBは img/R.jpg）を置けば、その写真を優先して表示します。
   出典：<a href="https://premium.gamepedia.jp/pokeca/archives/24665" target="_blank" rel="noopener">攻略大百科</a>／<a href="https://pokeka-atari.jp/expansion/30th-celebration" target="_blank" rel="noopener">ポケカ当たり.jp</a>／<a href="https://myca.dmm.com/pokemon-trading-card-game/list?cardseries=%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0MEGA&myca_primary_pack_id=6374" target="_blank" rel="noopener">DMMマイカ</a>／<a href="https://tcgpro.co.jp/media/pokeka-30th-atari/30th-card-list/" target="_blank" rel="noopener">トレカプロ</a>／画像 <a href="https://tcgdex.dev/" target="_blank" rel="noopener">TCGdex</a>
 </footer>
 
@@ -392,10 +392,9 @@ function spark(c){
   const col=ys[ys.length-1]<ys[0]?'var(--down)':ys[ys.length-1]>ys[0]?'var(--up)':'var(--muted)';
   return `<svg viewBox="0 0 64 20" aria-hidden="true"><polyline fill="none" stroke="${col}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="${pts}"/></svg>`;
 }
-function frame(c, lg){ // 画像があれば画像、無ければ独自プレースホルダー
-  const src = lg ? (c.imgHi||c.img) : c.img;
-  return `<div class="frame ${lg?'lg':''} rar-${c.rarity||'REG'}">${src?`<img src="${esc(src)}" alt="${esc(c.name)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`:
-    `<div class="ph"><div class="n"><span>${esc(noLabel(c))}</span><span>M6a</span></div><div class="c"><b>${esc(c.name)}</b><span>${c.rarity||'NORMAL'}</span></div><div class="f">30th CELEBRATION</div></div>`}</div>`;
+function frame(c, lg){ // TCGdex や FULL の画像URL → 無ければ img/番号.jpg（自分で置いた写真）→ 無ければ独自プレースホルダー
+  const src = (lg ? (c.imgHi||c.img) : c.img) || `img/${/^\d+$/.test(c.no) ? c.no : c.no.split('/')[0]}.jpg`;
+  return `<div class="frame ${lg?'lg':''} rar-${c.rarity||'REG'}"><div class="ph"><div class="n"><span>${esc(noLabel(c))}</span><span>M6a</span></div><div class="c"><b>${esc(c.name)}</b><span>${c.rarity||'NORMAL'}</span></div><div class="f">30th CELEBRATION</div></div><img class="art" src="${esc(src)}" alt="${esc(c.name)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"></div>`;
 }
 
 /* ---- BOX期待値 ---- */
