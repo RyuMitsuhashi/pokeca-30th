@@ -2941,5 +2941,325 @@
     }
    }
   }
+ },
+ {
+  "fetched_at": "2026-09-18T04:38+09:00",
+  "v": 2,
+  "sets": {
+   "M6a": {
+    "102/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 120,
+       "cond": "A"
+      }
+     }
+    },
+    "010/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 50,
+       "cond": "A"
+      }
+     }
+    },
+    "034/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 450,
+       "cond": "A"
+      }
+     }
+    },
+    "101/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 80,
+       "cond": "A"
+      }
+     }
+    },
+    "077/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 80,
+       "cond": "A"
+      }
+     }
+    },
+    "037/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 300,
+       "cond": "A"
+      }
+     }
+    },
+    "017/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 280,
+       "cond": "A"
+      }
+     }
+    },
+    "028/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 280,
+       "cond": "A"
+      }
+     }
+    },
+    "029/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 200,
+       "cond": "A"
+      }
+     }
+    },
+    "026/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 300,
+       "cond": "A"
+      }
+     }
+    },
+    "041/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "018/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "030/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 280,
+       "cond": "A"
+      }
+     }
+    },
+    "027/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "022/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 380,
+       "cond": "A"
+      }
+     }
+    },
+    "093/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 50,
+       "cond": "A"
+      }
+     }
+    },
+    "095/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 50,
+       "cond": "A"
+      }
+     }
+    },
+    "092/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 50,
+       "cond": "A"
+      }
+     }
+    },
+    "031/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 200,
+       "cond": "A"
+      }
+     }
+    },
+    "023/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "019/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "044/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "103/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 50,
+       "cond": "A"
+      }
+     }
+    },
+    "035/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "032/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "024/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "020/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "057/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 300,
+       "cond": "A"
+      }
+     }
+    },
+    "052/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 30,
+       "cond": "A"
+      }
+     }
+    },
+    "042/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 300,
+       "cond": "A"
+      }
+     }
+    },
+    "038/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "036/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "025/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 200,
+       "cond": "A"
+      }
+     }
+    },
+    "047/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 300,
+       "cond": "A"
+      }
+     }
+    },
+    "060/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 50,
+       "cond": "A"
+      }
+     }
+    },
+    "048/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 250,
+       "cond": "A"
+      }
+     }
+    },
+    "045/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "033/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 230,
+       "cond": "A"
+      }
+     }
+    },
+    "039/103": {
+     "prices": {
+      "dmm": {
+       "lowest": 200,
+       "cond": "A"
+      }
+     }
+    }
+   }
+  }
  }
 ]
