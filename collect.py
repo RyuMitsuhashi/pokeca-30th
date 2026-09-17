@@ -448,9 +448,28 @@ def main():
     only = set(s.strip() for s in a.sets.split(",") if s.strip())
 
     packs = dict(DMM_PACK_IDS); names = dict(SET_NAMES)   # 手動指定 + 自動発見
-    for name, pid in discover_packs(a.dump).items():
-        if pid in packs.values(): continue
-        packs[f"pack{pid}"] = pid; names[f"pack{pid}"] = name
+    # 自動発見は全世代のパックを返すので、MEGA 期（ID が MIN_PACK_ID 以上）に絞り、一覧のカード表記が M で始まるものだけ採用。判定は packs.json に記憶
+    MIN_PACK_ID = 4700; MAX_PROBE = 40
+    cache = json.loads(PACKS_FILE.read_text(encoding="utf-8")) if PACKS_FILE.exists() else {}   # {pack_id: {"name", "code"}}
+    discovered = [(n, pid) for n, pid in discover_packs(a.dump).items() if pid >= MIN_PACK_ID and pid not in packs.values()]
+    probed = 0
+    for name, pid in sorted(discovered, key=lambda x: x[1]):
+        key = str(pid)
+        if key not in cache:
+            if probed >= MAX_PROBE: break
+            probed += 1
+            try:
+                html = render(f"{BASE}/{GENRE}/list?cardseries={requests.utils.quote(SERIES)}&myca_primary_pack_id={pid}", None, wait_for='a[href*="/items/single-card/"]', wait_ms=6000, settle_ms=300)
+                codes = [c["setcode"] for c in parse_list(html) if c["setcode"]]
+                cache[key] = {"name": name, "code": max(set(codes), key=codes.count) if codes else ""}
+            except Exception as e:
+                cache[key] = {"name": name, "code": ""}
+            log(f"  判定 {pid} {name} → {cache[key]['code'] or '対象外'}")
+        code = cache[key].get("code", "")
+        if re.match(r"^M\d", code) and code not in packs:
+            packs[code] = pid; names[code] = name
+    PACKS_FILE.write_text(json.dumps(cache, ensure_ascii=False, indent=1), encoding="utf-8")
+    log(f"対象パック: {len(packs)} → {[(k, v) for k, v in packs.items()]}")
     if len(packs) <= 1 and os.environ.get("PROBE_PACKS") == "1":   # 総当たりは環境変数で明示したときだけ
         for code, info in probe_packs().items():
             if info["pack_id"] in packs.values(): continue
