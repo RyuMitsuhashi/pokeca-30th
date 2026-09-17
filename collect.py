@@ -82,11 +82,18 @@ def browser():
     return _B["browser"]
 
 
-def render(url, dump_name=None, js=None):
-    """JS描画後のHTML（js を渡せば page.evaluate の結果も）を返す"""
+def render(url, dump_name=None, js=None, wait_for=None, scroll=0):
+    """JS描画後のHTML（js を渡せば page.evaluate の結果も）を返す。読み込み待ちは DOM 完成＋任意のセレクタ出現で判定"""
     page = browser().new_page(user_agent=HEADERS["User-Agent"], locale="ja-JP")
     try:
-        page.goto(url, wait_until="networkidle", timeout=60000)
+        try: page.goto(url, wait_until="domcontentloaded", timeout=60000)
+        except Exception as e: log(f"  goto: {e.__class__.__name__}（取れた分で続行）")
+        if wait_for:
+            try: page.wait_for_selector(wait_for, timeout=20000)
+            except Exception: pass
+        page.wait_for_timeout(1500)
+        for _ in range(scroll):   # 無限スクロール型の一覧を下まで読む
+            page.mouse.wheel(0, 4000); page.wait_for_timeout(1200)
         html = page.content(); extra = page.evaluate(js) if js else None
     finally:
         page.close()
@@ -109,15 +116,27 @@ PACK_JS = """() => { const out = {};
 
 
 def discover_packs(dump) -> dict[str, int]:
-    """DMM の MEGA 一覧から {パック名: pack id} を集める"""
+    """DMM の MEGA 一覧から {パック名: pack id} を集める。絞り込みのパネルを開いてから読む"""
     url = f"{BASE}/{GENRE}/list?cardseries={requests.utils.quote(SERIES)}"
     packs: dict[str, int] = {}
+    page = browser().new_page(user_agent=HEADERS["User-Agent"], locale="ja-JP")
     try:
-        _, found = render(url, "series_list.html" if dump else None, js=PACK_JS)
-        for name, pid in (found or {}).items():
-            if isinstance(pid, int): packs[name] = pid
+        try: page.goto(url, wait_until="domcontentloaded", timeout=60000)
+        except Exception: pass
+        page.wait_for_timeout(2000)
+        for label in ["絞り込み", "パック", "パックで絞り込む", "収録パック", "フィルタ"]:
+            try:
+                btn = page.get_by_text(label, exact=False).first
+                if btn and btn.is_visible(): btn.click(); page.wait_for_timeout(1200)
+            except Exception: pass
+        found = page.evaluate(PACK_JS) or {}
+        for name, pid in found.items():
+            if isinstance(pid, int) and name != "最新弾": packs[name] = pid
+        if dump: DUMP.mkdir(exist_ok=True); (DUMP / "series_list.html").write_text(page.content(), encoding="utf-8")
     except Exception as e:
         log(f"pack discovery failed: {e}")
+    finally:
+        page.close()
     log(f"dmm packs found: {len(packs)} → {list(packs.items())[:12]}")
     return packs
 
@@ -150,10 +169,13 @@ def collect_set_list(pack_id: int, dump: bool, tag: str) -> list[dict]:
     cards, seen = [], set()
     base = f"{BASE}/{GENRE}/list?cardseries={requests.utils.quote(SERIES)}&myca_primary_pack_id={pack_id}"
     for page in range(1, MAX_LIST_PAGES + 1):
-        try:
-            html = render(f"{base}&page={page}", f"list_{tag}_p{page}.html" if dump else None)
-        except Exception as e:
-            log(f"  list page {page} failed: {e}"); break
+        html = ""
+        for attempt in range(2):
+            try:
+                html = render(f"{base}&page={page}", f"list_{tag}_p{page}.html" if dump else None, wait_for='a[href*="/items/single-card/"]', scroll=3); break
+            except Exception as e:
+                log(f"  list page {page} attempt {attempt+1} failed: {e}")
+        if not html: break
         found = [c for c in parse_list(html) if c["dmmId"] not in seen]
         for c in found: seen.add(c["dmmId"])
         cards += found
@@ -185,7 +207,7 @@ def parse_listings(html: str) -> list[dict]:
 
 def dmm_listings(cid: int, dump: bool) -> list[dict]:
     try:
-        html = render(DMM_ITEM.format(id=cid), f"dmm_{cid}.html" if dump else None)
+        html = render(DMM_ITEM.format(id=cid), f"dmm_{cid}.html" if dump else None, wait_for="text=他の出品情報")
         return parse_listings(html)
     except Exception as e:
         log(f"  dmm item {cid} failed: {e}"); return []
@@ -242,8 +264,10 @@ def parse_card_blocks(text: str) -> dict[str, int]:
 
 def yuyu_buylist(set_id: str, dump: bool) -> dict[str, int]:
     try:
-        html = get(YUYU_BUY.format(code=yuyu_code(set_id)), f"yuyu_buy_{set_id}.html" if dump else None)
-    except requests.RequestException as e:
+        html = render(YUYU_BUY.format(code=yuyu_code(set_id)), f"yuyu_buy_{set_id}.html" if dump else None)
+        if re.search(r"403|Forbidden|Access Denied", html[:3000], re.I):
+            log(f"  yuyu {set_id}: ブラウザでも拒否（403）。遊々亭は取得しない"); return {}
+    except Exception as e:
         log(f"  yuyu {set_id}: {e}"); return {}
     text = BeautifulSoup(html, "html.parser").get_text("\n", strip=True)
     out = parse_card_blocks(text)
@@ -254,12 +278,13 @@ def yuyu_buylist(set_id: str, dump: bool) -> dict[str, int]:
 
 def shinsoku_buylist(dump: bool) -> dict[str, int]:
     try:
-        html = render(SHINSOKU_LIST, "shinsoku_list.html" if dump else None)
+        html = render(SHINSOKU_LIST, "shinsoku_list.html" if dump else None, scroll=12)
     except Exception as e:
         log(f"  shinsoku: {e}"); return {}
     text = BeautifulSoup(html, "html.parser").get_text("\n", strip=True)
     out = parse_card_blocks(text)
-    log(f"  shinsoku: 買取 {len(out)}件" + ("" if out else f"。抜粋: {text[:300]!r}"))
+    lines = [l for l in text.split("\n") if l.strip()]
+    log(f"  shinsoku: 買取 {len(out)}件（テキスト {len(lines)}行）" + (f"。先頭付近: {lines[:12]!r}" if len(out) < 20 else ""))
     return out
 
 
