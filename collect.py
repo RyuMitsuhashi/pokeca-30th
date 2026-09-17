@@ -1,24 +1,21 @@
 #!/usr/bin/env python3
 """
-30th CELEBRATION 相場図鑑 のデータ収集。各ECサイトの公開ページから直接価格を取り、prices.json にスナップショットを追記する。
+ポケカ相場ダッシュボード データ収集 v2（複数弾対応）
 
-取得元（いずれも公開ページ。1日1〜2回、リクエスト間隔 WAIT 秒で控えめに）
-  dmm        DMMマイカ 通販サイト …… 全出品（店舗・価格・状態）と最安値。商品ページのHTMLをそのまま解析（確認済み）
-  cardrush   カードラッシュ …… 販売価格・買取価格。商品ページのHTMLを解析（初回実行時に --dump で確認してください）
-  hareruya2  晴れる屋2 …… Shopify なので /products/<id>.json（公式のJSON）から価格を取る
-  torecacamp トレカキャンプ …… 同じく Shopify の JSON
-メルカリ・ヤフオクは規約上の自動取得禁止・API非公開のため対象外。スニダンは規約確認後に追加予定。
-
-出力（prices.json、配列の末尾に追記）
-  {"fetched_at": "...", "cards": [ {"key": "135/103", "name": "ミュウex",
-      "prices": {"dmm": {"lowest": 18800, "cond": "A", "listings": [{"shop","price","cond"}...]},
-                 "cardrush": {"sell": 18800, "buy": 10000}, "hareruya2": {"sell": 28000}, "torecacamp": {"sell": 16800}}} ] }
+やること
+  1. DMMマイカの「ポケモンカードゲームMEGA」一覧から弾（パック）の一覧を見つける（見つからない弾は DMM_PACK_IDS に手で追記）
+  2. 弾ごとに一覧ページをブラウザ描画で全ページ読み、全カードの「最安値・状態・レアリティ・商品ID」を取る → sets.json / prices.json
+  3. SAR以上（HIGH_RARITY）または最安値が LISTING_MIN_PRICE 以上のカードは商品ページも開いて店舗別の出品一覧を取る
+  4. 30th CELEBRATION（M6a）は従来どおりカードラッシュ・晴れる屋2・トレカキャンプも取る
+  5. TCGdex に弾があればカード画像URLを tcgdex-<弾ID>.json にキャッシュ
 
 使い方
   pip install requests beautifulsoup4 playwright && python -m playwright install chromium
-  python collect.py                 # 全カード・全ソース（TCGdexの画像URLも tcgdex-M6a.json に保存）
-  python collect.py --only dmm      # ソースを絞る（カンマ区切り）
-  python collect.py --dump          # 取得したHTML/JSONを ./dump/ に保存（解析が外れたときの調査用）
+  python collect.py                 # 全弾
+  python collect.py --sets M6a,M2a  # 弾を絞る
+  python collect.py --dump          # 取得したHTMLを ./dump/ に保存
+
+注意：各サイトの公開ページを個人利用の範囲で読む前提。アクセスは控えめに（WAIT 秒間隔、1日2回）。
 """
 from __future__ import annotations
 import argparse, datetime as dt, json, pathlib, re, sys, time
@@ -26,93 +23,146 @@ import requests
 from bs4 import BeautifulSoup
 
 WAIT = 2.0
-HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; pokeca-30th-zukan/0.3; +mailto:you@example.com)", "Accept-Language": "ja,en;q=0.8"}
-OUT = pathlib.Path("prices.json"); IDS = pathlib.Path("ids.json"); DUMP = pathlib.Path("dump")
+HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; pokeca-souba/2.0; +mailto:you@example.com)", "Accept-Language": "ja,en;q=0.8"}
+OUT = pathlib.Path("prices.json"); SETS_FILE = pathlib.Path("sets.json"); DUMP = pathlib.Path("dump")
 JST = dt.timezone(dt.timedelta(hours=9))
-DMM = "https://myca.dmm.com/pokemon-trading-card-game/items/single-card/{id}"
+BASE = "https://myca.dmm.com"; GENRE = "pokemon-trading-card-game"; SERIES = "ポケモンカードゲームMEGA"
+DMM_ITEM = f"{BASE}/{GENRE}/items/single-card/{{id}}"
 RUSH = "https://www.cardrush-pokemon.jp/product/{id}"
 HARERUYA = "https://www.hareruya2.com/products/{id}.json"
 CAMP = "https://torecacamp-pokemon.com/products/{id}.json"
 
-# 追跡カード：key → 各サイトの商品ID（2026-09-17時点。空欄は未確認）
-CARDS = {
- "R/RGB":   {"name":"ミュウ（赤）",        "cardrush":85241},
- "G/RGB":   {"name":"ミュウ（緑）",        "cardrush":85242},
- "B/RGB":   {"name":"ミュウ（青）",        "dmm":374885, "cardrush":85243, "hareruya2":"10265831440704"},
- "135/103": {"name":"ミュウex FUR",       "dmm":374555, "cardrush":85240, "hareruya2":"10265831145792", "torecacamp":"rc_it1a2gnsix5q_ecj6"},
- "134/103": {"name":"ミュウツーex FUR",    "dmm":374545, "cardrush":85239, "torecacamp":"rc_it1qfx9a9xkk_opse"},
- "126/103": {"name":"ピカチュウex SAR 昼", "cardrush":85231, "hareruya2":"10265832587584", "torecacamp":"rc_ituakuzx3s6w_djab"},
- "127/103": {"name":"ピカチュウex SAR 夜", "dmm":374475, "cardrush":85232, "hareruya2":"10265831899456"},
- "129/103": {"name":"ミュウex SAR",       "cardrush":85234, "hareruya2":"10265831473472"},
- "131/103": {"name":"ゲンガーex SAR",     "cardrush":85236, "hareruya2":"10265831342400"},
- "128/103": {"name":"ミュウツーex SAR",   "cardrush":85233, "hareruya2":"10265831964992"},
- "130/103": {"name":"ニンフィアex SAR",   "dmm":374505, "cardrush":85235, "hareruya2":"10265831768384"},
- "132/103": {"name":"ジラーチex SAR",     "dmm":374525, "cardrush":85237, "hareruya2":"10265831244096"},
- "125/103": {"name":"ゲッコウガex SAR",   "dmm":374455, "cardrush":85230, "hareruya2":"10265832358208"},
- "133/103": {"name":"ボーマンダex SAR",   "cardrush":85238, "hareruya2":"10265831407936"},
- "124/103": {"name":"ホゲータex SAR",     "cardrush":85229, "hareruya2":"10265835176256", "torecacamp":"rc_itexi5fvupgs_esux"},
- "142/103": {"name":"ルギア 復刻版",      "cardrush":85117, "hareruya2":"50719"},
- "137/103": {"name":"リザードン 復刻版",  "dmm":374575, "cardrush":85112, "hareruya2":"10265836388672", "torecacamp":"rc_it9lhproroxw_voqr"},
- "165/103": {"name":"コイキング 復刻版",  "dmm":374855, "cardrush":85139, "hareruya2":"10265837830464", "torecacamp":"rc_itd2qz5fwkb4_0nek"},
- "150/103": {"name":"ゲンガー 復刻版",    "dmm":374705, "cardrush":85125, "hareruya2":"10265837568320"},
- "136/103": {"name":"ピカチュウ 復刻版",  "dmm":374565, "cardrush":85111, "hareruya2":"10265836814656", "torecacamp":"rc_itaoolmbea40_9bnm"},
- "141/103": {"name":"ひかるセレビィ 復刻版","dmm":374615, "cardrush":85116, "hareruya2":"10265838092608"},
- "151/103": {"name":"ダークライ&クレセリア 復刻版（上）","dmm":374713, "cardrush":85126, "hareruya2":"10265837994304"},
- "163/103": {"name":"ミュウVMAX 復刻版",  "dmm":374835, "cardrush":85137},
- "160/103": {"name":"ピカチュウ&ゼクロムGX 復刻版","dmm":374805, "cardrush":85134},
- "154/103": {"name":"レックウザEX 復刻版","dmm":374745, "cardrush":85128},
- "156/103": {"name":"MサーナイトEX 復刻版","dmm":374765, "cardrush":85130},
- "162/103": {"name":"ライコウ 復刻版",    "dmm":374825, "cardrush":85136},
- "153/103": {"name":"N 復刻版",           "dmm":374735, "cardrush":85127},
- "138/103": {"name":"カスミ 復刻版",      "dmm":374585, "cardrush":85113},
- "144/103": {"name":"わるいバンギラス 復刻版","dmm":374645, "cardrush":85119},
+# DMM のパックID。自動発見できなかった弾は、DMMの一覧でその弾を選んだときのURLの myca_primary_pack_id をここに書く
+DMM_PACK_IDS = {"M6a": 6374}
+SET_NAMES = {"M6a": "30th CELEBRATION"}   # 表示名（自動発見した弾は DMM の表記が入る）
+HIGH_RARITY = {"SAR", "FUR", "RGB", "SR", "UR", "ACE", "HR", "CSR", "CHR", "SSR", "MUR", "BWR"}
+LISTING_MIN_PRICE = 3000   # この価格以上のカードも出品一覧まで取る
+MAX_LIST_PAGES = 12
+
+# 30th のカードラッシュ・Shopify 商品ID（従来どおり）
+M6A_SHOPS = {
+ "R/RGB": {"cardrush": 85241}, "G/RGB": {"cardrush": 85242}, "B/RGB": {"cardrush": 85243, "hareruya2": "10265831440704"},
+ "135/103": {"cardrush": 85240, "hareruya2": "10265831145792", "torecacamp": "rc_it1a2gnsix5q_ecj6"},
+ "134/103": {"cardrush": 85239, "torecacamp": "rc_it1qfx9a9xkk_opse"},
+ "126/103": {"cardrush": 85231, "hareruya2": "10265832587584", "torecacamp": "rc_ituakuzx3s6w_djab"},
+ "127/103": {"cardrush": 85232, "hareruya2": "10265831899456"}, "129/103": {"cardrush": 85234, "hareruya2": "10265831473472"},
+ "131/103": {"cardrush": 85236, "hareruya2": "10265831342400"}, "128/103": {"cardrush": 85233, "hareruya2": "10265831964992"},
+ "130/103": {"cardrush": 85235, "hareruya2": "10265831768384"}, "132/103": {"cardrush": 85237, "hareruya2": "10265831244096"},
+ "125/103": {"cardrush": 85230, "hareruya2": "10265832358208"}, "133/103": {"cardrush": 85238, "hareruya2": "10265831407936"},
+ "124/103": {"cardrush": 85229, "hareruya2": "10265835176256", "torecacamp": "rc_itexi5fvupgs_esux"},
+ "142/103": {"cardrush": 85117, "hareruya2": "50719"}, "137/103": {"cardrush": 85112, "hareruya2": "10265836388672", "torecacamp": "rc_it9lhproroxw_voqr"},
+ "165/103": {"cardrush": 85139, "hareruya2": "10265837830464", "torecacamp": "rc_itd2qz5fwkb4_0nek"},
+ "150/103": {"cardrush": 85125, "hareruya2": "10265837568320"}, "136/103": {"cardrush": 85111, "hareruya2": "10265836814656", "torecacamp": "rc_itaoolmbea40_9bnm"},
+ "141/103": {"cardrush": 85116, "hareruya2": "10265838092608"}, "151/103": {"cardrush": 85126, "hareruya2": "10265837994304"},
+ "163/103": {"cardrush": 85137}, "160/103": {"cardrush": 85134}, "154/103": {"cardrush": 85128}, "156/103": {"cardrush": 85130},
+ "162/103": {"cardrush": 85136}, "153/103": {"cardrush": 85127}, "138/103": {"cardrush": 85113}, "144/103": {"cardrush": 85119},
 }
+
 PRICE = re.compile(r"[¥￥]\s?([\d,]+)|([\d,]+)\s?円")
-KEY = re.compile(r"(\d{3}/103|[RGB]/RGB)")
-LINK = re.compile(r'href="(?:https://myca\.dmm\.com)?/pokemon-trading-card-game/items/single-card/(\d+)"[^>]*>(.*?)</a>', re.S)
-
-
-def get(url: str, dump_name: str | None) -> str:
-    r = requests.get(url, headers=HEADERS, timeout=30); r.raise_for_status()
-    if dump_name:
-        DUMP.mkdir(exist_ok=True); (DUMP / dump_name).write_text(r.text, encoding="utf-8")
-    time.sleep(WAIT); return r.text
-
-
-_BROWSER = {"pw": None, "browser": None}
-def render(url: str, dump_name: str | None) -> str:
-    """JavaScript描画後のHTMLを返す（DMMマイカ用）。playwright が無ければ空文字。"""
-    try:
-        from playwright.sync_api import sync_playwright
-    except ImportError:
-        print("  playwright が入っていないためブラウザ描画をスキップ", file=sys.stderr); return ""
-    if _BROWSER["browser"] is None:
-        _BROWSER["pw"] = sync_playwright().start()
-        _BROWSER["browser"] = _BROWSER["pw"].chromium.launch()
-    page = _BROWSER["browser"].new_page(user_agent=HEADERS["User-Agent"], locale="ja-JP")
-    try:
-        page.goto(url, wait_until="networkidle", timeout=60000)
-        html = page.content()
-    finally:
-        page.close()
-    if dump_name:
-        DUMP.mkdir(exist_ok=True); (DUMP / dump_name).write_text(html, encoding="utf-8")
-    time.sleep(WAIT); return html
-
-
-def close_browser():
-    if _BROWSER["browser"]: _BROWSER["browser"].close()
-    if _BROWSER["pw"]: _BROWSER["pw"].stop()
+LINK = re.compile(r'href="(?:https://myca\.dmm\.com)?/' + GENRE + r'/items/single-card/(\d+)"[^>]*>(.*?)</a>', re.S)
+CARDNO = re.compile(r"(\d{3}/\d{3}|[A-Z]/RGB)")
 
 
 def yen(s): return int(str(s).replace(",", "")) if s else None
+def log(msg): print(msg, file=sys.stderr, flush=True)
 
 
-# ---- DMMマイカ ----
-DMM_MODE = {"browser": False}  # 一度ブラウザ描画が必要と分かったら以後はブラウザで取る
+# ---------- 取得（requests / ブラウザ） ----------
+def get(url, dump_name=None):
+    r = requests.get(url, headers=HEADERS, timeout=30); r.raise_for_status()
+    if dump_name: DUMP.mkdir(exist_ok=True); (DUMP / dump_name).write_text(r.text, encoding="utf-8")
+    time.sleep(WAIT); return r.text
 
-def parse_dmm(html: str) -> list[dict]:
-    """出品一覧を行ベースで拾う：『店舗名 → ¥価格 → (お買い得などの短い行) → 状態X』の並びを探す"""
+
+_B = {"pw": None, "browser": None}
+def browser():
+    if _B["browser"] is None:
+        from playwright.sync_api import sync_playwright
+        _B["pw"] = sync_playwright().start(); _B["browser"] = _B["pw"].chromium.launch()
+    return _B["browser"]
+
+
+def render(url, dump_name=None, js=None):
+    """JS描画後のHTML（js を渡せば page.evaluate の結果も）を返す"""
+    page = browser().new_page(user_agent=HEADERS["User-Agent"], locale="ja-JP")
+    try:
+        page.goto(url, wait_until="networkidle", timeout=60000)
+        html = page.content(); extra = page.evaluate(js) if js else None
+    finally:
+        page.close()
+    if dump_name: DUMP.mkdir(exist_ok=True); (DUMP / dump_name).write_text(html, encoding="utf-8")
+    time.sleep(WAIT)
+    return (html, extra) if js else html
+
+
+def close_browser():
+    if _B["browser"]: _B["browser"].close()
+    if _B["pw"]: _B["pw"].stop()
+
+
+# ---------- DMM：弾の発見 ----------
+PACK_JS = """() => { const out = {};
+  document.querySelectorAll('a[href*="myca_primary_pack_id="]').forEach(a => { const m = a.href.match(/myca_primary_pack_id=(\\d+)/); const t = a.textContent.trim(); if (m && t && t.length < 60) out[t] = +m[1]; });
+  document.querySelectorAll('option').forEach(o => { const s = o.closest('select'); const n = ((s && (s.name || s.id)) || '').toLowerCase(); if (/^\\d+$/.test(o.value) && o.textContent.trim() && n.includes('pack')) out[o.textContent.trim()] = +o.value; });
+  document.querySelectorAll('input[type=checkbox],input[type=radio]').forEach(i => { if ((i.name || '').includes('pack') && /^\\d+$/.test(i.value)) { const l = i.closest('label') || (i.id && document.querySelector('label[for="' + i.id + '"]')); const t = l ? l.textContent.trim() : ''; if (t) out[t] = +i.value; } });
+  return out; }"""
+
+
+def discover_packs(dump) -> dict[str, int]:
+    """DMM の MEGA 一覧から {パック名: pack id} を集める"""
+    url = f"{BASE}/{GENRE}/list?cardseries={requests.utils.quote(SERIES)}"
+    packs: dict[str, int] = {}
+    try:
+        _, found = render(url, "series_list.html" if dump else None, js=PACK_JS)
+        for name, pid in (found or {}).items():
+            if isinstance(pid, int): packs[name] = pid
+    except Exception as e:
+        log(f"pack discovery failed: {e}")
+    log(f"dmm packs found: {len(packs)} → {list(packs.items())[:12]}")
+    return packs
+
+
+# ---------- DMM：一覧ページから全カード ----------
+def parse_list(html: str) -> list[dict]:
+    """一覧ページ → [{key, no, name, rarity, setcode, dmmId, lowest, cond}]"""
+    out, seen = [], set()
+    links = list(LINK.finditer(html))
+    for i, m in enumerate(links):
+        cid = int(m.group(1)); name = BeautifulSoup(m.group(2), "html.parser").get_text(" ", strip=True)
+        if not name or cid in seen: continue
+        seg = html[m.end(): links[i + 1].start() if i + 1 < len(links) else m.end() + 3000]
+        text = BeautifulSoup(seg, "html.parser").get_text("\n", strip=True)
+        meta = re.search(r"(\d{3}/\d{3}|[A-Z]/RGB)/([A-Za-z]+)/([A-Za-z0-9]+)", text)
+        if meta:
+            key, rarity, setcode = meta.group(1), meta.group(2).upper(), meta.group(3)
+        else:
+            k = CARDNO.search(name); key = k.group(1) if k else None; rarity = ""; setcode = ""
+        if not key: continue
+        p = PRICE.search(text); c = re.search(r"状態([A-Z][+\-]?)", text)
+        seen.add(cid)
+        out.append({"key": key, "no": key.split("/")[0], "name": re.sub(r"\s*" + re.escape(key) + r"\s*", "", name).strip() or name,
+                    "rarity": rarity, "setcode": setcode, "dmmId": cid, "lowest": yen(p.group(1) or p.group(2)) if p else None, "cond": c.group(1) if c else None})
+    return out
+
+
+def collect_set_list(pack_id: int, dump: bool, tag: str) -> list[dict]:
+    cards, seen = [], set()
+    base = f"{BASE}/{GENRE}/list?cardseries={requests.utils.quote(SERIES)}&myca_primary_pack_id={pack_id}"
+    for page in range(1, MAX_LIST_PAGES + 1):
+        try:
+            html = render(f"{base}&page={page}", f"list_{tag}_p{page}.html" if dump else None)
+        except Exception as e:
+            log(f"  list page {page} failed: {e}"); break
+        found = [c for c in parse_list(html) if c["dmmId"] not in seen]
+        for c in found: seen.add(c["dmmId"])
+        cards += found
+        log(f"  {tag} page {page}: {len(found)} new cards")
+        if not found: break
+    return cards
+
+
+# ---------- DMM：商品ページ（出品一覧） ----------
+def parse_listings(html: str) -> list[dict]:
     text = BeautifulSoup(html, "html.parser").get_text("\n", strip=True)
     i = text.find("他の出品情報"); sec = text[i:] if i >= 0 else text
     j = sec.find("関連カード"); sec = sec[:j] if j > 0 else sec
@@ -122,8 +172,7 @@ def parse_dmm(html: str) -> list[dict]:
     for k, l in enumerate(lines):
         m = re.match(r"[¥￥]\s?([\d,]+)", l)
         if not m: continue
-        shop = next((lines[b] for b in range(k - 1, max(-1, k - 4), -1)
-                     if not lines[b].startswith(skip) and not re.match(r"[¥￥]", lines[b])), None)
+        shop = next((lines[b] for b in range(k - 1, max(-1, k - 4), -1) if not lines[b].startswith(skip) and not re.match(r"[¥￥]", lines[b])), None)
         cond = None
         for f in range(k + 1, min(len(lines), k + 5)):
             c = re.match(r"状態([A-Z][+\-]?)", lines[f])
@@ -133,137 +182,182 @@ def parse_dmm(html: str) -> list[dict]:
     return out
 
 
-def dmm_page(cid, dump):
-    url = DMM.format(id=cid)
-    html = render(url, f"dmm_{cid}.html" if dump else None) if DMM_MODE["browser"] else get(url, f"dmm_{cid}.html" if dump else None)
-    ls = parse_dmm(html)
-    if not ls and not DMM_MODE["browser"]:
-        # 素のHTMLに出品が無い → JS描画後のHTMLで再解析
-        html2 = render(url, f"dmm_{cid}_rendered.html" if dump else None)
-        if html2:
-            ls = parse_dmm(html2)
-            if ls: DMM_MODE["browser"] = True; html = html2
-            else:
-                t = BeautifulSoup(html2, "html.parser").get_text("\n", strip=True); k = t.find("他の出品情報")
-                print(f"  [dmm debug] 描画後も出品を解析できず。抜粋: {t[max(0,k):k+300] if k>=0 else t[:300]!r}", file=sys.stderr)
-    low = min((l for l in ls if l["price"]), key=lambda l: l["price"], default=None)
-    return {"lowest": low["price"] if low else None, "cond": low["cond"] if low else None, "listings": ls}, html
+def dmm_listings(cid: int, dump: bool) -> list[dict]:
+    try:
+        html = render(DMM_ITEM.format(id=cid), f"dmm_{cid}.html" if dump else None)
+        return parse_listings(html)
+    except Exception as e:
+        log(f"  dmm item {cid} failed: {e}"); return []
 
 
-def dmm_discover(dump) -> dict:
-    """未確認のDMM商品IDを、一覧ページ（ブラウザ描画で2ページ目以降も）と商品ページの「関連カード」から探して ids.json に貯める"""
-    known = json.loads(IDS.read_text(encoding="utf-8")) if IDS.exists() else {}
-    for k, c in CARDS.items():
-        if "dmm" not in c and k in known: c["dmm"] = int(known[k])
-    missing = [k for k, c in CARDS.items() if "dmm" not in c]
-    if not missing: return known
-    list_url = f"{BASE}/pokemon-trading-card-game/list?cardseries={requests.utils.quote(CARDSERIES)}&myca_primary_pack_id={PACK_ID}"
-    for page in range(1, 6):
-        html = render(f"{list_url}&page={page}", f"list_p{page}.html" if dump else None) or (get(list_url, None) if page == 1 else "")
-        found = ids_from_links(html); new = {k: v for k, v in found.items() if k not in known}
-        known.update(new)
-        print(f"  dmm list page {page}: {len(found)} links, {len(new)} new", file=sys.stderr)
-        for k in list(missing):
-            if k in known: CARDS[k]["dmm"] = int(known[k]); missing.remove(k)
-        if not missing or not found: break
-    if missing:  # 念のため商品ページの「関連カード」も辿る
-        queue = [c["dmm"] for c in CARDS.values() if "dmm" in c]; seen = set()
-        while missing and queue and len(seen) < 20:
-            cid = queue.pop(0)
-            if cid in seen: continue
-            seen.add(cid)
-            html = render(DMM.format(id=cid), None) or get(DMM.format(id=cid), None)
-            for k, v in ids_from_links(html).items():
-                if k not in known: known[k] = v; queue.append(v)
-            for k in list(missing):
-                if k in known: CARDS[k]["dmm"] = int(known[k]); missing.remove(k)
-    IDS.write_text(json.dumps(known, ensure_ascii=False, indent=1), encoding="utf-8")
-    if missing: print(f"dmm id unresolved: {missing}", file=sys.stderr)
-    return known
-
-
-# ---- カードラッシュ ----
+# ---------- 30th の他店 ----------
 def cardrush_page(pid, dump):
-    """販売価格と買取価格。ページ構造は初回に dump で確認して、必要なら下の正規表現を直す"""
     html = get(RUSH.format(id=pid), f"cardrush_{pid}.html" if dump else None)
     text = BeautifulSoup(html, "html.parser").get_text("\n", strip=True)
     def near(label):
         i = text.find(label)
         if i < 0: return None
         m = PRICE.search(text[i:i + 300]); return yen(m.group(1) or m.group(2)) if m else None
-    sell = near("販売価格") or near("価格")
-    buy = near("買取価格")
-    # 売り切れ：カートに入れるボタンが無く「再入荷を知らせる」がある／SOLD OUT 表記
+    sell = near("販売価格") or near("価格"); buy = near("買取価格")
     soldout = ("再入荷を知らせる" in text and "カートに入れる" not in text) or bool(re.search(r"sold\s*out|売り切れ|在庫切れ", text, re.I))
-    return {"sell": sell, "buy": buy, "soldout": soldout, "verify": sell is None}
+    return {"sell": sell, "buy": buy, "soldout": soldout}
 
 
-# ---- Shopify（晴れる屋2・トレカキャンプ） ----
 def shopify_json(url, dump_name, dump):
-    try:
-        txt = get(url, dump_name if dump else None)
-    except requests.RequestException:
-        time.sleep(5); txt = get(url, dump_name if dump else None)
+    try: txt = get(url, dump_name if dump else None)
+    except requests.RequestException: time.sleep(5); txt = get(url, dump_name if dump else None)
     p = json.loads(txt)["product"]
     vs = [v for v in p.get("variants", []) if v.get("available", True)] or p.get("variants", [])
     price = min((float(v["price"]) for v in vs if v.get("price")), default=None)
-    if price and price > 1_000_000 and float(vs[0]["price"]) % 100 == 0: price = price / 100  # cents で返る店への保険
-    return {"sell": int(price) if price else None, "title": p.get("title")}
+    if price and price > 1_000_000 and float(vs[0]["price"]) % 100 == 0: price = price / 100
+    return {"sell": int(price) if price else None}
 
 
-# ---- TCGdex（カード画像URL） ----
-def fetch_tcgdex(out: pathlib.Path = pathlib.Path("tcgdex-M6a.json")) -> bool:
-    """TCGdex の日本語セット一覧から M6a（30th CELEBRATION）だけを選び、カード一覧（画像URL入り）を保存する"""
-    api = "https://api.tcgdex.net/v2"
-    h = {"User-Agent": HEADERS["User-Agent"]}
+# ---------- 買取価格（第1段：Web上のテキスト価格表） ----------
+YUYU_BUY = "https://yuyu-tei.jp/buy/poc/s/{code}"          # 遊々亭：弾別の買取一覧
+SHINSOKU_LIST = "https://shinsoku-tcg.com/yuso-kaitori"     # シンソク：簡単カート買取（価格保証リスト）
+KANABELL_BUY_URL = ""   # カーナベルの買取検索URL（{q} にカード名）。ページ構造を確認してから入れる。空なら取得しない
+BUY_OCR = pathlib.Path("buy_ocr.json")                      # ocr_buylist.py の出力（画像の買取表）
+
+def yuyu_code(set_id: str) -> str:
+    m = re.match(r"^([A-Za-z]+)(\d+)([A-Za-z]*)$", set_id)
+    return f"{m.group(1).lower()}{int(m.group(2)):02d}{m.group(3).lower()}" if m else set_id.lower()
+
+
+def parse_card_blocks(text: str) -> dict[str, int]:
+    """行テキストから『カード番号 → 価格』を拾う汎用パーサ（番号の前後4行以内の『○○円』or『¥○○』）"""
+    lines = [l.strip() for l in text.split("\n") if l.strip()]
+    out = {}
+    for i, l in enumerate(lines):
+        m = CARDNO.search(l)
+        if not m: continue
+        for j in range(i, min(len(lines), i + 5)):
+            p = re.search(r"[¥￥]\s?([\d,]+)|([\d,]+)\s?円", lines[j])
+            if p:
+                v = yen(p.group(1) or p.group(2))
+                if v and v >= 10: out.setdefault(m.group(1), v); break
+    return out
+
+
+def yuyu_buylist(set_id: str, dump: bool) -> dict[str, int]:
     try:
-        sets = requests.get(f"{api}/ja/sets", headers=h, timeout=30).json()
+        html = get(YUYU_BUY.format(code=yuyu_code(set_id)), f"yuyu_buy_{set_id}.html" if dump else None)
+    except requests.RequestException as e:
+        log(f"  yuyu {set_id}: {e}"); return {}
+    text = BeautifulSoup(html, "html.parser").get_text("\n", strip=True)
+    out = parse_card_blocks(text)
+    if not out: log(f"  yuyu {set_id}: 0件。抜粋: {text[:200]!r}")
+    else: log(f"  yuyu {set_id}: 買取 {len(out)}件")
+    return out
+
+
+def shinsoku_buylist(dump: bool) -> dict[str, int]:
+    try:
+        html = render(SHINSOKU_LIST, "shinsoku_list.html" if dump else None)
     except Exception as e:
-        print(f"tcgdex: セット一覧を取得できず ({e})", file=sys.stderr); return False
-    def is_m6a(x):
-        sid = str(x.get("id", "")).lower(); name = str(x.get("name", ""))
-        return sid == "m6a" or (sid.startswith("m") and not sid.startswith("sm") and "30th" in name)
-    cand = [x for x in sets if isinstance(x, dict) and is_m6a(x)]
-    if not cand:
-        m_ids = [x.get("id") for x in sets if isinstance(x, dict) and re.match(r"^m\d", str(x.get("id", "")).lower())]
-        print(f"tcgdex: M6a は未収録。MEGA期のID: {m_ids}", file=sys.stderr)
-        out.unlink(missing_ok=True)  # 別セットの古いファイルが残らないように
-        return False
-    for x in cand:
+        log(f"  shinsoku: {e}"); return {}
+    text = BeautifulSoup(html, "html.parser").get_text("\n", strip=True)
+    out = parse_card_blocks(text)
+    log(f"  shinsoku: 買取 {len(out)}件" + ("" if out else f"。抜粋: {text[:300]!r}"))
+    return out
+
+
+def kanabell_buy(name: str, dump: bool) -> int | None:
+    if not KANABELL_BUY_URL: return None
+    try:
+        text = BeautifulSoup(get(KANABELL_BUY_URL.format(q=requests.utils.quote(name))), "html.parser").get_text("\n", strip=True)
+        vals = list(parse_card_blocks(text).values()); return max(vals) if vals else None
+    except requests.RequestException: return None
+
+
+def ocr_buy_by_key() -> dict[str, list[dict]]:
+    """buy_ocr.json → {カード番号: [{shop, price, src, when, name}]}"""
+    if not BUY_OCR.exists(): return {}
+    out: dict[str, list[dict]] = {}
+    for rec in json.loads(BUY_OCR.read_text(encoding="utf-8")):
+        for row in rec.get("rows", []):
+            k = row.get("no"); v = row.get("price")
+            if k and v: out.setdefault(k, []).append({"shop": rec.get("shop"), "price": v, "src": rec.get("src"), "when": rec.get("date"), "name": row.get("name")})
+    return out
+
+
+# ---------- TCGdex ----------
+def fetch_tcgdex(set_id: str) -> int:
+    api = "https://api.tcgdex.net/v2"; h = {"User-Agent": HEADERS["User-Agent"]}
+    out = pathlib.Path(f"tcgdex-{set_id}.json")
+    for sid in dict.fromkeys((set_id, set_id.lower(), set_id.upper())):
         try:
-            r = requests.get(f"{api}/ja/sets/{x['id']}", headers=h, timeout=30)
+            r = requests.get(f"{api}/ja/sets/{sid}", headers=h, timeout=30)
             if r.ok and isinstance(r.json().get("cards"), list):
                 out.write_text(r.text, encoding="utf-8")
-                n = sum(1 for c in r.json()["cards"] if c.get("image"))
-                print(f"tcgdex: {x['id']} {x.get('name')} → {len(r.json()['cards'])}枚、画像あり {n}枚", file=sys.stderr); return True
+                n = sum(1 for c in r.json()["cards"] if c.get("image")); log(f"  tcgdex {sid}: {len(r.json()['cards'])}枚、画像あり {n}枚"); return n
         except Exception as e:
-            print(f"tcgdex: {x.get('id')} 取得失敗 ({e})", file=sys.stderr)
-    return False
+            log(f"  tcgdex {sid}: {e}")
+    log(f"  tcgdex {set_id}: 未収録"); out.unlink(missing_ok=True); return 0
 
 
+# ---------- メイン ----------
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--only", default="dmm,cardrush,hareruya2,torecacamp"); ap.add_argument("--dump", action="store_true")
-    ap.add_argument("--no-tcgdex", action="store_true")
-    a = ap.parse_args(); only = set(a.only.split(","))
-    if not a.no_tcgdex: fetch_tcgdex()
-    if "dmm" in only: dmm_discover(a.dump)
-    cards = []
-    for key, c in CARDS.items():
-        P = {}
-        try:
-            if "dmm" in only and c.get("dmm"): P["dmm"], _ = dmm_page(c["dmm"], a.dump)
-            if "cardrush" in only and c.get("cardrush"): P["cardrush"] = cardrush_page(c["cardrush"], a.dump)
-            if "hareruya2" in only and c.get("hareruya2"): P["hareruya2"] = shopify_json(HARERUYA.format(id=c["hareruya2"]), f"hareruya2_{key.replace('/','-')}.json", a.dump)
-            if "torecacamp" in only and c.get("torecacamp"): P["torecacamp"] = shopify_json(CAMP.format(id=c["torecacamp"]), f"camp_{key.replace('/','-')}.json", a.dump)
-        except (requests.RequestException, ValueError, KeyError) as e:
-            print(f"  {key}: {e}", file=sys.stderr)
-        cards.append({"key": key, "name": c["name"], "prices": P})
-        print(f"  {key} {c['name']}: " + ", ".join(f"{k}={v.get('lowest', v.get('sell'))}{'(売切)' if v.get('soldout') else ''}" for k, v in P.items()), file=sys.stderr)
-    snap = {"fetched_at": dt.datetime.now(JST).isoformat(timespec="minutes"), "cards": cards}
+    ap.add_argument("--sets", default="", help="弾IDをカンマ区切りで絞る（例 M6a,M2a）")
+    ap.add_argument("--dump", action="store_true")
+    a = ap.parse_args()
+    only = set(s.strip() for s in a.sets.split(",") if s.strip())
+
+    packs = dict(DMM_PACK_IDS); names = dict(SET_NAMES)   # 手動指定 + 自動発見
+    for name, pid in discover_packs(a.dump).items():
+        if pid in packs.values(): continue
+        packs[f"pack{pid}"] = pid; names[f"pack{pid}"] = name
+    sets_db = json.loads(SETS_FILE.read_text(encoding="utf-8")) if SETS_FILE.exists() else {}
+    snap = {"fetched_at": dt.datetime.now(JST).isoformat(timespec="minutes"), "v": 2, "sets": {}}
+    shinsoku = shinsoku_buylist(a.dump)        # 弾をまたぐ一覧なのでカード番号で照合
+    ocr = ocr_buy_by_key()
+
+    for tmp_id, pid in packs.items():
+        if only and tmp_id not in only and not (tmp_id.startswith("pack")): continue
+        cards = collect_set_list(pid, a.dump, tmp_id)
+        if not cards: log(f"{tmp_id}: カードなし（pack id {pid}）"); continue
+        codes = [c["setcode"] for c in cards if c["setcode"]]
+        set_id = max(set(codes), key=codes.count) if codes else tmp_id   # 『…/FUR/M6a』の末尾が弾ID
+        if only and set_id not in only and tmp_id not in only: continue
+        entry = sets_db.setdefault(set_id, {"id": set_id, "name": names.get(tmp_id, set_id), "dmm_pack_id": pid, "cards": {}})
+        entry["dmm_pack_id"] = pid; entry["name"] = names.get(tmp_id) or entry.get("name") or set_id
+        prices = {}
+        yuyu = yuyu_buylist(set_id, a.dump)
+        for c in cards:
+            entry["cards"][c["key"]] = {"no": c["no"], "name": c["name"], "rarity": c["rarity"], "dmmId": c["dmmId"]}
+            P = {"dmm": {"lowest": c["lowest"], "cond": c["cond"]}}
+            buy = {}
+            if c["key"] in yuyu: buy["yuyu"] = {"price": yuyu[c["key"]]}
+            if c["key"] in shinsoku: buy["shinsoku"] = {"price": shinsoku[c["key"]]}
+            if c["rarity"] in HIGH_RARITY and KANABELL_BUY_URL:
+                kb = kanabell_buy(c["name"], a.dump)
+                if kb: buy["kanabell"] = {"price": kb}
+            for o in ocr.get(c["key"], []):
+                if not o.get("name") or o["name"][:2] in c["name"]:   # 番号一致＋名前の先頭が合えば同一カードとみなす
+                    buy["ocr:" + str(o["shop"])] = {"price": o["price"], "src": o.get("src"), "when": o.get("when")}
+            if buy: P["buy"] = buy
+            if c["rarity"] in HIGH_RARITY or (c["lowest"] or 0) >= LISTING_MIN_PRICE:
+                ls = dmm_listings(c["dmmId"], a.dump)
+                if ls:
+                    low = min(ls, key=lambda l: l["price"]); P["dmm"] = {"lowest": low["price"], "cond": low["cond"], "listings": ls}
+            if set_id == "M6a" and c["key"] in M6A_SHOPS:
+                s = M6A_SHOPS[c["key"]]
+                try:
+                    if s.get("cardrush"): P["cardrush"] = cardrush_page(s["cardrush"], a.dump)
+                    if s.get("hareruya2"): P["hareruya2"] = shopify_json(HARERUYA.format(id=s["hareruya2"]), f"hareruya2_{c['key'].replace('/', '-')}.json", a.dump)
+                    if s.get("torecacamp"): P["torecacamp"] = shopify_json(CAMP.format(id=s["torecacamp"]), f"camp_{c['key'].replace('/', '-')}.json", a.dump)
+                except Exception as e:
+                    log(f"  {c['key']} shops: {e}")
+            prices[c["key"]] = {"prices": P}
+        snap["sets"][set_id] = prices
+        log(f"{set_id} {entry['name']}: {len(cards)}枚")
+        fetch_tcgdex(set_id)
+
+    SETS_FILE.write_text(json.dumps(sets_db, ensure_ascii=False, indent=1), encoding="utf-8")
     hist = json.loads(OUT.read_text(encoding="utf-8")) if OUT.exists() else []
     hist.append(snap); OUT.write_text(json.dumps(hist, ensure_ascii=False, indent=1), encoding="utf-8")
-    print(f"saved {OUT} ({len(hist)} snapshots)", file=sys.stderr)
+    log(f"saved {OUT} ({len(hist)} snapshots), {SETS_FILE} ({len(sets_db)} sets)")
     close_browser()
 
 
