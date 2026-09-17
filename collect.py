@@ -116,23 +116,46 @@ PACK_JS = """() => { const out = {};
 
 
 def discover_packs(dump) -> dict[str, int]:
-    """DMM の MEGA 一覧から {パック名: pack id} を集める。絞り込みのパネルを開いてから読む"""
+    """DMM の一覧で絞り込み「封入パック」を開き、チェックを1つずつ入れて検索 → URL の myca_primary_pack_id を控える"""
     url = f"{BASE}/{GENRE}/list?cardseries={requests.utils.quote(SERIES)}"
     packs: dict[str, int] = {}
     page = browser().new_page(user_agent=HEADERS["User-Agent"], locale="ja-JP")
     try:
         try: page.goto(url, wait_until="domcontentloaded", timeout=60000)
         except Exception: pass
-        page.wait_for_timeout(2000)
-        for label in ["絞り込み", "パック", "パックで絞り込む", "収録パック", "フィルタ"]:
-            try:
-                btn = page.get_by_text(label, exact=False).first
-                if btn and btn.is_visible(): btn.click(); page.wait_for_timeout(1200)
-            except Exception: pass
-        found = page.evaluate(PACK_JS) or {}
-        for name, pid in found.items():
-            if isinstance(pid, int) and name != "最新弾": packs[name] = pid
+        page.wait_for_timeout(2500)
+        # 1) 「封入パック」の見出しを開く
+        hdr = page.get_by_text("封入パック", exact=True).first
+        try: hdr.click(); page.wait_for_timeout(1000)
+        except Exception as e:
+            log(f"  封入パックの見出しが見つからない: {e}"); return packs
+        # 2) 見出しの近くのチェックボックスを集める（値が数字ならそれがID）
+        sec = hdr.locator("xpath=ancestor::*[.//input[@type='checkbox']][1]")
+        boxes = sec.locator("input[type=checkbox]")
+        n = boxes.count(); log(f"  封入パックの候補: {n}件")
+        items = []
+        for i in range(n):
+            b = boxes.nth(i)
+            label = b.evaluate("el => ((el.closest('label') || el.parentElement) ? (el.closest('label') || el.parentElement).innerText : '').trim()")
+            val = b.get_attribute("value") or ""
+            if label: items.append((i, label.split("\n")[0].strip(), val))
         if dump: DUMP.mkdir(exist_ok=True); (DUMP / "series_list.html").write_text(page.content(), encoding="utf-8")
+        for i, label, val in items:
+            if val.isdigit(): packs[label] = int(val); continue
+        # 3) 値がIDでない場合：1つずつチェック→検索→URLを読む
+        pending = [(i, label) for i, label, val in items if not val.isdigit()]
+        for i, label in pending:
+            try:
+                page.goto(url, wait_until="domcontentloaded", timeout=60000); page.wait_for_timeout(2000)
+                page.get_by_text("封入パック", exact=True).first.click(); page.wait_for_timeout(800)
+                sec = page.get_by_text("封入パック", exact=True).first.locator("xpath=ancestor::*[.//input[@type='checkbox']][1]")
+                sec.locator("input[type=checkbox]").nth(i).check(); page.wait_for_timeout(300)
+                page.get_by_role("button", name="検索").first.click()
+                page.wait_for_url(re.compile(r"myca_primary_pack_id=\d+"), timeout=15000)
+                m = re.search(r"myca_primary_pack_id=(\d+)", page.url)
+                if m: packs[label] = int(m.group(1)); log(f"  封入パック: {label} → {m.group(1)}")
+            except Exception as e:
+                log(f"  封入パック {label}: 取れず ({e.__class__.__name__})")
     except Exception as e:
         log(f"pack discovery failed: {e}")
     finally:
