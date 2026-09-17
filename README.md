@@ -41,7 +41,7 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          for f in prices.json ids.json sets.json buy_ocr.json tcgdex-*.json sitemap.xml robots.txt llms.txt; do [ -f "$f" ] && git add "$f"; done
+          for f in prices.json ids.json sets.json packs.json buy_ocr.json tcgdex-*.json sitemap.xml robots.txt llms.txt; do [ -f "$f" ] && git add "$f"; done
           for d in sets cards og; do [ -d "$d" ] && git add "$d"; done
           git commit -m "prices: $(date -u +%Y-%m-%dT%H:%M)Z" || echo "no changes"
           git push
