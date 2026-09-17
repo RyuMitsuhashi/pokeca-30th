@@ -92,8 +92,17 @@ table{width:100%;border-collapse:collapse;font-size:.92rem}th,td{padding:6px 8px
 .up{color:#2ECC71}.down{color:#E5484D}.muted{color:#9BA0A8}.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1px;background:#2A2E34;border:1px solid #2A2E34;margin:10px 0}
 .kv div{background:#151719;padding:10px}.kv .l{color:#9BA0A8;font-size:.74rem}.kv .v{font-family:"IBM Plex Mono",monospace;font-size:1.15rem}
 .btn{display:inline-block;background:#2FD4A5;color:#0F1012;font-weight:700;text-decoration:none;padding:8px 14px;margin:10px 0}.foot{color:#6B7078;font-size:.78rem;margin-top:28px;border-top:1px solid #2A2E34;padding-top:10px}
-.crumb{font-size:.8rem;color:#9BA0A8}.crumb a{color:#9BA0A8}"""
+.crumb{font-size:.8rem;color:#9BA0A8}.crumb a{color:#9BA0A8}
+.ad{position:relative;border:1px dashed #2A2E34;padding:10px;margin:14px 0;min-height:100px}.adl{position:absolute;left:8px;top:-8px;font-size:.62rem;color:#6B7078;background:#0F1012;padding:0 6px}"""
 
+
+ADS_CLIENT = os.environ.get("ADSENSE_CLIENT", "").strip(); ADS_SLOT = os.environ.get("ADSENSE_SLOT", "").strip()
+def ad_block():
+    if not ADS_CLIENT or not ADS_SLOT: return ""
+    return (f'<div class="ad"><span class="adl">広告</span><ins class="adsbygoogle" style="display:block" data-ad-client="{esc(ADS_CLIENT)}" data-ad-slot="{esc(ADS_SLOT)}" data-ad-format="auto" data-full-width-responsive="true"></ins>'
+            '<script>(adsbygoogle=window.adsbygoogle||[]).push({});</script></div>')
+def ad_head():
+    return f'<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={esc(ADS_CLIENT)}" crossorigin="anonymous"></script>' if ADS_CLIENT and ADS_SLOT else ""
 
 def page(title, desc, canon, body, og_img=None, jsonld=None, breadcrumbs=None):
     ld = [j for j in ([jsonld] if jsonld else [])]
@@ -106,7 +115,7 @@ def page(title, desc, canon, body, og_img=None, jsonld=None, breadcrumbs=None):
     return f"""<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{esc(title)}</title><meta name="description" content="{esc(desc)}"><link rel="canonical" href="{esc(canon)}">
 <meta property="og:title" content="{esc(title)}"><meta property="og:description" content="{esc(desc)}"><meta property="og:url" content="{esc(canon)}"><meta property="og:site_name" content="{SITE_NAME}"><meta property="og:type" content="website">{og}
-<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"><style>{CSS}</style>{lds}</head>
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"><style>{CSS}</style>{lds}{ad_head()}</head>
 <body><div class="top"><a href="{SITE_URL}/"><b>{SITE_NAME}</b> <small>{TAG}</small></a></div><div class="wrap"><div class="crumb">{crumb}</div>{body}
 <div class="foot">価格は各サイト掲載時点の値で、実際の店頭・取引価格とは異なる場合があります。出典：DMMマイカ／カードラッシュ／遊々亭／シンソク ほか。©Pokémon／Nintendo／Creatures／GAME FREAK　<a href="{SITE_URL}/#/about">このサイトについて</a></div></div></body></html>"""
 
@@ -170,8 +179,10 @@ def build():
 <div><div class="l">PSA10 最安</div><div class="v">{yen(f['psa'])}</div></div><div><div class="l">PSA倍率</div><div class="v">{f"{f['ratio']:.2f}×" if f['ratio'] else '—'}</div></div>
 <div><div class="l">買取最高</div><div class="v">{yen(f['buys'][0][1]) if f['buys'] else '—'}</div></div><div><div class="l">スプレッド</div><div class="v">{f"{f['spread']:.0f}%" if f['spread'] is not None else '—'}</div></div></div>
 <a class="btn" href="{app}">チャートと店舗別価格をアプリで見る</a>
+{ad_block()}
 <h2>価格の推移（素体・最安値）</h2><table><tr><th>日時</th><th class="r">最安値</th></tr>{hist or '<tr><td colspan=2 class=muted>まだ履歴がありません</td></tr>'}</table>
 <h2>店舗別の販売価格</h2><table><tr><th>店舗</th><th class="r">価格</th><th>状態</th></tr>{shops or '<tr><td colspan=3 class=muted>データなし</td></tr>'}</table>
+{ad_block()}
 <h2>買取価格（売るならどこ）</h2><table><tr><th>店舗</th><th class="r">買取価格</th></tr>{buys or '<tr><td colspan=2 class=muted>データなし</td></tr>'}</table>
 <h2>このカードを探す</h2><p><a href="{dmm_link}" rel="noopener">DMMマイカ</a> ／ <a href="https://www.pokemon-card.com/card-search/index.php?keyword={esc(cname)}" rel="noopener">公式カード検索</a> ／ <a href="https://snkrdunk.com/search?keyword={esc(cname + ' ' + key)}" rel="noopener">スニダンで見る</a></p>
 <p class="muted">{prev_l} {' ｜ ' if prev_l and next_l else ''} {next_l}</p>"""
@@ -209,6 +220,7 @@ def build():
 <div class="kv"><div><div class="l">価格データのあるカード</div><div class="v">{len(priced)} / {len(rows)}</div></div><div><div class="l">主要カード指数（24h）</div><div class="v">{fmt_pct(idx)}</div></div>
 <div><div class="l">BOX 実勢／定価</div><div class="v">{yen(m['box']) if m.get('box') else '—'} / {yen(m['msrp']) if m.get('msrp') else '—'}</div></div><div><div class="l">期待値（復刻まで）</div><div class="v">{yen(m['ev']) if m.get('ev') else '—'}</div></div></div>
 <a class="btn" href="{SITE_URL}/#/set/{set_id}">ランキング・一覧をアプリで見る</a>
+{ad_block()}
 <h2>高額カード トップ20</h2><table><tr><th>カード</th><th class="r">素体最安</th><th class="r">24h</th><th class="r">PSA10</th><th class="r">買取最高</th></tr>{trow}</table>
 <h2>24hの値動き</h2><p><b>上昇</b></p><ul>{mv(ups)}</ul><p><b>下落</b></p><ul>{mv(downs)}</ul>
 <h2>よくある質問</h2>{''.join(f'<p><b>Q. {esc(q)}</b><br>A. {esc(a)}</p>' for q, a in faq)}
