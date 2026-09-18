@@ -564,9 +564,9 @@
    },
    "151/103": {
     "no": "151",
-    "name": "ダークライ＆クレセリアLEGEND（ダークライ）",
+    "name": "ダークライ＆クレセリアLEGEND152/103",
     "rarity": "",
-    "dmmId": 374713
+    "dmmId": 374715
    },
    "144/103": {
     "no": "144",
@@ -1552,6 +1552,15 @@
     "rarity": "C",
     "dmmId": 359705
    }
+  },
+  "box": {
+   "price": 8900,
+   "when": "2026-09-18T20:57+09:00",
+   "src": "DMMマイカ",
+   "name": "メガブレイブ BOX",
+   "dmmId": 10003850,
+   "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10003850",
+   "sealed": true
   }
  },
  "pack6389": {
@@ -2382,6 +2391,15 @@
     "rarity": "C",
     "dmmId": 360450
    }
+  },
+  "box": {
+   "price": 8300,
+   "when": "2026-09-18T20:57+09:00",
+   "src": "DMMマイカ",
+   "name": "メガシンフォニア BOX",
+   "dmmId": 10003860,
+   "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10003860",
+   "sealed": true
   }
  },
  "M2": {
@@ -3085,6 +3103,15 @@
     "rarity": "C",
     "dmmId": 361920
    }
+  },
+  "box": {
+   "price": 18400,
+   "when": "2026-09-18T20:57+09:00",
+   "src": "DMMマイカ",
+   "name": "インフェルノX BOX",
+   "dmmId": 10003880,
+   "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10003880",
+   "sealed": true
   }
  },
  "M2a": {
@@ -4592,6 +4619,15 @@
     "rarity": "",
     "dmmId": 362580
    }
+  },
+  "box": {
+   "price": 13700,
+   "when": "2026-09-18T20:57+09:00",
+   "src": "DMMマイカ",
+   "name": "MEGAドリームex BOX",
+   "dmmId": 10003900,
+   "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10003900",
+   "sealed": true
   }
  },
  "M3": {
@@ -5301,6 +5337,15 @@
     "rarity": "C",
     "dmmId": 369585
    }
+  },
+  "box": {
+   "price": 8600,
+   "when": "2026-09-18T20:57+09:00",
+   "src": "DMMマイカ",
+   "name": "ムニキスゼロ BOX",
+   "dmmId": 10003925,
+   "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10003925",
+   "sealed": true
   }
  },
  "M4": {
@@ -6028,6 +6073,15 @@
     "rarity": "C",
     "dmmId": 370355
    }
+  },
+  "box": {
+   "price": 9800,
+   "when": "2026-09-18T20:57+09:00",
+   "src": "DMMマイカ",
+   "name": "ニンジャスピナー BOX",
+   "dmmId": 10003950,
+   "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10003950",
+   "sealed": true
   }
  },
  "M5": {
@@ -6743,6 +6797,15 @@
     "rarity": "C",
     "dmmId": 371130
    }
+  },
+  "box": {
+   "price": 9380,
+   "when": "2026-09-18T20:57+09:00",
+   "src": "DMMマイカ",
+   "name": "アビスアイ BOX",
+   "dmmId": 10003970,
+   "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10003970",
+   "sealed": true
   }
  },
  "M6": {
@@ -7431,8 +7494,12 @@
   },
   "box": {
    "price": 12500,
-   "when": "2026-09-18T15:01+09:00",
-   "src": "DMMマイカ"
+   "when": "2026-09-18T20:57+09:00",
+   "src": "DMMマイカ",
+   "name": "ストームエメラルダ BOX",
+   "dmmId": 10003980,
+   "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10003980",
+   "sealed": true
   }
  }
 }
