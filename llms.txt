@@ -164,6 +164,7 @@
 - [https://ryumitsuhashi.github.io/pokeca-30th/cards/M6a/011-103/](https://ryumitsuhashi.github.io/pokeca-30th/cards/M6a/011-103/)
 - [https://ryumitsuhashi.github.io/pokeca-30th/cards/M6a/005-103/](https://ryumitsuhashi.github.io/pokeca-30th/cards/M6a/005-103/)
 - [https://ryumitsuhashi.github.io/pokeca-30th/cards/M6a/002-103/](https://ryumitsuhashi.github.io/pokeca-30th/cards/M6a/002-103/)
+- [https://ryumitsuhashi.github.io/pokeca-30th/cards/M6a/137-103/](https://ryumitsuhashi.github.io/pokeca-30th/cards/M6a/137-103/)
 - [https://ryumitsuhashi.github.io/pokeca-30th/sets/M6a/](https://ryumitsuhashi.github.io/pokeca-30th/sets/M6a/)
 - [https://ryumitsuhashi.github.io/pokeca-30th/cards/M1L/063-063/](https://ryumitsuhashi.github.io/pokeca-30th/cards/M1L/063-063/)
 - [https://ryumitsuhashi.github.io/pokeca-30th/cards/M1L/091-063/](https://ryumitsuhashi.github.io/pokeca-30th/cards/M1L/091-063/)
@@ -502,4 +503,3 @@
 - [https://ryumitsuhashi.github.io/pokeca-30th/cards/pack5873/223-193/](https://ryumitsuhashi.github.io/pokeca-30th/cards/pack5873/223-193/)
 - [https://ryumitsuhashi.github.io/pokeca-30th/cards/pack5873/222-193/](https://ryumitsuhashi.github.io/pokeca-30th/cards/pack5873/222-193/)
 - [https://ryumitsuhashi.github.io/pokeca-30th/cards/pack5873/221-193/](https://ryumitsuhashi.github.io/pokeca-30th/cards/pack5873/221-193/)
-- [https://ryumitsuhashi.github.io/pokeca-30th/cards/pack5873/220-193/](https://ryumitsuhashi.github.io/pokeca-30th/cards/pack5873/220-193/)
