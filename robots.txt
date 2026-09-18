@@ -5,7 +5,6 @@ Disallow: /prices.json
 Disallow: /sets.json
 Disallow: /buy_ocr.json
 Disallow: /ids.json
-Disallow: /tcgdex-
 Disallow: /data/
 Disallow: /og/
 
