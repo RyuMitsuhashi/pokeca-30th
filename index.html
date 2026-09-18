@@ -943,7 +943,7 @@ function renderHome(){
       return `<div class="setc" data-set="${esc(id)}"><div class="t"><b>${esc(SETS[id].name)}</b><span>${esc(id)}</span></div>
         <div class="r"><span>指数 24h／7日</span><b>${i24?chg(i24.p):'—'} <span class="dim">/</span> ${i7?chg(i7.p):'—'}</b></div>
         <div class="r"><span>看板</span><b title="${top?esc(top.c.name):''}">${top?esc(top.c.name.length>9?top.c.name.slice(0,9)+'…':top.c.name)+' '+yen(top.v):'—'}</b></div>
-        <div class="r"><span>BOX vs 定価</span><b>${b.box?yen(b.box)+' <span class="dim">/</span> '+yen(b.msrp):'—'}</b></div>
+        <div class="r"><span>BOX vs 定価</span><b>${b.box?yen(b.box)+' <span class="dim">/</span> '+(b.msrp?yen(b.msrp):'—'):'—'}</b></div>
         <div class="r"><span>開封価値（期待値−BOX）</span><b class="${b.ev&&b.box?(b.ev-b.box>0?'up':'down'):''}">${b.ev&&b.box?yen(b.ev-b.box):'—'}</b></div></div>`; }).join('')}</div>
     <h2 class="h2">BOX相場</h2>
     <div class="panel"><table style="min-width:0"><thead><tr><th>シリーズ</th><th class="r">BOX価格（実勢）</th><th class="r">定価</th><th class="r">定価比</th><th class="r">期待値（復刻まで）</th><th class="r">開封価値</th></tr></thead><tbody>${ids.map(id=>{ const b=boxInfo(id); return `<tr data-set="${esc(id)}"><td>${esc(SETS[id].name)}</td><td class="r">${b.box?yen(b.box):'—'}</td><td class="r">${b.msrp?yen(b.msrp):'—'}</td><td class="r">${b.box&&b.msrp?(b.box/b.msrp).toFixed(2)+'×':'—'}</td><td class="r">${b.ev?yen(b.ev):'—'}</td><td class="r ${b.ev&&b.box?(b.ev-b.box>0?'up':'down'):''}">${b.ev&&b.box?yen(b.ev-b.box):'—'}</td></tr>`; }).join('')}</tbody></table></div>`;

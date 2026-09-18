@@ -193,10 +193,12 @@ def parse_list(html: str) -> list[dict]:
         seg = html[m.end(): links[i + 1].start() if i + 1 < len(links) else m.end() + 3000]
         text = BeautifulSoup(seg, "html.parser").get_text("\n", strip=True)
         meta = re.search(r"(\d{3}/\d{3}|[A-Z]/RGB)/([A-Za-z]+)/([A-Za-z0-9]+)", text)
-        if meta:
+        if meta:   # 30th 型：135/103/FUR/M6a が1行
             key, rarity, setcode = meta.group(1), meta.group(2).upper(), meta.group(3)
-        else:
-            k = CARDNO.search(name); key = k.group(1) if k else None; rarity = ""; setcode = ""
+        else:      # MEGA 型：名前に「091/063」、別行に「SAR/M1L」
+            k = CARDNO.search(name) or CARDNO.search(text); key = k.group(1) if k else None
+            rc = re.search(r"(?:^|\n)\s*([A-Z]{1,4}|[A-Z]{1,3}\d?)/([A-Za-z]{1,3}\d[A-Za-z0-9]{0,3})\s*(?:\n|$)", text)
+            rarity, setcode = (rc.group(1).upper(), rc.group(2)) if rc else ("", "")
         if not key: continue
         p = PRICE.search(text); c = re.search(r"状態([A-Z][+\-]?)", text)
         grade = "psa10" if re.search(r"PSA\s*10", name + " " + text, re.I) else ("psa9" if re.search(r"PSA\s*9\b", name + " " + text, re.I) else "raw")
@@ -487,6 +489,7 @@ def main():
         codes = [c["setcode"] for c in cards if c["setcode"]]
         set_id = max(set(codes), key=codes.count) if codes else tmp_id   # 『…/FUR/M6a』の末尾が弾ID
         if only and set_id not in only and tmp_id not in only: continue
+        if tmp_id != set_id and tmp_id in sets_db: sets_db.pop(tmp_id)   # packXXXX で保存した古い項目を捨てる
         entry = sets_db.setdefault(set_id, {"id": set_id, "name": names.get(tmp_id, set_id), "dmm_pack_id": pid, "cards": {}})
         entry["dmm_pack_id"] = pid; entry["name"] = names.get(tmp_id) or PAGE_TITLE.get(pid) or entry.get("name") or set_id
         prices = {}
