@@ -310,11 +310,14 @@ def parse_card_blocks(text: str) -> dict[str, int]:
     return out
 
 
+YUYU_OFF = {"off": False}
+
 def yuyu_buylist(set_id: str, dump: bool) -> dict[str, int]:
+    if YUYU_OFF["off"]: return {}
     try:
         html = render(YUYU_BUY.format(code=yuyu_code(set_id)), f"yuyu_buy_{set_id}.html" if dump else None)
         if re.search(r"403|Forbidden|Access Denied", html[:3000], re.I):
-            log(f"  yuyu {set_id}: ブラウザでも拒否（403）。遊々亭は取得しない"); return {}
+            YUYU_OFF["off"] = True; log("  yuyu: 拒否（403）。今回は遊々亭を取得しない"); return {}
     except Exception as e:
         log(f"  yuyu {set_id}: {e}"); return {}
     text = BeautifulSoup(html, "html.parser").get_text("\n", strip=True)
@@ -363,21 +366,10 @@ SHOPS_SEARCH = {
 }
 SEARCH_RARITY = HIGH_RARITY   # 検索型は1枚ずつ開くので、SAR以上だけ
 
-def shop_search_price(base: str, query: str, dump_name: str | None) -> dict | None:
-    """通販サイトのトップで検索 → 結果から『カード番号を含むブロック』の価格・売り切れを読む"""
-    page = browser().new_page(user_agent=HEADERS["User-Agent"], locale="ja-JP")
-    try:
-        page.goto(base, wait_until="networkidle", timeout=60000)
-        inp = page.query_selector("input[type=search], input[name*=keyword], input[name*=search], input[name=q], input[name=s], input[placeholder*=検索]")
-        if not inp: return None
-        inp.fill(query); inp.press("Enter")
-        try: page.wait_for_load_state("networkidle", timeout=30000)
-        except Exception: pass
-        html = page.content(); url = page.url
-    finally:
-        page.close()
-    if dump_name: DUMP.mkdir(exist_ok=True); (DUMP / dump_name).write_text(html, encoding="utf-8")
-    time.sleep(WAIT)
+SEARCH_URL_PATTERNS = ["{base}product-list?keyword={q}", "{base}products/list?name={q}", "{base}search?keyword={q}", "{base}search?q={q}", "{base}?s={q}", "{base}products/search?q={q}"]
+SHOP_STATE: dict[str, dict] = {}   # base → {"tmpl": 当たった検索URL, "fail": 連続失敗数, "off": True なら今回はやめる}
+
+def _parse_hits(html: str, query: str) -> list[dict]:
     lines = [l.strip() for l in BeautifulSoup(html, "html.parser").get_text("\n", strip=True).split("\n") if l.strip()]
     hits = []
     for i, l in enumerate(lines):
@@ -389,6 +381,10 @@ def shop_search_price(base: str, query: str, dump_name: str | None) -> dict | No
         sold = any(re.search(r"sold\s*out|売り切れ|在庫切れ|在庫なし", x, re.I) for x in block)
         psa = any(re.search(r"PSA\s*10", x, re.I) for x in block)
         hits.append({"sell": min(prices), "soldout": sold, "psa": psa})
+    return hits
+
+
+def _result(hits: list[dict], url: str) -> dict | None:
     if not hits: return None
     out = {"url": url}
     for grade, hs in (("raw", [h for h in hits if not h["psa"]]), ("psa10", [h for h in hits if h["psa"]])):
@@ -397,6 +393,71 @@ def shop_search_price(base: str, query: str, dump_name: str | None) -> dict | No
         if grade == "raw": out["sell"] = best["sell"]; out["soldout"] = not live
         else: out["psa10"] = best["sell"]
     return out if ("sell" in out or "psa10" in out) else None
+
+
+def shop_search_price(base: str, query: str, dump_name: str | None) -> dict | None:
+    """通販サイトでカード番号を検索して販売価格を読む。検索欄が見えなければアイコンを押す→検索結果URLの型を総当たり。当たった型は記憶し、3連敗でその回は諦める"""
+    st = SHOP_STATE.setdefault(base, {"tmpl": None, "fail": 0, "off": False})
+    if st["off"]: return None
+    from urllib.parse import quote
+    def done(res):
+        if res: st["fail"] = 0
+        else:
+            st["fail"] += 1
+            if st["fail"] >= 3: st["off"] = True; log(f"  {base}: 3回続けて取れないので今回は販売価格をスキップ")
+        return res
+    # 1) 記憶した検索URL
+    if st["tmpl"]:
+        try:
+            html = render(st["tmpl"].format(base=base, q=quote(query)), dump_name, wait_ms=8000, settle_ms=800)
+            return done(_result(_parse_hits(html, query), st["tmpl"].format(base=base, q=quote(query))))
+        except Exception as e:
+            log(f"  search {query}: {e.__class__.__name__}"); return done(None)
+    # 2) 検索欄（見えているもの）→ 無ければ検索アイコンを押してから
+    page = browser().new_page(user_agent=HEADERS["User-Agent"], locale="ja-JP")
+    try:
+        try: page.goto(base, wait_until="domcontentloaded", timeout=60000)
+        except Exception: pass
+        page.wait_for_timeout(1500)
+        sel = "input[type=search], input[name*=keyword], input[name*=search], input[name=q], input[name=s], input[placeholder*=検索]"
+        def visible_input():
+            for h in page.query_selector_all(sel):
+                try:
+                    if h.is_visible(): return h
+                except Exception: pass
+            return None
+        inp = visible_input()
+        if not inp:
+            for tsel in ["button[aria-label*=検索]", "a[aria-label*=検索]", "[class*=search] button", "a[href*=search]", "[class*=search-toggle]", "[class*=btn-search]", "text=検索"]:
+                try:
+                    el = page.locator(tsel).first
+                    if el and el.is_visible(): el.click(); page.wait_for_timeout(800); inp = visible_input()
+                    if inp: break
+                except Exception: pass
+        if inp:
+            inp.fill(query); inp.press("Enter")
+            try: page.wait_for_load_state("domcontentloaded", timeout=15000)
+            except Exception: pass
+            page.wait_for_timeout(1500)
+            html = page.content(); url = page.url
+            res = _result(_parse_hits(html, query), url)
+            if res:
+                m = re.search(r"([?&](?:keyword|q|s|name|search)=)", url)
+                if m: st["tmpl"] = url.split(m.group(1))[0] + m.group(1) + "{q}"; st["tmpl"] = st["tmpl"].replace(base, "{base}", 1) if st["tmpl"].startswith(base) else st["tmpl"]
+                return done(res)
+    except Exception as e:
+        log(f"  search {query}: {e.__class__.__name__}")
+    finally:
+        page.close()
+    # 3) 検索結果URLの型を総当たり
+    for tmpl in SEARCH_URL_PATTERNS:
+        try:
+            u = tmpl.format(base=base, q=quote(query))
+            html = render(u, None, wait_ms=6000, settle_ms=600)
+            res = _result(_parse_hits(html, query), u)
+            if res: st["tmpl"] = tmpl; log(f"  {base}: 検索URLの型を記憶 {tmpl}"); return done(res)
+        except Exception: pass
+    return done(None)
 
 
 # ---------- BOX の実勢価格（DMMマイカをシリーズ名で検索して BOX を含む商品の最安） ----------
