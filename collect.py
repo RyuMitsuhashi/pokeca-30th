@@ -7,7 +7,6 @@
   2. 弾ごとに一覧ページをブラウザ描画で全ページ読み、全カードの「最安値・状態・レアリティ・商品ID」を取る → sets.json / prices.json
   3. SAR以上（HIGH_RARITY）または最安値が LISTING_MIN_PRICE 以上のカードは商品ページも開いて店舗別の出品一覧を取る
   4. 30th CELEBRATION（M6a）は従来どおりカードラッシュ・晴れる屋2・トレカキャンプも取る
-  5. TCGdex に弾があればカード画像URLを tcgdex-<弾ID>.json にキャッシュ
 
 使い方
   pip install requests beautifulsoup4 playwright && python -m playwright install chromium
@@ -228,17 +227,18 @@ DMM_BOX_ITEM = BASE + "/" + GENRE + "/items/box/{id}"
 # 値を 0 にすると「このシリーズのBOXは取得しない」。DMMにまだBOXが無い弾で、名前が似た別商品
 #（例：30th CELEBRATION に対する FUTURISTIC BOX）を誤って拾わないようにするために使う。
 BOX_IDS: dict[str, int] = {
-    # --- MEGA期 ---
-    "アビスアイ":            10003970,
-    "ストームエメラルダ":      10003980,   # M6
-    "メガブレイブ":          10003850,   # M1L
-    "MEGAドリームex":       10003900,   # M2a
-    "メガシンフォニア":       10003860,   # M1S
-    "インフェルノX":         10003880,   # M2
-    "ニンジャスピナー":       10003950,   # M4
-    "ムニキスゼロ":          10003925,
-    "30th CELEBRATION":     0,          # まだDMMマイカに通常BOXが無い（0 = 取得しない）。
-                                        # 出たらこの 0 を商品IDに置き換える。10004020 は別商品の FUTURISTIC BOX なので使わない
+    # --- MEGA期（シリーズIDをキーにする。サイトの表示で確認済み）---
+    "M1L": 10003850,   # メガブレイブ BOX
+    "M1S": 10003860,   # メガシンフォニア BOX
+    "M2":  10003880,   # インフェルノX BOX
+    "M2a": 10003900,   # MEGAドリームex BOX
+    "M3":  10003925,   # ムニキスゼロ BOX
+    "M4":  10003950,   # ニンジャスピナー BOX
+    "M5":  10003970,   # アビスアイ BOX
+    "M6":  10003980,   # ストームエメラルダ BOX
+    "M6a": 0,          # 30th CELEBRATION：まだDMMマイカに通常BOXが無い（0 = 取得しない）。
+                       # 出たらこの 0 を商品IDに置き換える。10004020 は別商品の FUTURISTIC BOX なので使わない
+    "30th CELEBRATION": 0,   # プレミアムデッキセット等、30th系の別商品にも BOX を付けない
     # --- スカーレット＆バイオレット期 ---
     "熱風のアリーナ":         10003760,   # sv9a
     "テラスタルフェスex":      10003730,   # sv8a
@@ -609,21 +609,6 @@ def shop_search_price(base: str, query: str, dump_name: str | None) -> dict | No
     return done(None)
 
 
-# ---------- TCGdex ----------
-def fetch_tcgdex(set_id: str) -> int:
-    api = "https://api.tcgdex.net/v2"; h = {"User-Agent": HEADERS["User-Agent"]}
-    out = pathlib.Path(f"tcgdex-{set_id}.json")
-    for sid in dict.fromkeys((set_id, set_id.lower(), set_id.upper())):
-        try:
-            r = requests.get(f"{api}/ja/sets/{sid}", headers=h, timeout=30)
-            if r.ok and isinstance(r.json().get("cards"), list):
-                out.write_text(r.text, encoding="utf-8")
-                n = sum(1 for c in r.json()["cards"] if c.get("image")); log(f"  tcgdex {sid}: {len(r.json()['cards'])}枚、画像あり {n}枚"); return n
-        except Exception as e:
-            log(f"  tcgdex {sid}: {e}")
-    log(f"  tcgdex {set_id}: 未収録"); out.unlink(missing_ok=True); return 0
-
-
 # ---------- メイン ----------
 def main():
     ap = argparse.ArgumentParser()
@@ -746,6 +731,7 @@ def main():
         try:
             bid = box_id_for(set_id, entry["name"])
             if bid == 0:   # 0 = 取得しない（DMMにまだBOXが無い弾。似た名前の別商品を拾わせない）
+                entry.pop("box", None)   # 前回の実行で誤って入った値が残らないように消す
                 log("  BOX 実勢: 取得しない指定（BOX_IDS = 0）"); raise StopIteration
             b = dmm_box_item(bid, a.dump) if bid else None          # ① BOX_IDS で手動指定があればそれ
             if b: log(f"  BOX 商品ID指定: {bid}")
@@ -766,7 +752,6 @@ def main():
             log(f"  BOX: {e}")
         snap["sets"][set_id] = prices
         log(f"{set_id} {entry['name']}: {len(cards)}枚")
-        fetch_tcgdex(set_id)
 
     SETS_FILE.write_text(json.dumps(sets_db, ensure_ascii=False, indent=1), encoding="utf-8")
     hist = json.loads(OUT.read_text(encoding="utf-8")) if OUT.exists() else []

@@ -247,7 +247,7 @@ def build():
     for u, t in urls: sm.append(f"<url><loc>{esc(u)}</loc><lastmod>{t.date()}</lastmod><changefreq>daily</changefreq></url>")
     sm.append("</urlset>"); (ROOT / "sitemap.xml").write_text("\n".join(sm), encoding="utf-8")
     robots = ("# HTMLは引用歓迎、生データ（JSON）と共有画像の一括取得は不可\n"
-              "User-agent: *\nAllow: /\nDisallow: /prices.json\nDisallow: /sets.json\nDisallow: /buy_ocr.json\nDisallow: /ids.json\nDisallow: /tcgdex-\nDisallow: /data/\nDisallow: /og/\n\n"
+              "User-agent: *\nAllow: /\nDisallow: /prices.json\nDisallow: /sets.json\nDisallow: /buy_ocr.json\nDisallow: /ids.json\nDisallow: /data/\nDisallow: /og/\n\n"
               "User-agent: GPTBot\nAllow: /\nDisallow: /prices.json\nDisallow: /sets.json\nDisallow: /data/\n"
               "User-agent: ClaudeBot\nAllow: /\nDisallow: /prices.json\nDisallow: /sets.json\nDisallow: /data/\n"
               "User-agent: PerplexityBot\nAllow: /\nDisallow: /prices.json\nDisallow: /sets.json\nDisallow: /data/\n"

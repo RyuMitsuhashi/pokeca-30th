@@ -306,7 +306,7 @@ details.sec > *:not(summary){margin-top:8px}
   <div id="aboutview" class="view"><h2 class="h2">このサイトについて</h2><div class="panel" style="padding:14px 16px;line-height:1.8;font-size:.9rem">
     <p style="margin:0 0 10px">SOUBADEX（ソウバデックス）は、個人が運営するポケモンカードの相場チェックツールです。各ショップ・通販サイトの公開ページに掲載された販売価格・買取価格を1日2回取得し、シリーズ別・カード別に推移として表示しています。価格は各サイト掲載時点の値で、実際の店頭・取引価格とは異なる場合があります。売買の判断はご自身の責任でお願いします。</p>
     <p style="margin:0 0 10px"><b>データの出典</b>：DMMマイカ（myca.dmm.com）、カードラッシュ、遊々亭、シンソク、攻略大百科、ポケカ当たり.jp、トレカプロ。買取価格の一部はショップが公開している買取表の画像を読み取ったもので、その旨と元の掲載へのリンクを表示しています。</p>
-    <p style="margin:0 0 10px"><b>カード画像</b>：ファン運営のデータベース TCGdex（tcgdex.dev）から取得しています。画像の権利は ©Pokémon／Nintendo／Creatures／GAME FREAK に帰属し、当サイトは各権利者と関係ありません。</p>
+    <p style="margin:0 0 10px"><b>カード画像</b>：運営者が撮影した写真を掲載しています（未掲載のカードはカード名とシリーズを記した枠で表示しています）。カードのデザイン・キャラクターの権利は ©Pokémon／Nintendo／Creatures／GAME FREAK に帰属し、当サイトは各権利者と関係ありません。</p>
     <p style="margin:0 0 10px"><b>運営・連絡先</b>：SOUBADEX（個人運営）。お問い合わせ・掲載データに関するご連絡は <a href="mailto:contact@soubadex.com">contact@soubadex.com</a> まで。</p>
     <p style="margin:0 0 10px"><b>データ収集の方針</b>：各サイトの公開ページのみを、1日2回・数秒間隔の低負荷で取得しています。収集元のサイト運営者様から停止のご要望があった場合は、速やかに当該サイトの収集を停止します。</p>
     <p style="margin:0 0 10px"><b>掲載データの利用</b>：当サイトの集計データ・文章・画像の無断転載、再配布、自動取得による複製はお断りします。引用の際は出典として当サイト名とURLを明記してください。</p>
@@ -330,7 +330,7 @@ details.sec > *:not(summary){margin-top:8px}
 <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="mbox" id="mbox"></div></div>
 
 <footer class="foot">
-  <span id="affNote"></span>価格は各サイト掲載時点の値で、実際の店頭・取引価格とは異なる場合があります。出典：DMMマイカ／カードラッシュ／遊々亭／シンソク／攻略大百科／ポケカ当たり.jp／トレカプロ、画像：TCGdex。©Pokémon／Nintendo／Creatures／GAME FREAK　<a href="#/about">このサイトについて</a>
+  <span id="affNote"></span>価格は各サイト掲載時点の値で、実際の店頭・取引価格とは異なる場合があります。出典：DMMマイカ／カードラッシュ／遊々亭／シンソク／攻略大百科／ポケカ当たり.jp／トレカプロ。©Pokémon／Nintendo／Creatures／GAME FREAK　<a href="#/about">このサイトについて</a>
 </footer>
 
 <script>
@@ -486,7 +486,7 @@ const DMM_LIST = 'https://myca.dmm.com/pokemon-trading-card-game/list?cardseries
 const keyOf = no => String(no).replace('M6a-','').split('＋')[0];
 const TR_BY_KEY = {}; TRACKED.forEach(t => { TR_BY_KEY[keyOf(t.no)] = t; });
 const ALL_M6A = FULL.map(([no,name,rar,buy,dmmId,rushId,img]) => { const key = /^\d+$/.test(no) ? no+'/103' : no; return {
-  key, no, name, rarity:rar, buy, dmmId, rushId, img: img||'', tracked: TR_BY_KEY[key] || null,
+  key, no, name, rarity:rar, buy, dmmId, rushId, img: img||'', tracked: TR_BY_KEY[key] || null, set:'M6a',
   order: /^\d+$/.test(no) ? +no : 1000 + ['R/RGB','G/RGB','B/RGB'].indexOf(no) }; });
 const SETS = { M6a: { id:'M6a', name:'30th CELEBRATION', release:'2026-09-16', cards: ALL_M6A, embedded:true, dmmPackId:6374 } };
 let CUR = 'M6a';
@@ -547,11 +547,27 @@ function attachTilt(el){
   el.addEventListener('touchstart',e=>{ held=!held; if(held){ const t=e.touches[0]; move(t.clientX,t.clientY); } else reset(); },{passive:true});
   el.addEventListener('touchmove',e=>{ if(held){ const t=e.touches[0]; move(t.clientX,t.clientY); } },{passive:true});
 }
-function frame(c, lg){ // TCGdex や FULL の画像URL → 無ければ img/番号.jpg（自分で置いた写真）→ 無ければ独自プレースホルダー
-  const base = `img/${/^\d+$/.test(c.no) ? c.no : c.no.split('/')[0]}`;
+/* ---- 手動で置いたカード画像：img/<シリーズID>/<番号>.webp（Actions が img/index.json を作る） ---- */
+let IMG_INDEX = null, IMG_READY = false;
+async function loadImgIndex(){
+  try{ const r=await fetch('./img/index.json',{cache:'no-store'}); if(r.ok) IMG_INDEX=await r.json(); }catch(e){}
+  finally{ IMG_READY=true; }
+}
+function localImgs(c){
+  if(!IMG_READY) return [];                                // 一覧を読むまでは画像を出しに行かない（空振りの404を防ぐ）
+  const sid=c.set||CUR, no=/^\d+$/.test(c.no)?c.no:String(c.no).split('/')[0];
+  const hit=IMG_INDEX&&IMG_INDEX[sid]&&IMG_INDEX[sid][no];
+  if(hit) return [hit];                                    // 一覧にあれば一発で当てる（404が出ない）
+  if(IMG_INDEX) return [];                                 // 一覧があって載っていない＝置かれていない
+  const ex=['webp','jpg','jpeg','png'];                    // 一覧がまだ無いときだけ拡張子を順に試す
+  return [...ex.map(e=>`img/${sid}/${no}.${e}`), ...(sid==='M6a'?ex.map(e=>`img/${no}.${e}`):[])];
+}
+function frame(c, lg){ // img/<シリーズID>/<番号>（自分で置いた写真）→ 無ければ独自プレースホルダー
   const remote = lg ? (c.imgHi||c.img) : c.img;
-  const cands = remote ? [remote] : ['webp','jpg','jpeg','png'].map(e=>`${base}.${e}`); // 自分で置く画像は webp / jpg / jpeg / png の順に探す
-  return `<div class="frame ${lg?'lg':''} rar-${c.rarity||'REG'}"><div class="ph"><div class="n"><span>${esc(noLabel(c))}</span><span>M6a</span></div><div class="c"><b>${esc(c.name)}</b><span>${c.rarity||'NORMAL'}</span></div><div class="f">30th CELEBRATION</div></div><img class="art" src="${esc(cands[0])}" data-alts="${esc(cands.slice(1).join(','))}" alt="${esc(c.name)}" loading="lazy" referrerpolicy="no-referrer" onerror="var a=(this.dataset.alts||'').split(',').filter(Boolean);if(a.length){this.src=a.shift();this.dataset.alts=a.join(',');}else{this.remove();}">${lg?'<div class="glare"></div>':''}</div>`;
+  const cands = remote ? [remote] : localImgs(c);   // 自分で置いた画像は img/<シリーズID>/<番号>.webp
+  const sid = c.set||CUR, sname = (SETS[sid]&&SETS[sid].name)||sid;
+  const art = cands.length ? `<img class="art" src="${esc(cands[0])}" data-alts="${esc(cands.slice(1).join(','))}" alt="${esc(c.name)}" loading="lazy" referrerpolicy="no-referrer" onerror="var a=(this.dataset.alts||'').split(',').filter(Boolean);if(a.length){this.src=a.shift();this.dataset.alts=a.join(',');}else{this.remove();}">` : '';
+  return `<div class="frame ${lg?'lg':''} rar-${c.rarity||'REG'}"><div class="ph"><div class="n"><span>${esc(noLabel(c))}</span><span>${esc(sid)}</span></div><div class="c"><b>${esc(c.name)}</b><span>${c.rarity||'NORMAL'}</span></div><div class="f">${esc(sname)}</div></div>${art}${lg?'<div class="glare"></div>':''}</div>`;
 }
 
 /* ---- BOX期待値 ---- */
@@ -798,7 +814,7 @@ function renderSetSel(){
   $('#setSel').innerHTML=ids.map(id=>`<option value="${esc(id)}" ${id===CUR?'selected':''}>${esc(SETS[id].name)}（${esc(id)}）</option>`).join('');
   $('#setMark').textContent=CUR;
 }
-function switchSet(id){ if(!SETS[id]) return; CUR=id; ALL=SETS[id].cards; state.tab='all'; state.q=''; $('#q').value=''; renderSetSel(); renderAll(); loadTcgdex(id); }
+function switchSet(id){ if(!SETS[id]) return; CUR=id; ALL=SETS[id].cards; state.tab='all'; state.q=''; $('#q').value=''; renderSetSel(); renderAll(); }
 $('#setSel').addEventListener('change',e=>{ location.hash='#/set/'+e.target.value; });
 $('#thead').addEventListener('click',e=>{ const th=e.target.closest('[data-col]'); if(!th) return; const col=th.dataset.col; if(col==='spark') return;
   if(state.sort.col===col) state.sort.dir=state.sort.dir==='asc'?'desc':'asc'; else state.sort={col, dir:['no','name','rarity'].includes(col)?'asc':'desc'}; renderTable(); });
@@ -810,36 +826,13 @@ $('#modal').addEventListener('click',e=>{
 });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape' && $('#modal').classList.contains('open')) closeModal(); });
 
-/* ---- TCGdex（非公式ファンDB）からカード画像URLを引く（シリーズごと） ---- */
-function applyTcgdex(setId, set){
-  const sid=String(set.id||'').toLowerCase(); if(sid!==setId.toLowerCase() && !(setId==='M6a' && /30th/i.test(set.name||''))) return 0;
-  let n=0; const cards=SETS[setId].cards;
-  for(const cd of (set.cards||[])){
-    if(!cd.image) continue; const lid=String(cd.localId||'');
-    const c=cards.find(x=>x.no===lid || x.no===lid.padStart(3,'0') || (/^[RGB]$/i.test(lid)&&x.no===lid.toUpperCase()+'/RGB'));
-    if(!c||c.img) continue; c.img=cd.image+'/low.webp'; c.imgHi=cd.image+'/high.webp'; n++;
-  }
-  return n;
-}
-async function loadTcgdex(setId){
-  if(SETS[setId].tcg) return; SETS[setId].tcg=true;
-  const urls=[`./tcgdex-${setId}.json`, `https://api.tcgdex.net/v2/ja/sets/${setId}`, `https://api.tcgdex.net/v2/ja/sets/${setId.toLowerCase()}`];
-  for(const u of urls){
-    try{ const r=await fetch(u,{cache:'no-store'}); if(!r.ok) continue; const set=await r.json(); if(!set||!Array.isArray(set.cards)) continue;
-      const n=applyTcgdex(setId,set); if(n&&CUR===setId){ renderAll(); if(state.selected) renderModal(); } return n;
-    }catch(e){ /* claude.ai 上（外部fetch不可）や未収録時はプレースホルダーのまま */ }
-  }
-  return 0;
-}
-
-/* ---- sets.json（collect.py が作る弾一覧） ---- */
 async function loadSets(){
   try{
     const r=await fetch('./sets.json',{cache:'no-store'}); if(!r.ok) return;
     const db=await r.json();
     for(const [id,st] of Object.entries(db)){
       if(SETS[id]) { if(!SETS[id].dmmPackId && st.dmm_pack_id) SETS[id].dmmPackId=st.dmm_pack_id; if(st.box) SETS[id].box=st.box; continue; }
-      const cards=Object.entries(st.cards||{}).map(([key,v])=>({ key, no:v.no||key.split('/')[0], name:v.name||key, rarity:v.rarity||'', buy:'', dmmId:v.dmmId||0, rushId:0, img:'', tracked:null,
+      const cards=Object.entries(st.cards||{}).map(([key,v])=>({ key, no:v.no||key.split('/')[0], name:v.name||key, rarity:v.rarity||'', buy:'', dmmId:v.dmmId||0, rushId:0, img:'', tracked:null, set:id,
         order: /^\d+$/.test(v.no||'') ? +v.no : 1000 + ['R','G','B'].indexOf(String(key)[0]) })).sort((a,b)=>a.order-b.order);
       SETS[id]={ id, name:st.name||id, release:st.release||'', cards, dmmPackId:st.dmm_pack_id, box:st.box||null };
     }
@@ -971,7 +964,7 @@ function route(){
   const view = v==='set'||v==='card' ? 'set' : v==='buy' ? 'buy' : v==='box' ? 'box' : v==='about' ? 'about' : 'home';
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
   document.querySelectorAll('.nav a').forEach(el=>el.classList.toggle('on', el.dataset.v===view));
-  if(view==='set'){ if(a&&SETS[a]&&a!==CUR){ CUR=a; ALL=SETS[a].cards; state.tab='all'; renderSetSel(); renderAll(); loadTcgdex(a); } $('#setview').classList.add('on');
+  if(view==='set'){ if(a&&SETS[a]&&a!==CUR){ CUR=a; ALL=SETS[a].cards; state.tab='all'; renderSetSel(); renderAll(); } $('#setview').classList.add('on');
     if(v==='card'&&b){ const key=decodeURIComponent(b); if(byKey(key)) openModal(key); } else if($('#modal').classList.contains('open')) closeModal(); }
   else if(view==='buy'){ renderBuyView(); $('#buyview').classList.add('on'); }
   else if(view==='box'){ renderBoxView(); $('#boxview').classList.add('on'); }
@@ -989,7 +982,7 @@ document.addEventListener('click', e=>{
   const sc=e.target.closest('[data-set]'); if(sc){ location.hash='#/set/'+sc.dataset.set; return; }
   const go=e.target.closest('[data-go]'); if(go){ const [id,key]=go.dataset.go.split('|'); if(go.closest('#sugg')){ $('#sugg').hidden=true; $('#q').value=''; state.q=''; } location.hash='#/card/'+id+'/'+encodeURIComponent(key); return; }
 });
-renderSetSel(); renderAll(); route(); (async()=>{ await loadSets(); await loadPricesJson(); loadTcgdex(CUR); route(); })();
+renderSetSel(); renderAll(); route(); (async()=>{ await loadImgIndex(); await loadSets(); await loadPricesJson(); renderAll(); route(); })();
 if(Object.values(ADS.affiliate).some(Boolean) || ADS.adsenseClient){ $('#affNote').innerHTML = '当サイトは各店舗・ASPのアフィリエイトプログラムに参加しており、「PR」表記のあるリンクから購入があった場合に報酬を受け取ることがあります。価格・順位はアフィリエイトの有無に関係なく取得したデータをそのまま表示しています。広告配信（Google AdSense）にはCookieが使用されます。 '; }
 })();
 </script>
