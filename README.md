@@ -31,6 +31,6 @@ img/
 
 - 拡張子は `webp` / `jpg` / `jpeg` / `png` のどれでも可（同じ番号に複数あれば webp を優先）。
 - GitHub の「Add file → Upload files」に `M1L` フォルダごとドラッグすればまとめて上がります。
-- 置いたあと収集（Actions）が1回走ると `tools/make_img_index.py` が `img/index.json`（画像の一覧）を作り直し、画面はそれを見て表示します。**手元で確認したいときは `python tools/make_img_index.py` を実行してください。**
+- 置いたあと収集（Actions）が1回走ると `make_img_index.py` が `img/index.json`（画像の一覧）を作り直し、画面はそれを見て表示します。**手元で確認したいときは `python make_img_index.py` を実行してください。**
 - 昔の `img/135.webp`（直下置き）は 30th（M6a）の画像として引き続き使えます。
 - 画像が無いカードはプレースホルダー（シリーズIDとカード名が入った枠）になります。
