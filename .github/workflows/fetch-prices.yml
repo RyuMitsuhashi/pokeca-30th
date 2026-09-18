@@ -32,7 +32,7 @@ jobs:
         run: python ocr_buylist.py
       - run: python collect.py
       - name: card image index (img/index.json)
-        run: python tools/make_img_index.py
+        run: python make_img_index.py
       - name: build static pages (SEO)
         env:
           SITE_URL: ${{ vars.SITE_URL }}
@@ -47,3 +47,4 @@ jobs:
           for d in sets cards og; do [ -d "$d" ] && git add "$d"; done
           git commit -m "prices: $(date -u +%Y-%m-%dT%H:%M)Z" || echo "no changes"
           git push
+
