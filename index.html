@@ -944,7 +944,18 @@ function renderAll(){ renderKpis(); renderEv(); renderStrips(); renderTabs(); re
 /* ---- ホーム：横断の計算 ---- */
 const CHASE = new Set(['RGB','FUR','SAR','SR','UR','ACE','HR','CSR','CHR','SSR','MUR','CLS']);
 // シリーズごとの公式情報（定価・発売日）。BOXの実勢価格は collect.py が sets.json に入れる。M6a の実勢は初期値として持つ
-const SET_META = { M6a:{ msrp:7200, release:'2026-09-16' } };   // box は collect.py が sets.json に入れる。30thは通常BOXが売られていない期間は出さない
+// シリーズごとの定価（BOX・税込）と発売日。出典：ポケモンセンターオンラインの希望小売価格。BOXの実勢価格は collect.py が sets.json に入れる
+const SET_META = {
+  M6a:{ msrp:7200, release:'2026-09-16' },   // 30th CELEBRATION
+  M6 :{ msrp:6000 },   // ストームエメラルダ
+  M5 :{ msrp:6000 },   // アビスアイ
+  M4 :{ msrp:5400 },   // ニンジャスピナー
+  M3 :{ msrp:5400 },   // ムニキスゼロ
+  M2a:{ msrp:5500 },   // MEGAドリームex
+  M2 :{ msrp:5400 },   // インフェルノX
+  M1S:{ msrp:5400 },   // メガシンフォニア
+  M1L:{ msrp:5400 },   // メガブレイブ
+};
 // 封入率（1BOXあたりの枚数と種類数）。期待値を出したいシリーズだけ書く。書いていないシリーズは期待値「—」
 const RATES = { M6a: RATE };
 const SET_THEME = { M6a:{light:'#FBF3DA', dark:'#17150E'} };   // シリーズページの背景。無いシリーズはIDから自動で作る

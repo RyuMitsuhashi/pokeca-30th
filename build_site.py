@@ -21,7 +21,10 @@ SITE_URL = os.environ.get("SITE_URL") or (f"https://{repo.split('/')[0].lower()}
 SITE_URL = SITE_URL.rstrip("/")
 JST = dt.timezone(dt.timedelta(hours=9))
 NOW = dt.datetime.now(JST)
-SET_META = {"M6a": {"msrp": 7200, "release": "2026-09-16", "ev": 19078}}  # 定価・期待値（index.html と同じ値を手で合わせる）。BOX実勢は sets.json から入る
+# 定価（BOX・税込／出典：ポケモンセンターオンライン）と期待値。index.html の SET_META と同じ値を手で合わせる。BOX実勢は sets.json から入る
+SET_META = {"M6a": {"msrp": 7200, "release": "2026-09-16", "ev": 19078},
+            "M6": {"msrp": 6000}, "M5": {"msrp": 6000}, "M4": {"msrp": 5400}, "M3": {"msrp": 5400},
+            "M2a": {"msrp": 5500}, "M2": {"msrp": 5400}, "M1S": {"msrp": 5400}, "M1L": {"msrp": 5400}}
 CHASE = {"RGB", "FUR", "SAR", "SR", "UR", "ACE", "HR", "CSR", "CHR", "SSR", "MUR", "CLS"}
 BUY_LABEL = {"yuyu": "遊々亭", "shinsoku": "シンソク", "kanabell": "カーナベル", "cardrush": "カードラッシュ"}
 SHOP_LABEL = {"cardrush": "カードラッシュ", "hareruya2": "晴れる屋2", "torecacamp": "トレカキャンプ", "shinsoku": "シンソク", "torecalounge": "トレカラウンジ"}
