@@ -200,7 +200,9 @@ def build():
             out.write_text(page(title, desc, url, body, og, jsonld, [("ホーム", f"{SITE_URL}/"), (name, set_url), (cname, url)]), encoding="utf-8")
             urls.append((url, f["updated"] or NOW))
         # ---- シリーズページ ----
-        meta = SET_META.get(set_id, {}); m = meta
+        meta = dict(SET_META.get(set_id, {})); m = meta
+        sbox = (SETS.get(set_id) or {}).get("box") or {}   # collect.py が一覧のBOX行から取った実勢価格を優先
+        if sbox.get("price"): m["box"] = sbox["price"]
         top = priced[:20]
         chase = [r for r in rows if (r[1].get("rarity") or "") in CHASE and r[2]["raw"] and r[2]["day_chg"] is not None]
         idx = sum(r[2]["day_chg"] for r in chase) / len(chase) if chase else None
@@ -210,11 +212,15 @@ def build():
         desc = (f"{NOW.strftime('%Y年%m月%d日')}時点の{name}（{set_id}）の相場。価格データのあるカード{len(priced)}枚。"
                 + (f"最高額は{top[0][1].get('name')}の{yen(top[0][2]['raw'])}。" if top else "")
                 + (f"主要カードの指数は24hで{fmt_pct(idx)}。" if idx is not None else "")
-                + (f"BOXは実勢{yen(m['box'])}（定価{yen(m['msrp'])}）、期待値{yen(m['ev'])}。" if m.get("box") else ""))
+                + (f"BOXは実勢{yen(m['box'])}" + (f"（定価{yen(m['msrp'])}）" if m.get("msrp") else "")
+                   + (f"、期待値{yen(m['ev'])}" if m.get("ev") else "") + "。" if m.get("box") else ""))
         trow = "".join(f"<tr><td><a href='{SITE_URL}/cards/{set_id}/{slug(k)}/'>{esc(c.get('name',''))}</a> <span class=muted>{esc(c.get('rarity',''))} {esc(k)}</span></td><td class='r'>{yen(f['raw'])}</td><td class='r {'up' if (f['day_chg'] or 0)>0.05 else 'down' if (f['day_chg'] or 0)<-0.05 else ''}'>{fmt_pct(f['day_chg'])}</td><td class='r'>{yen(f['psa'])}</td><td class='r'>{yen(f['buys'][0][1]) if f['buys'] else '—'}</td></tr>" for k, c, f in top)
         mv = lambda L: "".join(f"<li><a href='{SITE_URL}/cards/{set_id}/{slug(k)}/'>{esc(c.get('name',''))}</a> {yen(f['raw'])} <span class='{'up' if f['day_chg']>0 else 'down'}'>{fmt_pct(f['day_chg'])}</span></li>" for k, c, f in L) or "<li class=muted>該当なし</li>"
         faq = [(f"{name}の当たりカードは？", f"価格の高い順に、{ '、'.join(c.get('name','') + '（' + yen(f['raw']) + '）' for k, c, f in top[:5]) }です（{NOW.strftime('%Y/%m/%d')}時点の最安値）。" if top else "集計中です。"),
-               (f"{name}のBOXは開ける価値がある？", (f"実勢価格{yen(m['box'])}に対して期待値は{yen(m['ev'])}で、差は{yen(m['ev']-m['box'])}。定価{yen(m['msrp'])}で買えるなら開ける価値があります。" if m.get("box") else "封入率と期待値は集計中です。")),
+               (f"{name}のBOXは開ける価値がある？",
+                (f"実勢価格{yen(m['box'])}に対して期待値は{yen(m['ev'])}で、差は{yen(m['ev']-m['box'])}。"
+                 + (f"定価{yen(m['msrp'])}で買えるなら開ける価値があります。" if m.get("msrp") else "") if m.get("box") and m.get("ev")
+                 else f"BOXの実勢価格は{yen(m['box'])}です。封入率と期待値は集計中です。" if m.get("box") else "封入率と期待値は集計中です。")),
                (f"{name}の相場は上がっている？", (f"主要カードの指数は24hで{fmt_pct(idx)}です。" if idx is not None else "推移は取得を重ねると表示されます。") + "詳しい推移は各カードのページで確認できます。")]
         body = f"""<h1>{esc(name)} <span class="muted">{esc(set_id)}</span></h1><p class="muted">{NOW.strftime('%Y年%m月%d日 %H:%M')}時点</p><p>{esc(desc)}</p>
 <div class="kv"><div><div class="l">価格データのあるカード</div><div class="v">{len(priced)} / {len(rows)}</div></div><div><div class="l">主要カード指数（24h）</div><div class="v">{fmt_pct(idx)}</div></div>

@@ -208,6 +208,155 @@ def parse_list(html: str) -> list[dict]:
     return out
 
 
+# ---------- DMM：BOX（未開封）の販売価格 ----------
+# BOX は単品カードとは別カテゴリ（/items/box/<id>）。ポケモンの一覧を keyword=BOX で引くと
+# 全シリーズのBOXが一度に並び、各商品にシリーズコード（M1L / M6a / sv9a …）のバッジが付く。
+# そのコードでシリーズに紐づけるので、シリーズごとに検索し直す必要がない。
+BOX_LIST = BASE + "/" + GENRE + "/list?keyword={kw}"
+ITEM_LINK = re.compile(r'<a\b[^>]*href="([^"]*/items/([a-z0-9-]+)/(\d+))"[^>]*>(.*?)</a>', re.S)
+BOX_WORD = re.compile(r"BOX|ＢＯＸ|ボックス", re.I)
+BOX_NG = re.compile(r"カートン|オリパ|ぷち抜き|福袋|くじ|1パック|１パック|パック単品|バラ売り|開封済|開封品|中身|スリーブ|デッキケース|プレイマット|収納|ストレージ|ローダー")
+BOX_UNSEALED = re.compile(r"シュリンクなし|シュリンク無|シュリンク剥がし|未シュリンク")
+BOX_SEALED = re.compile(r"未開封|未使用品|シュリンク付")
+SETCODE = re.compile(r"^(M\d{1,2}[A-Za-z]?|sv\d{1,2}[A-Za-z]?|SV\d[A-Za-z]?)$")   # バッジのシリーズコード
+BOX_MIN_PRICE = 2000; BOX_MAX_PRICE = 300000; MAX_BOX_PAGES = 8
+DMM_BOX_ITEM = BASE + "/" + GENRE + "/items/box/{id}"
+
+# BOX の商品IDを手で指定したいとき（DMMマイカでそのBOXの商品ページを開き、URL 末尾の数字を書く）。
+# キーはシリーズID（M6a など）。シリーズIDが分からないときは表示名の一部でも可（例 "アビスアイ"）。
+# 指定があれば keyword=BOX の一覧より優先して、その商品ページを直接読む。
+# 値を 0 にすると「このシリーズのBOXは取得しない」。DMMにまだBOXが無い弾で、名前が似た別商品
+#（例：30th CELEBRATION に対する FUTURISTIC BOX）を誤って拾わないようにするために使う。
+BOX_IDS: dict[str, int] = {
+    # --- MEGA期 ---
+    "アビスアイ":            10003970,
+    "ストームエメラルダ":      10003980,   # M6
+    "メガブレイブ":          10003850,   # M1L
+    "MEGAドリームex":       10003900,   # M2a
+    "メガシンフォニア":       10003860,   # M1S
+    "インフェルノX":         10003880,   # M2
+    "ニンジャスピナー":       10003950,   # M4
+    "ムニキスゼロ":          10003925,
+    "30th CELEBRATION":     0,          # まだDMMマイカに通常BOXが無い（0 = 取得しない）。
+                                        # 出たらこの 0 を商品IDに置き換える。10004020 は別商品の FUTURISTIC BOX なので使わない
+    # --- スカーレット＆バイオレット期 ---
+    "熱風のアリーナ":         10003760,   # sv9a
+    "テラスタルフェスex":      10003730,   # sv8a
+    "ポケモンカード151":      10003375,   # sv2a
+    "楽園ドラゴーナ":         10003660,   # sv7a
+    "スカーレットex":         10003285,   # SV1S
+    "ホワイトフレア":         10003810,
+    "ブラックボルト":         10003800,
+    "ロケット団の栄光":       10003775,
+    "バトルパートナーズ":      10003740,
+    "超電ブレイカー":         10003670,
+    "ステラミラクル":         10003640,
+    "ナイトワンダラー":       10003625,
+    "変幻の仮面":            10003600,
+    "クリムゾンヘイズ":       10003575,
+    "サイバージャッジ":       10003545,
+    "ワイルドフォース":       10003535,
+    "シャイニートレジャーex":   10003525,
+    "未来の一閃":            10003490,
+    "古代の咆哮":            10003480,
+    "レイジングサーフ":       10003455,
+    # --- シリーズに紐づかない商品（実勢価格には使わない。番号の控え）---
+    # 10004020 30th CELEBRATION FUTURISTIC BOX / 10003765 ロケット団の栄光 アタッシュケースセット
+    # 10003820 スペシャルBOX ポケモンセンターヒロシマ / 10003815 トウホク / 10003825 フクオカ
+}
+
+
+def dmm_box_item(cid: int, dump: bool) -> dict | None:
+    """BOX の商品ページを直接読む（手動指定用）。出品一覧があればその最安を採る"""
+    try:
+        html = render(DMM_BOX_ITEM.format(id=cid), f"box_item_{cid}.html" if dump else None, wait_ms=20000, settle_ms=800)
+    except Exception as e:
+        log(f"  BOX商品 {cid}: {e}"); return None
+    text = BeautifulSoup(html, "html.parser").get_text("\n", strip=True)
+    t = re.search(r"<h1[^>]*>(.*?)</h1>", html, re.S)
+    name = BeautifulSoup(t.group(1), "html.parser").get_text(" ", strip=True) if t else ""
+    if not name:
+        t = re.search(r"<title>(.*?)</title>", html, re.S)
+        name = re.sub(r"\s*[|｜].*$", "", t.group(1)).strip() if t else str(cid)
+    ls = parse_listings(html)
+    price = min((l["price"] for l in ls), default=None)
+    if not price:   # 出品一覧が読めないときは、ページ上で最初に出てくる価格（＝その商品の価格）を採る
+        price = next((v for v in (yen(m.group(1) or m.group(2)) for m in PRICE.finditer(text))
+                      if v and BOX_MIN_PRICE <= v <= BOX_MAX_PRICE), None)
+    if not price: log(f"  BOX商品 {cid}『{name}』: 価格が読めず"); return None
+    code = next((l for l in (x.strip() for x in text.split("\n")) if SETCODE.match(l)), "")
+    return {"name": name, "dmmId": cid, "setcode": code, "lowest": price,
+            "sealed": bool(BOX_SEALED.search(text)) and not BOX_UNSEALED.search(name),
+            "url": DMM_BOX_ITEM.format(id=cid), "listings": len(ls)}
+
+
+def box_id_for(set_id: str, series_name: str) -> int | None:
+    """BOX_IDS からこのシリーズの商品IDを引く（シリーズID → 表示名の部分一致の順）"""
+    if set_id in BOX_IDS: return BOX_IDS[set_id]
+    nm = (series_name or "").replace(" ", "")
+    hits = [(k, v) for k, v in BOX_IDS.items() if k.replace(" ", "") and k.replace(" ", "") in nm]
+    return max(hits, key=lambda kv: len(kv[0]))[1] if hits else None   # 一番長く一致するキーを採る
+
+
+def parse_boxes(html: str) -> list[dict]:
+    """一覧HTML → BOX商品 [{name, dmmId, setcode, lowest, sealed, url}]"""
+    out, seen = [], set()
+    links = list(ITEM_LINK.finditer(html))
+    for i, m in enumerate(links):
+        href, kind, cid = m.group(1), m.group(2), int(m.group(3))
+        name = BeautifulSoup(m.group(4), "html.parser").get_text(" ", strip=True)
+        if not name or cid in seen: continue
+        if kind != "box" and not BOX_WORD.search(name): continue
+        if CARDNO.search(name): continue                      # カード番号があれば単品カード
+        end = min(links[i + 1].start(), m.end() + 1500) if i + 1 < len(links) else m.end() + 1500
+        text = BeautifulSoup(html[m.end():end], "html.parser").get_text("\n", strip=True)
+        blob = name + "\n" + text
+        if BOX_NG.search(blob): continue
+        pm = PRICE.search(name) or PRICE.search(text)
+        price = yen(pm.group(1) or pm.group(2)) if pm else None
+        if not price or not (BOX_MIN_PRICE <= price <= BOX_MAX_PRICE): continue
+        code = next((l for l in (x.strip() for x in text.split("\n")) if SETCODE.match(l)), "")
+        seen.add(cid)
+        out.append({"name": name, "dmmId": cid, "setcode": code, "lowest": price,
+                    "sealed": bool(BOX_SEALED.search(blob)) and not BOX_UNSEALED.search(blob),
+                    "url": href if href.startswith("http") else BASE + href})
+    return out
+
+
+def box_query(series_name: str) -> str:
+    """『拡張パック メガブレイブ』→『メガブレイブ』（名前で照合するとき用に接頭辞を落とす）"""
+    return re.sub(r"^(拡張パック|強化拡張パック|ハイクラスパック|スペシャルセット)\s*", "", series_name or "").strip()
+
+
+def pick_box(boxes: list[dict], set_id: str = "", series_name: str = "") -> dict | None:
+    """シリーズコードが一致するものを最優先、次に名前一致。どちらもシュリンク付き→最安の順"""
+    if not boxes: return None
+    code = (set_id or "").lower()
+    q = box_query(series_name).replace(" ", "")
+    by_code = [b for b in boxes if code and (b.get("setcode") or "").lower() == code]
+    by_name = [b for b in boxes if q and q in b["name"].replace(" ", "")]
+    for pool in ([b for b in by_code if b["sealed"]], by_code, [b for b in by_name if b["sealed"]], by_name):
+        if pool: return min(pool, key=lambda b: b["lowest"])
+    return None
+
+
+def dmm_box_index(dump: bool, keyword: str = "BOX") -> list[dict]:
+    """ポケモン一覧を keyword で引いて、全シリーズのBOX商品を一度に集める"""
+    found: list[dict] = []
+    for page in range(1, MAX_BOX_PAGES + 1):
+        url = BOX_LIST.format(kw=requests.utils.quote(keyword)) + (f"&page={page}" if page > 1 else "")
+        try:
+            html = render(url, f"boxlist_{keyword}_p{page}.html" if dump else None, wait_for='a[href*="/items/"]', scroll=3)
+        except Exception as e:
+            log(f"  BOX一覧 p{page}: {e}"); break
+        ids = {b["dmmId"] for b in found}
+        got = [b for b in parse_boxes(html) if b["dmmId"] not in ids]
+        found += got
+        log(f"  BOX一覧『{keyword}』p{page}: +{len(got)}件（計{len(found)}）")
+        if not got: break
+    return found
+
+
 PAGE_TITLE = {}   # pack_id → 一覧の見出し（パック名）
 
 def collect_set_list(pack_id: int, dump: bool, tag: str) -> list[dict]:
@@ -360,9 +509,9 @@ def ocr_buy_by_key() -> dict[str, list[dict]]:
 
 # ---------- 店の通販サイトを検索して販売価格を読む（汎用） ----------
 # base が空の店は取得しない。トレカラウンジは通販サイトのURLが分かったら入れる
+# 販売価格を「通販サイトで検索して読む」店。シンソクは買取専門として扱うのでここには入れない（買取は shinsoku_buylist で取得）
 SHOPS_SEARCH = {
-    "shinsoku":     {"label": "シンソク",     "base": "https://www.cardshop-shinsoku.jp/"},
-    "torecalounge": {"label": "トレカラウンジ", "base": ""},
+    "torecalounge": {"label": "トレカラウンジ", "base": ""},   # 通販サイトのURLが分かったら入れる
 }
 SEARCH_RARITY = HIGH_RARITY   # 検索型は1枚ずつ開くので、SAR以上だけ
 
@@ -460,33 +609,6 @@ def shop_search_price(base: str, query: str, dump_name: str | None) -> dict | No
     return done(None)
 
 
-# ---------- BOX の実勢価格（DMMマイカをシリーズ名で検索して BOX を含む商品の最安） ----------
-def dmm_box_price(series_name: str, dump: bool) -> int | None:
-    q = re.sub(r"^(拡張パック|強化拡張パック|ハイクラスパック)\s*", "", series_name).strip()
-    page = browser().new_page(user_agent=HEADERS["User-Agent"], locale="ja-JP")
-    try:
-        page.goto(BASE + "/", wait_until="networkidle", timeout=60000)
-        inp = page.query_selector("input[type=search], input[name*=keyword], input[name*=search], input[name=q], input[placeholder*=検索]")
-        if not inp: return None
-        inp.fill(q + " BOX"); inp.press("Enter")
-        try: page.wait_for_load_state("networkidle", timeout=30000)
-        except Exception: pass
-        html = page.content()
-    finally:
-        page.close()
-    if dump: DUMP.mkdir(exist_ok=True); (DUMP / f"box_{q}.html").write_text(html, encoding="utf-8")
-    time.sleep(WAIT)
-    lines = [l.strip() for l in BeautifulSoup(html, "html.parser").get_text("\n", strip=True).split("\n") if l.strip()]
-    cands = []
-    for i, l in enumerate(lines):
-        if "BOX" not in l.upper() or q.replace(" ", "") not in l.replace(" ", ""): continue
-        if re.search(r"カートン|パック\b|1パック|シュリンクなし|開封", l): continue
-        for x in lines[i: i + 6]:
-            m = PRICE.search(x)
-            if m: v = yen(m.group(1) or m.group(2)); cands.append(v) if v and v >= 2000 else None; break
-    return min(cands) if cands else None
-
-
 # ---------- TCGdex ----------
 def fetch_tcgdex(set_id: str) -> int:
     api = "https://api.tcgdex.net/v2"; h = {"User-Agent": HEADERS["User-Agent"]}
@@ -507,6 +629,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--sets", default="", help="弾IDをカンマ区切りで絞る（例 M6a,M2a）")
     ap.add_argument("--dump", action="store_true")
+    ap.add_argument("--boxes", action="store_true", help="一覧のBOX行だけを確認して終了（--sets と併用推奨）")
     a = ap.parse_args()
     only = set(s.strip() for s in a.sets.split(",") if s.strip())
 
@@ -538,9 +661,26 @@ def main():
             if info["pack_id"] in packs.values(): continue
             packs[code] = info["pack_id"]; names[code] = info["name"]
         log(f"packs after probe: {len(packs)} → {[(k, v) for k, v in packs.items()]}")
+    if a.boxes:   # 確認用：BOX一覧だけ見て終わる
+        idx = dmm_box_index(a.dump)
+        log(f"BOX商品 {len(idx)}件（コード付き {sum(1 for b in idx if b['setcode'])}件）")
+        for b in sorted(idx, key=lambda x: (x["setcode"] or "zz", x["lowest"])):
+            log(f"  [{b['setcode'] or '—':>5}] ¥{b['lowest']:,}  {'封' if b['sealed'] else '?'}  {b['name']}  {b['url']}")
+        log("--- シリーズごとの採用結果（BOX_IDS に貼れる形）---")
+        for code, pid in packs.items():
+            bid = box_id_for(code, names.get(code, ""))
+            if bid is not None:
+                log(f'    "{code}": {bid},   # BOX_IDS で指定済み' + ("（取得しない）" if bid == 0 else "")); continue
+            pk = pick_box(idx, code, names.get(code, ""))
+            if pk: log(f'    "{code}": {pk["dmmId"]},   # {pk["name"]} ¥{pk["lowest"]:,}')
+            else:  log(f'    # "{code}": ?,   # {names.get(code, "")} … 見つからず（商品ページのURL末尾の数字を入れてください）')
+        close_browser(); return
+
     sets_db = json.loads(SETS_FILE.read_text(encoding="utf-8")) if SETS_FILE.exists() else {}
     snap = {"fetched_at": dt.datetime.now(JST).isoformat(timespec="minutes"), "v": 2, "sets": {}}
     shinsoku = shinsoku_buylist(a.dump)        # 弾をまたぐ一覧なのでカード番号で照合
+    box_index = dmm_box_index(a.dump)          # 全シリーズのBOXを1回で取る（シリーズコードで紐づけ）
+    log(f"BOX商品: {len(box_index)}件（コード付き {sum(1 for b in box_index if b['setcode'])}件）")
     ocr = ocr_buy_by_key()
 
     for tmp_id, pid in packs.items():
@@ -597,15 +737,31 @@ def main():
                     if s.get("torecacamp"): P["torecacamp"] = shopify_json(CAMP.format(id=s["torecacamp"]), f"camp_{c['key'].replace('/', '-')}.json", a.dump)
                 except Exception as e:
                     log(f"  {c['key']} shops: {e}")
-            if P.get("shinsoku", {}).get("psa10"):   # シンソクのPSA10はまとめ側にも反映
-                P.setdefault("psa10", {}); P["psa10"].setdefault("shops", {})["shinsoku"] = P["shinsoku"]["psa10"]
-                if not P["psa10"].get("lowest") or P["shinsoku"]["psa10"] < P["psa10"]["lowest"]: P["psa10"]["lowest"] = P["shinsoku"]["psa10"]
+            for sk in list(P.keys()):   # 検索型の店が PSA10 も返したらまとめ側に反映
+                if sk in SHOPS_SEARCH and P[sk].get("psa10"):
+                    P.setdefault("psa10", {}); P["psa10"].setdefault("shops", {})[sk] = P[sk]["psa10"]
+                    if not P["psa10"].get("lowest") or P[sk]["psa10"] < P["psa10"]["lowest"]: P["psa10"]["lowest"] = P[sk]["psa10"]
             prices[c["key"]] = {"prices": P}
         log(f"  PSA10 付き: {sum(1 for v in prices.values() if v['prices'].get('psa10'))}枚")
         try:
-            bp = dmm_box_price(entry["name"], a.dump)
-            if bp: entry["box"] = {"price": bp, "when": snap["fetched_at"], "src": "DMMマイカ"}; log(f"  BOX 実勢: ¥{bp:,}")
-            else: log("  BOX 実勢: 見つからず")
+            bid = box_id_for(set_id, entry["name"])
+            if bid == 0:   # 0 = 取得しない（DMMにまだBOXが無い弾。似た名前の別商品を拾わせない）
+                log("  BOX 実勢: 取得しない指定（BOX_IDS = 0）"); raise StopIteration
+            b = dmm_box_item(bid, a.dump) if bid else None          # ① BOX_IDS で手動指定があればそれ
+            if b: log(f"  BOX 商品ID指定: {bid}")
+            if not b: b = pick_box(box_index, set_id, entry["name"])   # ② keyword=BOX の一覧からコード照合
+            if not b:      # ③ コードも名前も当たらなければ、そのシリーズ名でもう一度だけ引く
+                extra = dmm_box_index(a.dump, keyword=box_query(entry["name"])) if box_query(entry["name"]) else []
+                ids = {x["dmmId"] for x in box_index}; box_index += [x for x in extra if x["dmmId"] not in ids]
+                b = pick_box(extra, set_id, entry["name"])
+            if b:
+                entry["box"] = {"price": b["lowest"], "when": snap["fetched_at"], "src": "DMMマイカ",
+                                "name": b["name"], "dmmId": b["dmmId"], "url": b["url"], "sealed": b["sealed"]}
+                log(f"  BOX 実勢: ¥{b['lowest']:,}（{b['name']}{'' if b['sealed'] else '・未開封表記なし'}）")
+            else:
+                entry.pop("box", None); log("  BOX 実勢: 見つからず")
+        except StopIteration:
+            pass
         except Exception as e:
             log(f"  BOX: {e}")
         snap["sets"][set_id] = prices

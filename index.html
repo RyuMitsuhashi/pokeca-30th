@@ -910,7 +910,11 @@ function withSet(setId, fn){ const pc=CUR, pa=ALL; CUR=setId; ALL=SETS[setId].ca
 function setIndex(setId, key){ return withSet(setId, ()=>{ const xs=ALL.filter(c=>CHASE.has(c.rarity)).map(c=>chgOver(c,key)).filter(Boolean).map(x=>x.p); return xs.length?{p:xs.reduce((a,b)=>a+b,0)/xs.length, n:xs.length}:null; }); }
 function allCards(){ const out=[]; for(const id of Object.keys(SETS)) withSet(id, ()=>{ for(const c of ALL){ const s=latestSale(c); if(s) out.push({setId:id, c, sale:s, ch:chgOver(c,period), sp:spread(c)}); } }); return out; }
 function topCard(setId){ return withSet(setId, ()=>{ let best=null; for(const c of ALL){ const s=latestSale(c); if(s&&(!best||s.v>best.v)) best={c, v:s.v}; } return best; }); }
-function boxInfo(setId){ const m=SET_META[setId]||{}; const st=SETS[setId]||{}; const ev = RATES[setId] ? withSet(setId, ()=>evBreakdown()) : null; return {box:(st.box&&st.box.price)||m.box, boxSrc:st.box?st.box.src:'', msrp:m.msrp, ev: ev? ev.withCls : null}; }
+function boxInfo(setId){ const m=SET_META[setId]||{}; const st=SETS[setId]||{}; const ev = RATES[setId] ? withSet(setId, ()=>evBreakdown()) : null; return {box:(st.box&&st.box.price)||m.box, boxSrc:st.box?st.box.src:'', boxName:st.box?st.box.name:'', boxId:st.box?st.box.dmmId:null, boxUrl:st.box?st.box.url:'', boxSealed:st.box?st.box.sealed!==false:true, msrp:m.msrp, ev: ev? ev.withCls : null}; }
+function boxCell(b){ if(!b.box) return '—'; const t=[b.boxName||'', b.boxSrc?'出典: '+b.boxSrc:'', b.boxName&&!b.boxSealed?'シュリンクなし':''].filter(Boolean).join(' / ');
+  const v=yen(b.box)+(b.boxName&&!b.boxSealed?' <span class="dim">※</span>':'');
+  const u=b.boxUrl||(b.boxId?'https://myca.dmm.com/pokemon-trading-card-game/items/box/'+b.boxId:'');
+  return u ? `<a href="${esc(u)}" target="_blank" rel="noopener" title="${esc(t)}">${v}</a>` : `<span title="${esc(t)}">${v}</span>`; }
 
 function renderHome(){
   const all=allCards(); const withCh=all.filter(x=>x.ch);
@@ -946,7 +950,7 @@ function renderHome(){
         <div class="r"><span>BOX vs 定価</span><b>${b.box?yen(b.box)+' <span class="dim">/</span> '+(b.msrp?yen(b.msrp):'—'):'—'}</b></div>
         <div class="r"><span>開封価値（期待値−BOX）</span><b class="${b.ev&&b.box?(b.ev-b.box>0?'up':'down'):''}">${b.ev&&b.box?yen(b.ev-b.box):'—'}</b></div></div>`; }).join('')}</div>
     <h2 class="h2">BOX相場</h2>
-    <div class="panel"><table style="min-width:0"><thead><tr><th>シリーズ</th><th class="r">BOX価格（実勢）</th><th class="r">定価</th><th class="r">定価比</th><th class="r">期待値（復刻まで）</th><th class="r">開封価値</th></tr></thead><tbody>${ids.map(id=>{ const b=boxInfo(id); return `<tr data-set="${esc(id)}"><td>${esc(SETS[id].name)}</td><td class="r">${b.box?yen(b.box):'—'}</td><td class="r">${b.msrp?yen(b.msrp):'—'}</td><td class="r">${b.box&&b.msrp?(b.box/b.msrp).toFixed(2)+'×':'—'}</td><td class="r">${b.ev?yen(b.ev):'—'}</td><td class="r ${b.ev&&b.box?(b.ev-b.box>0?'up':'down'):''}">${b.ev&&b.box?yen(b.ev-b.box):'—'}</td></tr>`; }).join('')}</tbody></table></div>`;
+    <div class="panel"><table style="min-width:0"><thead><tr><th>シリーズ</th><th class="r">BOX価格（実勢）</th><th class="r">定価</th><th class="r">定価比</th><th class="r">期待値（復刻まで）</th><th class="r">開封価値</th></tr></thead><tbody>${ids.map(id=>{ const b=boxInfo(id); return `<tr data-set="${esc(id)}"><td>${esc(SETS[id].name)}</td><td class="r">${boxCell(b)}</td><td class="r">${b.msrp?yen(b.msrp):'—'}</td><td class="r">${b.box&&b.msrp?(b.box/b.msrp).toFixed(2)+'×':'—'}</td><td class="r">${b.ev?yen(b.ev):'—'}</td><td class="r ${b.ev&&b.box?(b.ev-b.box>0?'up':'down'):''}">${b.ev&&b.box?yen(b.ev-b.box):'—'}</td></tr>`; }).join('')}</tbody></table></div>`;
 }
 function renderBuyView(){
   const rows=[]; for(const id of Object.keys(SETS)) withSet(id, ()=>{ for(const c of ALL){ const br=buyRows(c); if(br.length) rows.push({setId:id,c,br,sp:spread(c)}); } });
@@ -957,7 +961,7 @@ function renderBuyView(){
 }
 function renderBoxView(){
   const ids=Object.keys(SETS);
-  $('#boxview').innerHTML=`<h2 class="h2">BOX相場と期待値</h2><div class="panel"><table style="min-width:0"><thead><tr><th>シリーズ</th><th class="r">BOX価格（実勢）</th><th class="r">定価</th><th class="r">定価比</th><th class="r">期待値（復刻まで）</th><th class="r">開封価値</th></tr></thead><tbody>${ids.map(id=>{ const b=boxInfo(id); return `<tr data-set="${esc(id)}"><td>${esc(SETS[id].name)}</td><td class="r">${b.box?yen(b.box):'—'}</td><td class="r">${b.msrp?yen(b.msrp):'—'}</td><td class="r">${b.box&&b.msrp?(b.box/b.msrp).toFixed(2)+'×':'—'}</td><td class="r">${b.ev?yen(b.ev):'—'}</td><td class="r ${b.ev&&b.box?(b.ev-b.box>0?'up':'down'):''}">${b.ev&&b.box?yen(b.ev-b.box):'—'}</td></tr>`; }).join('')}</tbody></table></div>
+  $('#boxview').innerHTML=`<h2 class="h2">BOX相場と期待値</h2><div class="panel"><table style="min-width:0"><thead><tr><th>シリーズ</th><th class="r">BOX価格（実勢）</th><th class="r">定価</th><th class="r">定価比</th><th class="r">期待値（復刻まで）</th><th class="r">開封価値</th></tr></thead><tbody>${ids.map(id=>{ const b=boxInfo(id); return `<tr data-set="${esc(id)}"><td>${esc(SETS[id].name)}</td><td class="r">${boxCell(b)}</td><td class="r">${b.msrp?yen(b.msrp):'—'}</td><td class="r">${b.box&&b.msrp?(b.box/b.msrp).toFixed(2)+'×':'—'}</td><td class="r">${b.ev?yen(b.ev):'—'}</td><td class="r ${b.ev&&b.box?(b.ev-b.box>0?'up':'down'):''}">${b.ev&&b.box?yen(b.ev-b.box):'—'}</td></tr>`; }).join('')}</tbody></table></div>
     <p class="note">期待値＝各レアリティの「1BOXあたり枚数×平均最安値」の合計。封入率の設定があるシリーズ（今は30th）だけ計算します。開封価値がプラスなら開ける、マイナスなら開けずに単品を買うのが得。</p>`;
 }
 
@@ -980,6 +984,7 @@ function route(){
 }
 window.addEventListener('hashchange', route);
 document.addEventListener('click', e=>{
+  if(e.target.closest('a[target="_blank"]')) return;   // 外部リンクは行クリックの対象にしない
   const pb=e.target.closest('.periods [data-p]'); if(pb){ period=pb.dataset.p; renderHome(); return; }
   const sc=e.target.closest('[data-set]'); if(sc){ location.hash='#/set/'+sc.dataset.set; return; }
   const go=e.target.closest('[data-go]'); if(go){ const [id,key]=go.dataset.go.split('|'); if(go.closest('#sugg')){ $('#sugg').hidden=true; $('#q').value=''; state.q=''; } location.hash='#/card/'+id+'/'+encodeURIComponent(key); return; }
