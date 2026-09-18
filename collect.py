@@ -265,6 +265,51 @@ BOX_IDS: dict[str, int] = {
 }
 
 
+BOX_COND = re.compile(r"^(未使用品|未開封|シュリンク付き?|状態[A-Z][+\-]?|プレイ用|傷あり)$")
+BOX_NOISE = re.compile(r"送料|以上の注文|クーポン|ポイント|セール|値下げ")
+
+
+def strip_sales(text: str) -> str:
+    """本文から販売履歴の行を取り除く（合計金額を商品価格と取り違えないため）。
+    見出しが変わっても壊れないよう、履歴らしい行が続く間だけを落とす"""
+    lines = text.split("\n"); out = []; in_hist = False
+    for l in lines:
+        t = l.strip()
+        if t.startswith("販売履歴"): in_hist = True; continue
+        if in_hist:
+            parts = [x.strip() for x in t.split("\t") if x.strip()]   # 表がタブ区切りで1行に来ることがある
+            head = parts[0] if parts else ""
+            if (not parts or head in ("販売日", "状態", "枚数", "価格") or SALES_WHEN.match(head)
+                    or SALES_QTY.match(head) or SALES_PRICE.match(head) or BOX_COND.match(head) or head == "未使用"): continue
+            in_hist = False
+        out.append(l)
+    return "\n".join(out)
+
+
+def box_listings(html: str) -> list[dict]:
+    """BOX の『他の出品情報』→ [{shop, price, cond}]。単品カードと違い状態が『未使用品』なので別扱い"""
+    text = BeautifulSoup(html, "html.parser").get_text("\n", strip=True)
+    i = text.find("他の出品情報")
+    if i < 0: return []
+    sec = text[i:]
+    j = sec.find("関連カード")
+    if j > 0: sec = sec[:j]
+    lines = [l.strip() for l in sec.split("\n") if l.strip()]
+    skip = ("他の出品情報", "状態が良い順", "状態について", "カートに追加", "ほしいものリストに追加", "全")
+    out = []
+    for k, l in enumerate(lines):
+        m = re.match(r"^[¥￥]\s?([\d,]+)$", l)
+        if not m: continue
+        v = yen(m.group(1))
+        if not v or not (BOX_MIN_PRICE <= v <= BOX_MAX_PRICE): continue
+        shop = next((lines[b] for b in range(k - 1, max(-1, k - 4), -1)
+                     if not lines[b].startswith(skip) and not BOX_NOISE.search(lines[b])
+                     and not re.match(r"^[¥￥\d]", lines[b]) and not BOX_COND.match(lines[b])), None)
+        cond = next((lines[f] for f in range(k + 1, min(len(lines), k + 4)) if BOX_COND.match(lines[f])), None)
+        out.append({"shop": shop, "price": v, "cond": cond})
+    return out
+
+
 def dmm_box_item(cid: int, dump: bool) -> dict | None:
     """BOX の商品ページを直接読む（手動指定用）。出品一覧があればその最安を採る"""
     try:
@@ -277,10 +322,10 @@ def dmm_box_item(cid: int, dump: bool) -> dict | None:
     if not name:
         t = re.search(r"<title>(.*?)</title>", html, re.S)
         name = re.sub(r"\s*[|｜].*$", "", t.group(1)).strip() if t else str(cid)
-    ls = parse_listings(html)
+    ls = box_listings(html)   # BOX の出品は状態表記が「未使用品」なので専用に読む
     price = min((l["price"] for l in ls), default=None)
-    if not price:   # 出品一覧が読めないときは、ページ上で最初に出てくる価格（＝その商品の価格）を採る
-        price = next((v for v in (yen(m.group(1) or m.group(2)) for m in PRICE.finditer(text))
+    if not price:   # 出品一覧が読めないときだけ、販売履歴を除いた本文の最初の価格を採る
+        price = next((v for v in (yen(m.group(1) or m.group(2)) for m in PRICE.finditer(strip_sales(text)))
                       if v and BOX_MIN_PRICE <= v <= BOX_MAX_PRICE), None)
     if not price: log(f"  BOX商品 {cid}『{name}』: 価格が読めず"); return None
     code = next((l for l in (x.strip() for x in text.split("\n")) if SETCODE.match(l)), "")
