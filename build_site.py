@@ -21,7 +21,7 @@ SITE_URL = os.environ.get("SITE_URL") or (f"https://{repo.split('/')[0].lower()}
 SITE_URL = SITE_URL.rstrip("/")
 JST = dt.timezone(dt.timedelta(hours=9))
 NOW = dt.datetime.now(JST)
-SET_META = {"M6a": {"box": 24900, "msrp": 7200, "release": "2026-09-16", "ev": 19078}}  # BOX価格・定価・期待値（index.html と同じ値を手で合わせる）
+SET_META = {"M6a": {"msrp": 7200, "release": "2026-09-16", "ev": 19078}}  # 定価・期待値（index.html と同じ値を手で合わせる）。BOX実勢は sets.json から入る
 CHASE = {"RGB", "FUR", "SAR", "SR", "UR", "ACE", "HR", "CSR", "CHR", "SSR", "MUR", "CLS"}
 BUY_LABEL = {"yuyu": "遊々亭", "shinsoku": "シンソク", "kanabell": "カーナベル", "cardrush": "カードラッシュ"}
 SHOP_LABEL = {"cardrush": "カードラッシュ", "hareruya2": "晴れる屋2", "torecacamp": "トレカキャンプ", "shinsoku": "シンソク", "torecalounge": "トレカラウンジ"}
@@ -117,7 +117,7 @@ def page(title, desc, canon, body, og_img=None, jsonld=None, breadcrumbs=None):
 <meta property="og:title" content="{esc(title)}"><meta property="og:description" content="{esc(desc)}"><meta property="og:url" content="{esc(canon)}"><meta property="og:site_name" content="{SITE_NAME}"><meta property="og:type" content="website">{og}
 <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"><style>{CSS}</style>{lds}{ad_head()}</head>
 <body><div class="top"><a href="{SITE_URL}/"><b>{SITE_NAME}</b> <small>{TAG}</small></a></div><div class="wrap"><div class="crumb">{crumb}</div>{body}
-<div class="foot">価格は各サイト掲載時点の値で、実際の店頭・取引価格とは異なる場合があります。出典：DMMマイカ／カードラッシュ／遊々亭／シンソク ほか。©Pokémon／Nintendo／Creatures／GAME FREAK　<a href="{SITE_URL}/#/about">このサイトについて</a></div></div></body></html>"""
+<div class="foot">価格は各サイト掲載時点の値で、実際の店頭・取引価格とは異なる場合があります。出典：DMMマイカ／カードラッシュ／シンソク ほか。©Pokémon／Nintendo／Creatures／GAME FREAK　<a href="{SITE_URL}/#/about">このサイトについて</a></div></div></body></html>"""
 
 
 # ---------- OG画像 ----------
@@ -254,7 +254,7 @@ def build():
               "User-agent: Google-Extended\nAllow: /\n\n"
               f"Sitemap: {SITE_URL}/sitemap.xml\n")
     (ROOT / "robots.txt").write_text(robots, encoding="utf-8")
-    (ROOT / "llms.txt").write_text(f"# {SITE_NAME} ｜ {TAG}\n\n> ポケモンカードの販売価格・買取価格・PSA10価格を、DMMマイカ・カードラッシュ・遊々亭・シンソクなどの公開ページから1日2回集計している相場サイト。シリーズ別のBOX期待値、主要カードの指数、鑑定価値（PSA10÷素体）を掲載。\n\n## ページ\n" + "\n".join(f"- [{u}]({u})" for u, t in urls[:500]) + "\n", encoding="utf-8")
+    (ROOT / "llms.txt").write_text(f"# {SITE_NAME} ｜ {TAG}\n\n> ポケモンカードの販売価格・買取価格・PSA10価格を、DMMマイカ・カードラッシュ・晴れる屋2・シンソクなどの公開ページから1日2回集計している相場サイト。シリーズ別のBOX期待値、主要カードの指数、鑑定価値（PSA10÷素体）を掲載。\n\n## ページ\n" + "\n".join(f"- [{u}]({u})" for u, t in urls[:500]) + "\n", encoding="utf-8")
     print(f"pages: {len(urls)}, sitemap written", file=sys.stderr)
 
 

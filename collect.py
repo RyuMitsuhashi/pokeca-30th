@@ -236,9 +236,8 @@ BOX_IDS: dict[str, int] = {
     "M4":  10003950,   # ニンジャスピナー BOX
     "M5":  10003970,   # アビスアイ BOX
     "M6":  10003980,   # ストームエメラルダ BOX
-    "M6a": 0,          # 30th CELEBRATION：まだDMMマイカに通常BOXが無い（0 = 取得しない）。
-                       # 出たらこの 0 を商品IDに置き換える。10004020 は別商品の FUTURISTIC BOX なので使わない
-    "30th CELEBRATION": 0,   # プレミアムデッキセット等、30th系の別商品にも BOX を付けない
+    "M6a": 10004030,   # 30th CELEBRATION BOX（10004020 は別商品の FUTURISTIC BOX なので使わない）
+    "30th CELEBRATION": 0,   # プレミアムデッキセット等、30th系の別商品には BOX を付けない（0 = 取得しない）
     # --- スカーレット＆バイオレット期 ---
     "熱風のアリーナ":         10003760,   # sv9a
     "テラスタルフェスex":      10003730,   # sv8a
@@ -285,7 +284,8 @@ def dmm_box_item(cid: int, dump: bool) -> dict | None:
                       if v and BOX_MIN_PRICE <= v <= BOX_MAX_PRICE), None)
     if not price: log(f"  BOX商品 {cid}『{name}』: 価格が読めず"); return None
     code = next((l for l in (x.strip() for x in text.split("\n")) if SETCODE.match(l)), "")
-    return {"name": name, "dmmId": cid, "setcode": code, "lowest": price,
+    sold = sales_summary(parse_sales(html))   # BOX も販売履歴（実際に売れた価格・個数）を持つ
+    return {"name": name, "dmmId": cid, "setcode": code, "lowest": price, "sold": sold,
             "sealed": bool(BOX_SEALED.search(text)) and not BOX_UNSEALED.search(name),
             "url": DMM_BOX_ITEM.format(id=cid), "listings": len(ls)}
 
@@ -402,12 +402,70 @@ def parse_listings(html: str) -> list[dict]:
     return out
 
 
-def dmm_listings(cid: int, dump: bool) -> list[dict]:
+# ---------- DMM：商品ページ（販売履歴＝実際に売れた価格と枚数） ----------
+# 例）『2時間前 / 未使用 / 25個 / ¥475,000』『2026/08/25 / 状態A / 1枚 / ¥250』
+# 価格は合計なので、枚数で割って1枚あたりの成約単価にする。
+SALES_WHEN = re.compile(r"^(?:(\d{4})[/-](\d{1,2})[/-](\d{1,2})|(?:約)?\s*(\d+)\s*(分|時間|日|週間|週|か月|ヶ月|カ月|年)前|たった今|今)$")
+SALES_QTY = re.compile(r"^(\d+)\s*[個枚]$")
+SALES_PRICE = re.compile(r"^[¥￥]\s?([\d,]+)$")
+DELTA = {"分": 1 / 1440, "時間": 1 / 24, "日": 1, "週間": 7, "週": 7, "か月": 30, "ヶ月": 30, "カ月": 30, "年": 365}
+
+
+def _sales_when(m, now: dt.datetime) -> str:
+    if m.group(1): return f"{int(m.group(1)):04d}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
+    if m.group(4): return (now - dt.timedelta(days=int(m.group(4)) * DELTA.get(m.group(5), 1))).strftime("%Y-%m-%d")
+    return now.strftime("%Y-%m-%d")
+
+
+def parse_sales(html: str) -> list[dict]:
+    """商品ページ → 販売履歴 [{when, cond, qty, total, unit}]（新しい順）"""
+    text = BeautifulSoup(html, "html.parser").get_text("\n", strip=True)
+    i = text.find("販売履歴")
+    if i < 0: return []
+    sec = text[i:]
+    for stop in ("他の出品情報", "関連カード"):
+        j = sec.find(stop)
+        if j > 0: sec = sec[:j]
+    now = dt.datetime.now(JST)
+    out, cur = [], {}
+    for raw in sec.split("\n"):
+        for l in [x.strip() for x in raw.split("\t")]:   # 表がタブ区切りで来ることがある
+            if not l or l in ("販売履歴", "販売日", "状態", "枚数", "価格"): continue
+            w = SALES_WHEN.match(l)
+            if w: cur = {"when": _sales_when(w, now)}; continue
+            if not cur: continue
+            q = SALES_QTY.match(l)
+            if q: cur["qty"] = int(q.group(1)); continue
+            pm = SALES_PRICE.match(l)
+            if pm and cur.get("qty"):
+                total = yen(pm.group(1))
+                if total: out.append({**cur, "total": total, "unit": int(round(total / cur["qty"]))})
+                cur = {}; continue
+            cur.setdefault("cond", l)
+    return out
+
+
+def sales_summary(sales: list[dict], days: int = 30) -> dict | None:
+    """販売履歴 → {med(中央値), last(直近単価), n(件数), qty(枚数), when(最新日)}"""
+    if not sales: return None
+    lim = (dt.datetime.now(JST) - dt.timedelta(days=days)).strftime("%Y-%m-%d")
+    rows = [r for r in sales if r["when"] >= lim] or sales
+    # 中央値は「枚数で重み付け」する。1枚だけの取引と43枚まとめ買いを同じ1票にしない
+    qty = sum(r["qty"] for r in rows)
+    med, seen = rows[0]["unit"], 0
+    for r in sorted(rows, key=lambda x: x["unit"]):
+        seen += r["qty"]
+        if seen >= qty / 2: med = r["unit"]; break
+    return {"med": med, "last": rows[0]["unit"], "n": len(rows), "qty": qty, "when": rows[0]["when"]}
+
+
+def dmm_item(cid: int, dump: bool) -> dict:
+    """商品ページを1回読んで、出品一覧と販売履歴の両方を返す（リクエストは増やさない）"""
     try:
         html = render(DMM_ITEM.format(id=cid), f"dmm_{cid}.html" if dump else None, wait_for="text=他の出品情報")
-        return parse_listings(html)
     except Exception as e:
-        log(f"  dmm item {cid} failed: {e}"); return []
+        log(f"  dmm item {cid} failed: {e}"); return {"listings": [], "sold": None}
+    return {"listings": parse_listings(html), "sold": sales_summary(parse_sales(html))}
 
 
 # ---------- 30th の他店 ----------
@@ -434,15 +492,9 @@ def shopify_json(url, dump_name, dump):
 
 
 # ---------- 買取価格（第1段：Web上のテキスト価格表） ----------
-YUYU_BUY = "https://yuyu-tei.jp/buy/poc/s/{code}"          # 遊々亭：弾別の買取一覧
 SHINSOKU_LIST = "https://shinsoku-tcg.com/yuso-kaitori"     # シンソク：簡単カート買取（価格保証リスト）
 KANABELL_BUY_URL = ""   # カーナベルの買取検索URL（{q} にカード名）。ページ構造を確認してから入れる。空なら取得しない
 BUY_OCR = pathlib.Path("buy_ocr.json")                      # ocr_buylist.py の出力（画像の買取表）
-
-def yuyu_code(set_id: str) -> str:
-    m = re.match(r"^([A-Za-z]+)(\d+)([A-Za-z]*)$", set_id)
-    return f"{m.group(1).lower()}{int(m.group(2)):02d}{m.group(3).lower()}" if m else set_id.lower()
-
 
 def parse_card_blocks(text: str) -> dict[str, int]:
     """行テキストから『カード番号 → 価格』を拾う汎用パーサ（番号の前後4行以内の『○○円』or『¥○○』）"""
@@ -456,23 +508,6 @@ def parse_card_blocks(text: str) -> dict[str, int]:
             if p:
                 v = yen(p.group(1) or p.group(2))
                 if v and v >= 10: out.setdefault(m.group(1), v); break
-    return out
-
-
-YUYU_OFF = {"off": False}
-
-def yuyu_buylist(set_id: str, dump: bool) -> dict[str, int]:
-    if YUYU_OFF["off"]: return {}
-    try:
-        html = render(YUYU_BUY.format(code=yuyu_code(set_id)), f"yuyu_buy_{set_id}.html" if dump else None)
-        if re.search(r"403|Forbidden|Access Denied", html[:3000], re.I):
-            YUYU_OFF["off"] = True; log("  yuyu: 拒否（403）。今回は遊々亭を取得しない"); return {}
-    except Exception as e:
-        log(f"  yuyu {set_id}: {e}"); return {}
-    text = BeautifulSoup(html, "html.parser").get_text("\n", strip=True)
-    out = parse_card_blocks(text)
-    if not out: log(f"  yuyu {set_id}: 0件。抜粋: {text[:200]!r}")
-    else: log(f"  yuyu {set_id}: 買取 {len(out)}件")
     return out
 
 
@@ -679,21 +714,20 @@ def main():
         entry = sets_db.setdefault(set_id, {"id": set_id, "name": names.get(tmp_id, set_id), "dmm_pack_id": pid, "cards": {}})
         entry["dmm_pack_id"] = pid; entry["name"] = names.get(tmp_id) or PAGE_TITLE.get(pid) or entry.get("name") or set_id
         prices = {}
-        yuyu = yuyu_buylist(set_id, a.dump)
         graded = [c for c in cards if c.get("grade") in ("psa10", "psa9")]
         cards = [c for c in cards if c.get("grade", "raw") == "raw"]
         for g in graded:   # 鑑定品：同じ番号の素体カードに psa10/psa9 として付ける
             if g["grade"] != "psa10": continue
             P = {"lowest": g["lowest"], "dmmId": g["dmmId"]}
             if g["rarity"] in HIGH_RARITY or (g["lowest"] or 0) >= LISTING_MIN_PRICE:
-                ls = dmm_listings(g["dmmId"], a.dump)
+                it = dmm_item(g["dmmId"], a.dump); ls = it["listings"]
                 if ls: low = min(ls, key=lambda l: l["price"]); P = {"lowest": low["price"], "dmmId": g["dmmId"], "listings": ls}
+                if it["sold"]: P["sold"] = it["sold"]
             prices.setdefault(g["key"], {"prices": {}})["prices"]["psa10"] = P
         for c in cards:
             entry["cards"][c["key"]] = {"no": c["no"], "name": c["name"], "rarity": c["rarity"], "dmmId": c["dmmId"]}
             P = prices.get(c["key"], {}).get("prices", {}); P["dmm"] = {"lowest": c["lowest"], "cond": c["cond"]}
             buy = {}
-            if c["key"] in yuyu: buy["yuyu"] = {"price": yuyu[c["key"]]}
             if c["key"] in shinsoku: buy["shinsoku"] = {"price": shinsoku[c["key"]]}
             if c["rarity"] in HIGH_RARITY and KANABELL_BUY_URL:
                 kb = kanabell_buy(c["name"], a.dump)
@@ -703,9 +737,10 @@ def main():
                     buy["ocr:" + str(o["shop"])] = {"price": o["price"], "src": o.get("src"), "when": o.get("when")}
             if buy: P["buy"] = buy
             if c["rarity"] in HIGH_RARITY or (c["lowest"] or 0) >= LISTING_MIN_PRICE:
-                ls = dmm_listings(c["dmmId"], a.dump)
+                it = dmm_item(c["dmmId"], a.dump); ls = it["listings"]
                 if ls:
                     low = min(ls, key=lambda l: l["price"]); P["dmm"] = {"lowest": low["price"], "cond": low["cond"], "listings": ls}
+                if it["sold"]: P["dmm"]["sold"] = it["sold"]   # 実際に売れた価格（中央値・件数・枚数）
             if c["rarity"] in SEARCH_RARITY:
                 for sk, sc in SHOPS_SEARCH.items():
                     if not sc["base"]: continue
@@ -743,7 +778,9 @@ def main():
             if b:
                 entry["box"] = {"price": b["lowest"], "when": snap["fetched_at"], "src": "DMMマイカ",
                                 "name": b["name"], "dmmId": b["dmmId"], "url": b["url"], "sealed": b["sealed"]}
-                log(f"  BOX 実勢: ¥{b['lowest']:,}（{b['name']}{'' if b['sealed'] else '・未開封表記なし'}）")
+                if b.get("sold"): entry["box"]["sold"] = b["sold"]
+                log(f"  BOX 実勢: ¥{b['lowest']:,}（{b['name']}{'' if b['sealed'] else '・未開封表記なし'}）"
+                    + (f" / 成約 中央値¥{b['sold']['med']:,}・{b['sold']['n']}件・{b['sold']['qty']}個" if b.get("sold") else ""))
             else:
                 entry.pop("box", None); log("  BOX 実勢: 見つからず")
         except StopIteration:
