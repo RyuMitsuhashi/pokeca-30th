@@ -168,6 +168,7 @@
 - [https://ryumitsuhashi.github.io/pokeca-30th/cards/M6a/142-103/](https://ryumitsuhashi.github.io/pokeca-30th/cards/M6a/142-103/)
 - [https://ryumitsuhashi.github.io/pokeca-30th/cards/M6a/150-103/](https://ryumitsuhashi.github.io/pokeca-30th/cards/M6a/150-103/)
 - [https://ryumitsuhashi.github.io/pokeca-30th/cards/M6a/G-RGB/](https://ryumitsuhashi.github.io/pokeca-30th/cards/M6a/G-RGB/)
+- [https://ryumitsuhashi.github.io/pokeca-30th/cards/M6a/160-103/](https://ryumitsuhashi.github.io/pokeca-30th/cards/M6a/160-103/)
 - [https://ryumitsuhashi.github.io/pokeca-30th/sets/M6a/](https://ryumitsuhashi.github.io/pokeca-30th/sets/M6a/)
 - [https://ryumitsuhashi.github.io/pokeca-30th/cards/M1L/063-063/](https://ryumitsuhashi.github.io/pokeca-30th/cards/M1L/063-063/)
 - [https://ryumitsuhashi.github.io/pokeca-30th/cards/M1L/091-063/](https://ryumitsuhashi.github.io/pokeca-30th/cards/M1L/091-063/)
@@ -502,4 +503,3 @@
 - [https://ryumitsuhashi.github.io/pokeca-30th/cards/M2/018-080/](https://ryumitsuhashi.github.io/pokeca-30th/cards/M2/018-080/)
 - [https://ryumitsuhashi.github.io/pokeca-30th/cards/M2/017-080/](https://ryumitsuhashi.github.io/pokeca-30th/cards/M2/017-080/)
 - [https://ryumitsuhashi.github.io/pokeca-30th/cards/M2/016-080/](https://ryumitsuhashi.github.io/pokeca-30th/cards/M2/016-080/)
-- [https://ryumitsuhashi.github.io/pokeca-30th/cards/M2/015-080/](https://ryumitsuhashi.github.io/pokeca-30th/cards/M2/015-080/)
