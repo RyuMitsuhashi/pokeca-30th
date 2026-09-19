@@ -965,6 +965,7 @@ const SET_META = {
   M2 :{ msrp:5400 },   // インフェルノX
   M1S:{ msrp:5400 },   // メガシンフォニア
   M1L:{ msrp:5400 },   // メガブレイブ
+  MF :{ msrp:6200, release:'2026-09-16' },   // 30th プレミアムデッキセット エーフィ・ブラッキー
 };
 // 封入率（1BOXあたりの枚数と種類数）。期待値を出したいシリーズだけ書く。書いていないシリーズは期待値「—」
 const RATES = { M6a: RATE };
@@ -988,8 +989,11 @@ function setIndex(setId, key){ return withSet(setId, ()=>{ const xs=ALL.filter(c
 function allCards(){ const out=[]; for(const id of Object.keys(SETS)) withSet(id, ()=>{ for(const c of ALL){ const s=latestSale(c); if(s) out.push({setId:id, c, sale:s, ch:chgOver(c,period), sp:spread(c)}); } }); return out; }
 function topCard(setId){ return withSet(setId, ()=>{ let best=null; for(const c of ALL){ const s=latestSale(c); if(s&&(!best||s.v>best.v)) best={c, v:s.v}; } return best; }); }
 function boxInfo(setId){ const m=SET_META[setId]||{}; const st=SETS[setId]||{}; const ev = RATES[setId] ? withSet(setId, ()=>evBreakdown()) : null;
+  const buy=st.box&&st.box.buy?st.box.buy:null;
   return {box:(st.box&&st.box.price)||m.box, boxSrc:st.box?st.box.src:'', boxName:st.box?st.box.name:'', boxUrl:st.box?st.box.url:'',
-          boxSealed:st.box?st.box.sealed!==false:true, sold:st.box?st.box.sold:null, msrp:m.msrp, ev: ev? ev.withCls : null}; }
+          boxSealed:st.box?st.box.sealed!==false:true, sold:st.box?st.box.sold:null, msrp:m.msrp, ev: ev? ev.withCls : null,
+          buy:buy?buy.shinsoku:null, buyName:buy?buy.name:''}; }
+function boxBuyCell(b){ return b.buy ? `<span title="${esc(b.buyName||'')} / 出典: シンソク 郵送買取">${yen(b.buy)}</span>` : '—'; }
 function boxCell(b){ if(!b.box) return '—'; const t=[b.boxName||'', b.boxSrc?'出典: '+b.boxSrc:'', b.boxName&&!b.boxSealed?'シュリンクなし':''].filter(Boolean).join(' / ');
   const v=yen(b.box)+(b.boxName&&!b.boxSealed?' <span class="dim">※</span>':'');
   return b.boxUrl ? `<a href="${esc(b.boxUrl)}" target="_blank" rel="noopener" title="${esc(t)}">${v}</a>` : `<span title="${esc(t)}">${v}</span>`; }
@@ -1055,7 +1059,7 @@ function renderHome(){
   </div>
   <div class="rd-bottom">
     <section class="rd-card"><div class="rd-card-head"><div><h2>シリーズから探す</h2><p>収録カードとBOXの価格をチェック</p></div><span class="rd-label">${ids.length} SERIES</span></div><div class="sets rd-series">${ids.map(id=>{const i24=setIndex(id,'24h'),top=topCard(id),b=boxInfo(id);return `<a class="setc" href="#/set/${esc(id)}"><div class="rd-set-top"><span class="rd-set-mark">${id==='M6a'?'30TH':esc(id)}</span><div><div class="t"><b>${esc(SETS[id].name)}</b></div><small>${esc(id)} · ${SETS[id].cards.length} CARDS</small></div><span class="rd-set-arrow">›</span></div><div class="r"><span>指数 / 24h</span><b>${i24?chg(i24.p):'—'}</b></div><div class="r"><span>最高額カード</span><b>${top?esc(top.c.name)+' '+yen(top.v):'—'}</b></div><div class="r"><span>BOX参考価格</span><b>${b.box?yen(b.box):'—'}</b></div><div class="r"><span>カード一覧を見る</span><b>→</b></div></a>`;}).join('')}</div></section>
-    <section class="rd-card"><div class="rd-card-head"><div><h2>BOX相場</h2><p>実勢価格と開封期待値を比較</p></div><a class="rd-link" href="#/box">詳細を見る →</a></div><div class="rd-scroll"><table class="rd-box-table"><thead><tr><th>シリーズ</th><th class="r">出品最安</th><th class="r">成約<br>中央値</th><th class="r">期待値<br>復刻版まで</th><th class="r">期待値−価格</th></tr></thead><tbody>${ids.map(id=>{const b=boxInfo(id);return `<tr data-set="${esc(id)}" role="link" tabindex="0"><td>${esc(SETS[id].name)}<small>${esc(id)}</small></td><td class="r num">${boxCell(b)}<small>定価 ${b.msrp?yen(b.msrp):'—'}</small></td><td class="r num">${boxSoldCell(b)}</td><td class="r num">${b.ev?yen(b.ev):'—'}</td><td class="r num ${b.ev&&b.box?(b.ev>b.box?'up':'down'):''}">${b.ev&&b.box?yen(b.ev-b.box).replace('¥-','−¥'):'—'}</td></tr>`;}).join('')}</tbody></table></div><p class="rd-box-note">期待値は元HTMLの計算による参考値です。実際の封入内容や売却額を保証するものではありません。封入率や計算内訳はシリーズ詳細で確認できます。</p></section>
+    <section class="rd-card"><div class="rd-card-head"><div><h2>BOX相場</h2><p>実勢価格と開封期待値を比較</p></div><a class="rd-link" href="#/box">詳細を見る →</a></div><div class="rd-scroll"><table class="rd-box-table"><thead><tr><th>シリーズ</th><th class="r">出品最安</th><th class="r">成約<br>中央値</th><th class="r">買取</th><th class="r">期待値<br>復刻版まで</th><th class="r">期待値−価格</th></tr></thead><tbody>${ids.map(id=>{const b=boxInfo(id);return `<tr data-set="${esc(id)}" role="link" tabindex="0"><td>${esc(SETS[id].name)}<small>${esc(id)}</small></td><td class="r num">${boxCell(b)}<small>定価 ${b.msrp?yen(b.msrp):'—'}</small></td><td class="r num">${boxSoldCell(b)}</td><td class="r num">${boxBuyCell(b)}</td><td class="r num">${b.ev?yen(b.ev):'—'}</td><td class="r num ${b.ev&&b.box?(b.ev>b.box?'up':'down'):''}">${b.ev&&b.box?yen(b.ev-b.box).replace('¥-','−¥'):'—'}</td></tr>`;}).join('')}</tbody></table></div><p class="rd-box-note">期待値は元HTMLの計算による参考値です。実際の封入内容や売却額を保証するものではありません。封入率や計算内訳はシリーズ詳細で確認できます。</p></section>
   </div>`;
 }
 document.addEventListener('click', e=>{const tab=e.target.closest('[data-homelist]');if(tab){rdRanking=tab.dataset.homelist;renderHome();}});
@@ -1070,7 +1074,7 @@ function renderBuyView(){
 }
 function renderBoxView(){
   const ids=Object.keys(SETS);
-  $('#boxview').innerHTML=`<h2 class="h2">BOX相場と期待値</h2><div class="panel"><table style="min-width:0"><thead><tr><th>シリーズ</th><th class="r">BOX 出品最安</th><th class="r">成約（中央値）</th><th class="r">定価</th><th class="r">定価比</th><th class="r">期待値（復刻まで）</th><th class="r">開封価値</th></tr></thead><tbody>${ids.map(id=>{ const b=boxInfo(id); return `<tr data-set="${esc(id)}"><td>${esc(SETS[id].name)}</td><td class="r">${boxCell(b)}</td><td class="r">${boxSoldCell(b)}</td><td class="r">${b.msrp?yen(b.msrp):'—'}</td><td class="r">${b.box&&b.msrp?(b.box/b.msrp).toFixed(2)+'×':'—'}</td><td class="r">${b.ev?yen(b.ev):'—'}</td><td class="r ${b.ev&&b.box?(b.ev-b.box>0?'up':'down'):''}">${b.ev&&b.box?yen(b.ev-b.box):'—'}</td></tr>`; }).join('')}</tbody></table></div>
+  $('#boxview').innerHTML=`<h2 class="h2">BOX相場と期待値</h2><div class="panel"><table style="min-width:0"><thead><tr><th>シリーズ</th><th class="r">BOX 出品最安</th><th class="r">成約（中央値）</th><th class="r">買取</th><th class="r">定価</th><th class="r">定価比</th><th class="r">期待値（復刻まで）</th><th class="r">開封価値</th></tr></thead><tbody>${ids.map(id=>{ const b=boxInfo(id); return `<tr data-set="${esc(id)}"><td>${esc(SETS[id].name)}</td><td class="r">${boxCell(b)}</td><td class="r">${boxSoldCell(b)}</td><td class="r">${boxBuyCell(b)}</td><td class="r">${b.msrp?yen(b.msrp):'—'}</td><td class="r">${b.box&&b.msrp?(b.box/b.msrp).toFixed(2)+'×':'—'}</td><td class="r">${b.ev?yen(b.ev):'—'}</td><td class="r ${b.ev&&b.box?(b.ev-b.box>0?'up':'down'):''}">${b.ev&&b.box?yen(b.ev-b.box):'—'}</td></tr>`; }).join('')}</tbody></table></div>
     <p class="note">期待値＝各レアリティの「1BOXあたり枚数×平均最安値」の合計。封入率の設定があるシリーズ（今は30th）だけ計算します。開封価値がプラスなら開ける、マイナスなら開けずに単品を買うのが得。</p>`;
 }
 
