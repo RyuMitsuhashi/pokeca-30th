@@ -2,6 +2,7 @@
 User-agent: *
 Allow: /
 Disallow: /prices.json
+Disallow: /dmm-hist.json
 Disallow: /sets.json
 Disallow: /buy_ocr.json
 Disallow: /ids.json
@@ -11,16 +12,19 @@ Disallow: /og/
 User-agent: GPTBot
 Allow: /
 Disallow: /prices.json
+Disallow: /dmm-hist.json
 Disallow: /sets.json
 Disallow: /data/
 User-agent: ClaudeBot
 Allow: /
 Disallow: /prices.json
+Disallow: /dmm-hist.json
 Disallow: /sets.json
 Disallow: /data/
 User-agent: PerplexityBot
 Allow: /
 Disallow: /prices.json
+Disallow: /dmm-hist.json
 Disallow: /sets.json
 Disallow: /data/
 User-agent: Google-Extended

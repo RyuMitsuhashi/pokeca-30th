@@ -1002,18 +1002,18 @@
    }
   },
   "box": {
-   "price": 12500,
-   "when": "2026-09-19T15:34+09:00",
+   "price": 24500,
+   "when": "2026-09-19T17:06+09:00",
    "src": "DMMマイカ",
    "name": "30th CELEBRATION BOX",
    "dmmId": 10004030,
    "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10004030",
    "sealed": true,
    "sold": {
-    "med": 23000,
-    "last": 22000,
-    "n": 18,
-    "qty": 45,
+    "med": 23800,
+    "last": 26900,
+    "n": 50,
+    "qty": 97,
     "when": "2026-09-19"
    }
   }
@@ -1578,17 +1578,17 @@
   },
   "box": {
    "price": 8900,
-   "when": "2026-09-19T15:34+09:00",
+   "when": "2026-09-19T17:06+09:00",
    "src": "DMMマイカ",
    "name": "メガブレイブ BOX",
    "dmmId": 10003850,
    "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10003850",
    "sealed": true,
    "sold": {
-    "med": 8000,
+    "med": 8500,
     "last": 7980,
-    "n": 18,
-    "qty": 62,
+    "n": 50,
+    "qty": 137,
     "when": "2026-09-19"
    }
   }
@@ -2424,17 +2424,17 @@
   },
   "box": {
    "price": 8300,
-   "when": "2026-09-19T15:34+09:00",
+   "when": "2026-09-19T17:06+09:00",
    "src": "DMMマイカ",
    "name": "メガシンフォニア BOX",
    "dmmId": 10003860,
    "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10003860",
    "sealed": true,
    "sold": {
-    "med": 7000,
+    "med": 7500,
     "last": 6980,
-    "n": 18,
-    "qty": 62,
+    "n": 50,
+    "qty": 142,
     "when": "2026-09-19"
    }
   }
@@ -3143,17 +3143,17 @@
   },
   "box": {
    "price": 19000,
-   "when": "2026-09-19T15:34+09:00",
+   "when": "2026-09-19T17:06+09:00",
    "src": "DMMマイカ",
    "name": "インフェルノX BOX",
    "dmmId": 10003880,
    "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10003880",
    "sealed": true,
    "sold": {
-    "med": 18000,
-    "last": 21500,
-    "n": 18,
-    "qty": 29,
+    "med": 18100,
+    "last": 16800,
+    "n": 50,
+    "qty": 158,
     "when": "2026-09-19"
    }
   }
@@ -3333,9 +3333,9 @@
    },
    "226/193": {
     "no": "226",
-    "name": "メガサーナイトex（表面加工エラー）",
+    "name": "メガサーナイトex",
     "rarity": "MA",
-    "dmmId": 364835
+    "dmmId": 364830
    },
    "225/193": {
     "no": "225",
@@ -4666,17 +4666,17 @@
   },
   "box": {
    "price": 12000,
-   "when": "2026-09-19T15:34+09:00",
+   "when": "2026-09-19T17:06+09:00",
    "src": "DMMマイカ",
    "name": "MEGAドリームex BOX",
    "dmmId": 10003900,
    "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10003900",
    "sealed": true,
    "sold": {
-    "med": 12000,
-    "last": 14980,
-    "n": 18,
-    "qty": 26,
+    "med": 12600,
+    "last": 12000,
+    "n": 50,
+    "qty": 127,
     "when": "2026-09-19"
    }
   }
@@ -5391,17 +5391,17 @@
   },
   "box": {
    "price": 8600,
-   "when": "2026-09-19T15:34+09:00",
+   "when": "2026-09-19T17:06+09:00",
    "src": "DMMマイカ",
    "name": "ムニキスゼロ BOX",
    "dmmId": 10003925,
    "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10003925",
    "sealed": true,
    "sold": {
-    "med": 8200,
+    "med": 9100,
     "last": 7980,
-    "n": 18,
-    "qty": 85,
+    "n": 50,
+    "qty": 511,
     "when": "2026-09-18"
    }
   }
@@ -6134,7 +6134,7 @@
   },
   "box": {
    "price": 9800,
-   "when": "2026-09-19T15:34+09:00",
+   "when": "2026-09-19T17:06+09:00",
    "src": "DMMマイカ",
    "name": "ニンジャスピナー BOX",
    "dmmId": 10003950,
@@ -6143,8 +6143,8 @@
    "sold": {
     "med": 9000,
     "last": 7980,
-    "n": 18,
-    "qty": 33,
+    "n": 50,
+    "qty": 158,
     "when": "2026-09-19"
    }
   }
@@ -6865,7 +6865,7 @@
   },
   "box": {
    "price": 9380,
-   "when": "2026-09-19T15:34+09:00",
+   "when": "2026-09-19T17:06+09:00",
    "src": "DMMマイカ",
    "name": "アビスアイ BOX",
    "dmmId": 10003970,
@@ -6873,9 +6873,9 @@
    "sealed": true,
    "sold": {
     "med": 8500,
-    "last": 7700,
-    "n": 18,
-    "qty": 57,
+    "last": 9700,
+    "n": 50,
+    "qty": 172,
     "when": "2026-09-19"
    }
   }
@@ -7566,7 +7566,7 @@
   },
   "box": {
    "price": 12500,
-   "when": "2026-09-19T15:34+09:00",
+   "when": "2026-09-19T17:06+09:00",
    "src": "DMMマイカ",
    "name": "ストームエメラルダ BOX",
    "dmmId": 10003980,
@@ -7574,10 +7574,460 @@
    "sealed": true,
    "sold": {
     "med": 11500,
-    "last": 13800,
-    "n": 18,
-    "qty": 109,
+    "last": 9800,
+    "n": 50,
+    "qty": 194,
     "when": "2026-09-19"
+   }
+  }
+ },
+ "M-P": {
+  "id": "M-P",
+  "name": "プロモーションカード",
+  "cards": {
+   "096/M-P": {
+    "no": "096",
+    "name": "メガマフォクシーex",
+    "rarity": "PROMO",
+    "dmmId": 371010
+   },
+   "143/M-P": {
+    "no": "143",
+    "name": "デウロ",
+    "rarity": "PROMO",
+    "dmmId": 375491
+   },
+   "144/M-P": {
+    "no": "144",
+    "name": "ボスの指令 カラスバ",
+    "rarity": "PROMO",
+    "dmmId": 375492
+   },
+   "142/M-P": {
+    "no": "142",
+    "name": "スペシャルレッドカード",
+    "rarity": "PROMO",
+    "dmmId": 375490
+   },
+   "141/M-P": {
+    "no": "141",
+    "name": "ミネズミ",
+    "rarity": "PROMO",
+    "dmmId": 375489
+   },
+   "140/M-P": {
+    "no": "140",
+    "name": "シビシラス",
+    "rarity": "PROMO",
+    "dmmId": 375488
+   },
+   "139/M-P": {
+    "no": "139",
+    "name": "メガシャリタツex",
+    "rarity": "PROMO",
+    "dmmId": 375487
+   },
+   "136/M-P": {
+    "no": "136",
+    "name": "ガイ",
+    "rarity": "PROMO",
+    "dmmId": 375480
+   },
+   "135/M-P": {
+    "no": "135",
+    "name": "ポケパッド",
+    "rarity": "PROMO",
+    "dmmId": 375475
+   },
+   "133/M-P": {
+    "no": "133",
+    "name": "ピカチュウ",
+    "rarity": "PROMO",
+    "dmmId": 375465
+   },
+   "131/M-P": {
+    "no": "131",
+    "name": "ピカチュウex",
+    "rarity": "PROMO",
+    "dmmId": 375455
+   },
+   "100/M-P": {
+    "no": "100",
+    "name": "ヒカリ",
+    "rarity": "PROMO",
+    "dmmId": 371030
+   },
+   "099/M-P": {
+    "no": "099",
+    "name": "グリ",
+    "rarity": "PROMO",
+    "dmmId": 371025
+   },
+   "098/M-P": {
+    "no": "098",
+    "name": "シュシュプ",
+    "rarity": "PROMO",
+    "dmmId": 371020
+   },
+   "097/M-P": {
+    "no": "097",
+    "name": "パウワウ",
+    "rarity": "PROMO",
+    "dmmId": 371015
+   },
+   "095/M-P": {
+    "no": "095",
+    "name": "シェイミ",
+    "rarity": "PROMO",
+    "dmmId": 371005
+   },
+   "094/M-P": {
+    "no": "094",
+    "name": "基本鋼エネルギー",
+    "rarity": "PROMO",
+    "dmmId": 371000
+   },
+   "093/M-P": {
+    "no": "093",
+    "name": "基本悪エネルギー",
+    "rarity": "PROMO",
+    "dmmId": 370995
+   },
+   "090/M-P": {
+    "no": "090",
+    "name": "基本雷エネルギー",
+    "rarity": "PROMO",
+    "dmmId": 370980
+   },
+   "086/M-P": {
+    "no": "086",
+    "name": "メガガルーラex",
+    "rarity": "PROMO",
+    "dmmId": 370960
+   },
+   "085/M-P": {
+    "no": "085",
+    "name": "ポケパッド",
+    "rarity": "PROMO",
+    "dmmId": 370955
+   },
+   "081/M-P": {
+    "no": "081",
+    "name": "ふうせん",
+    "rarity": "PROMO",
+    "dmmId": 370240
+   },
+   "080/M-P": {
+    "no": "080",
+    "name": "ポケギア3.0",
+    "rarity": "PROMO",
+    "dmmId": 370235
+   },
+   "078/M-P": {
+    "no": "078",
+    "name": "ハイパーボール",
+    "rarity": "PROMO",
+    "dmmId": 370225
+   },
+   "076/M-P": {
+    "no": "076",
+    "name": "ミツルの思いやり",
+    "rarity": "PROMO",
+    "dmmId": 370215
+   },
+   "075/M-P": {
+    "no": "075",
+    "name": "ジェット",
+    "rarity": "PROMO",
+    "dmmId": 370210
+   },
+   "074/M-P": {
+    "no": "074",
+    "name": "ブレイブバングル",
+    "rarity": "PROMO",
+    "dmmId": 370205
+   },
+   "073/M-P": {
+    "no": "073",
+    "name": "カメテテ",
+    "rarity": "PROMO",
+    "dmmId": 370200
+   },
+   "072/M-P": {
+    "no": "072",
+    "name": "ジーランス",
+    "rarity": "PROMO",
+    "dmmId": 370195
+   },
+   "071/M-P": {
+    "no": "071",
+    "name": "メガヤドランex",
+    "rarity": "PROMO",
+    "dmmId": 370190
+   },
+   "070/M-P": {
+    "no": "070",
+    "name": "ヤドン",
+    "rarity": "PROMO",
+    "dmmId": 370185
+   },
+   "069/M-P": {
+    "no": "069",
+    "name": "パワープロテイン",
+    "rarity": "PROMO",
+    "dmmId": 369435
+   },
+   "068/M-P": {
+    "no": "068",
+    "name": "メガエルレイドex",
+    "rarity": "PROMO",
+    "dmmId": 369430
+   },
+   "067/M-P": {
+    "no": "067",
+    "name": "キルリア",
+    "rarity": "PROMO",
+    "dmmId": 369425
+   },
+   "066/M-P": {
+    "no": "066",
+    "name": "ラルトス",
+    "rarity": "PROMO",
+    "dmmId": 369420
+   },
+   "065/M-P": {
+    "no": "065",
+    "name": "ダブルドラゴンエネルギー",
+    "rarity": "PROMO",
+    "dmmId": 369415
+   },
+   "064/M-P": {
+    "no": "064",
+    "name": "パラレルシティ",
+    "rarity": "PROMO",
+    "dmmId": 369410
+   },
+   "063/M-P": {
+    "no": "063",
+    "name": "プルメリ",
+    "rarity": "PROMO",
+    "dmmId": 369405
+   },
+   "062/M-P": {
+    "no": "062",
+    "name": "かるいし",
+    "rarity": "PROMO",
+    "dmmId": 369400
+   },
+   "061/M-P": {
+    "no": "061",
+    "name": "フィールドブロアー",
+    "rarity": "PROMO",
+    "dmmId": 369395
+   },
+   "060/M-P": {
+    "no": "060",
+    "name": "バトルサーチャー",
+    "rarity": "PROMO",
+    "dmmId": 369390
+   },
+   "058/M-P": {
+    "no": "058",
+    "name": "トレーナーズポスト",
+    "rarity": "PROMO",
+    "dmmId": 369380
+   },
+   "056/M-P": {
+    "no": "056",
+    "name": "ホルビー",
+    "rarity": "PROMO",
+    "dmmId": 369370
+   },
+   "055/M-P": {
+    "no": "055",
+    "name": "ミカルゲ",
+    "rarity": "PROMO",
+    "dmmId": 369365
+   },
+   "054/M-P": {
+    "no": "054",
+    "name": "デデンネGX",
+    "rarity": "PROMO",
+    "dmmId": 369360
+   },
+   "053/M-P": {
+    "no": "053",
+    "name": "ペパー",
+    "rarity": "PROMO",
+    "dmmId": 369355
+   },
+   "052/M-P": {
+    "no": "052",
+    "name": "ポケパッド",
+    "rarity": "PROMO",
+    "dmmId": 369205
+   },
+   "051/M-P": {
+    "no": "051",
+    "name": "トウコ",
+    "rarity": "PROMO",
+    "dmmId": 362530
+   },
+   "050/M-P": {
+    "no": "050",
+    "name": "ふうせん",
+    "rarity": "PROMO",
+    "dmmId": 362525
+   },
+   "049/M-P": {
+    "no": "049",
+    "name": "逆境ほけん",
+    "rarity": "PROMO",
+    "dmmId": 362520
+   },
+   "048/M-P": {
+    "no": "048",
+    "name": "ノココッチ",
+    "rarity": "PROMO",
+    "dmmId": 362515
+   },
+   "047/M-P": {
+    "no": "047",
+    "name": "エレズン",
+    "rarity": "PROMO",
+    "dmmId": 362510
+   },
+   "046/M-P": {
+    "no": "046",
+    "name": "ワルビアルex",
+    "rarity": "PROMO",
+    "dmmId": 362505
+   },
+   "045/M-P": {
+    "no": "045",
+    "name": "リザード",
+    "rarity": "PROMO",
+    "dmmId": 362500
+   },
+   "032/M-P": {
+    "no": "032",
+    "name": "ラティアスex",
+    "rarity": "PROMO",
+    "dmmId": 361505
+   },
+   "031/M-P": {
+    "no": "031",
+    "name": "夜のタンカ",
+    "rarity": "PROMO",
+    "dmmId": 361500
+   },
+   "022/M-P": {
+    "no": "022",
+    "name": "リオル",
+    "rarity": "PROMO",
+    "dmmId": 361200
+   },
+   "021/M-P": {
+    "no": "021",
+    "name": "ラルトス",
+    "rarity": "PROMO",
+    "dmmId": 361195
+   },
+   "020/M-P": {
+    "no": "020",
+    "name": "ピカチュウ",
+    "rarity": "PROMO",
+    "dmmId": 361190
+   },
+   "017/M-P": {
+    "no": "017",
+    "name": "ニャオハ",
+    "rarity": "PROMO",
+    "dmmId": 361175
+   },
+   "016/M-P": {
+    "no": "016",
+    "name": "基本鋼エネルギー",
+    "rarity": "PROMO",
+    "dmmId": 361170
+   },
+   "014/M-P": {
+    "no": "014",
+    "name": "基本闘エネルギー",
+    "rarity": "PROMO",
+    "dmmId": 361160
+   },
+   "013/M-P": {
+    "no": "013",
+    "name": "基本超エネルギー",
+    "rarity": "PROMO",
+    "dmmId": 361155
+   },
+   "012/M-P": {
+    "no": "012",
+    "name": "基本雷エネルギー",
+    "rarity": "PROMO",
+    "dmmId": 361150
+   },
+   "011/M-P": {
+    "no": "011",
+    "name": "基本水エネルギー",
+    "rarity": "PROMO",
+    "dmmId": 361145
+   },
+   "009/M-P": {
+    "no": "009",
+    "name": "基本草エネルギー",
+    "rarity": "PROMO",
+    "dmmId": 361135
+   },
+   "008/M-P": {
+    "no": "008",
+    "name": "メガシグナル",
+    "rarity": "PROMO",
+    "dmmId": 361130
+   },
+   "007/M-P": {
+    "no": "007",
+    "name": "リーリエの決心",
+    "rarity": "PROMO",
+    "dmmId": 361125
+   },
+   "006/M-P": {
+    "no": "006",
+    "name": "カウンターゲイン",
+    "rarity": "PROMO",
+    "dmmId": 361120
+   },
+   "005/M-P": {
+    "no": "005",
+    "name": "あなあけスコップ",
+    "rarity": "PROMO",
+    "dmmId": 361115
+   },
+   "004/M-P": {
+    "no": "004",
+    "name": "マクノシタ",
+    "rarity": "PROMO",
+    "dmmId": 361110
+   },
+   "003/M-P": {
+    "no": "003",
+    "name": "マシマシラ",
+    "rarity": "PROMO",
+    "dmmId": 361105
+   },
+   "002/M-P": {
+    "no": "002",
+    "name": "ラプラスex",
+    "rarity": "PROMO",
+    "dmmId": 361100
+   },
+   "001/M-P": {
+    "no": "001",
+    "name": "チコリータ",
+    "rarity": "PROMO",
+    "dmmId": 361095
    }
   }
  }
