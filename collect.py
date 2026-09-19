@@ -72,7 +72,14 @@ M6A_SHOPS = {
 PRICE = re.compile(r"[¥￥]\s?([\d,]+)|([\d,]+)\s?円")
 LINK = re.compile(r'href="(?:https://myca\.dmm\.com)?/' + GENRE + r'/items/single-card/(\d+)[^"]*"[^>]*>(.*?)</a>', re.S)
 # カード番号：通常（135/103）、プロモ（144/M-P、397/SM-P）、30thのRGB（R/RGB）
-CARDNO = re.compile(r"(\d{1,3}/\d{1,3}|\d{1,3}/[A-Za-z]{1,3}-P|[A-Z]/RGB)")
+NO = r"\d{1,3}/\d{1,3}|\d{1,3}/[A-Za-z]{1,3}-P|[A-Z]/RGB"
+CARDNO = re.compile(r"(" + NO + r")")
+# 一覧の1行にまとまっているメタ情報。DMMには3つの形がある
+#   128/103/SAR/M6a … レアリティあり
+#   092/103/-/M6a   … レアリティが「-」（AR・SAR以外のカードに多い）
+#   052/103/M6a     … レアリティ欄そのものが無い
+# 「-」や欠落を許さないと、そのカードがシリーズ不明で丸ごと落ちる
+META_LINE = re.compile(r"(?:^|\n)\s*(" + NO + r")/(?:([A-Za-z]+|-)/)?([A-Za-z]{1,4}(?:\d{1,2}[A-Za-z]?)?|[A-Za-z]{1,3}-P)\s*(?=\n|$)")
 
 
 def yen(s): return int(str(s).replace(",", "")) if s else None
@@ -223,9 +230,11 @@ def parse_list(html: str) -> list[dict]:
         if not name or cid in seen: continue
         seg = html[m.end(): links[i + 1].start() if i + 1 < len(links) else m.end() + 3000]
         text = BeautifulSoup(seg, "html.parser").get_text("\n", strip=True)
-        meta = re.search(r"(\d{1,3}/\d{1,3}|\d{1,3}/[A-Za-z]{1,3}-P|[A-Z]/RGB)/([A-Za-z]+)/([A-Za-z0-9-]+)", text)
-        if meta:   # 30th 型：135/103/FUR/M6a が1行
-            key, rarity, setcode = meta.group(1), meta.group(2).upper(), meta.group(3)
+        meta = META_LINE.search(text)
+        if meta:   # 「135/103/FUR/M6a」型（レアリティは「-」や欠落もある）
+            key, setcode = meta.group(1), meta.group(3)
+            rarity = (meta.group(2) or "").upper()
+            if rarity == "-": rarity = ""
         else:      # MEGA 型：名前に「091/063」、別行に「SAR/M1L」
             k = CARDNO.search(name) or CARDNO.search(text); key = k.group(1) if k else None
             rc = re.search(r"(?:^|\n)\s*([A-Z]{1,5}|[A-Z]{1,3}\d?)/([A-Za-z]{1,3}\d[A-Za-z0-9]{0,3}|[A-Za-z]{1,3}-P)\s*(?:\n|$)", text)
@@ -270,6 +279,10 @@ BOX_IDS: dict[str, int] = {
     "M6":  10003980,   # ストームエメラルダ BOX
     "M6a": 10004030,   # 30th CELEBRATION BOX（10004020 は別商品の FUTURISTIC BOX なので使わない）
     "30th CELEBRATION": 0,   # プレミアムデッキセット等、30th系の別商品には BOX を付けない（0 = 取得しない）
+    # --- BOX が存在しない区分（0 = 取得しない）。ここを埋めておくと keyword=BOX の一覧クロールを省ける ---
+    "M-P": 0,   # プロモーションカード（BOX という商品が無い）
+    "MEE": 0, "MEZ": 0, "MEM": 0,   # スターターセットex
+    "MBG": 0, "MBD": 0,             # スターターセットMEGA
     # --- スカーレット＆バイオレット期 ---
     "熱風のアリーナ":         10003760,   # sv9a
     "テラスタルフェスex":      10003730,   # sv8a
@@ -989,8 +1002,17 @@ def main():
     PREV_HIST = json.loads(HIST_FILE.read_text(encoding="utf-8")) if HIST_FILE.exists() else {}
     REFRESH_ALL = os.environ.get("REFRESH_ALL") == "1"      # 全カードを開き直したいとき
     reused = {"n": 0}
-    box_index = dmm_box_index(a.dump)          # 全シリーズのBOXを1回で取る（シリーズコードで紐づけ）
-    log(f"BOX商品: {len(box_index)}件（コード付き {sum(1 for b in box_index if b['setcode'])}件）")
+    # BOX は BOX_IDS に商品IDがあるシリーズなら商品ページ1枚で済む。
+    # keyword=BOX の一覧クロール（8ページ）は、IDが無いシリーズが出てきたときだけ走らせる
+    box_index: list[dict] = []
+    box_index_done = {"v": False}
+
+    def box_index_lazy():
+        if not box_index_done["v"]:
+            box_index_done["v"] = True
+            box_index.extend(dmm_box_index(a.dump))
+            log(f"BOX商品: {len(box_index)}件（コード付き {sum(1 for b in box_index if b['setcode'])}件）")
+        return box_index
     ocr = ocr_buy_by_key()
 
     groups = collect_series(a.dump)                     # シリーズ一覧を1回読んでコードで振り分ける
@@ -1076,7 +1098,7 @@ def main():
                 log("  BOX 実勢: 取得しない指定（BOX_IDS = 0）"); raise StopIteration
             b = dmm_box_item(bid, a.dump) if bid else None          # ① BOX_IDS で手動指定があればそれ
             if b: log(f"  BOX 商品ID指定: {bid}")
-            if not b: b = pick_box(box_index, set_id, entry["name"])   # ② keyword=BOX の一覧からコード照合
+            if not b: b = pick_box(box_index_lazy(), set_id, entry["name"])   # ② keyword=BOX の一覧からコード照合
             if not b:      # ③ コードも名前も当たらなければ、そのシリーズ名でもう一度だけ引く
                 extra = dmm_box_index(a.dump, keyword=box_query(entry["name"])) if box_query(entry["name"]) else []
                 ids = {x["dmmId"] for x in box_index}; box_index += [x for x in extra if x["dmmId"] not in ids]
