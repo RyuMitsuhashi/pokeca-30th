@@ -403,6 +403,7 @@ const SERIES = {
   buy:   {label:'買取（最高）', color:'var(--s-buy)', style:'dot', src:'カードラッシュ'},
   psa:   {label:'PSA10 最安', color:'var(--s-psa)', style:'solid', src:'DMMマイカ 鑑定品'},
   sold:  {label:'成約（中央値）', color:'var(--s-sold)', style:'solid', src:'DMMマイカ 販売履歴＝実際に売れた価格'},
+  psabuy:{label:'PSA10 買取', color:'var(--s-psa)', style:'dot', src:'シンソク 郵送買取'},
 };
 const SALE_ORDER = ['dmm','rush','avg','flea'];
 const BUY_LABEL = {yuyu:'遊々亭', shinsoku:'シンソク', kanabell:'カーナベル', cardrush:'カードラッシュ'};
@@ -555,7 +556,7 @@ const setListUrl = id => `https://myca.dmm.com/pokemon-trading-card-game/list?ca
 
 const LS_KEY = 'pk30th-dash-custom-v1';
 const state = { tab:'all', sort:{col:'no', dir:'asc'}, q:'', selected:null, range:'all',
-  basis:'raw', enabled:{flea:true, rush:true, dmm:true, avg:true, buy:true, psa:true, sold:true}, loaded:{}, loadedShops:{}, loadedBuy:{}, loadedSold:{}, loadedAt:null };
+  basis:'raw', enabled:{flea:true, rush:true, dmm:true, avg:true, buy:true, psa:true, sold:true, psabuy:true}, loaded:{}, loadedShops:{}, loadedBuy:{}, loadedSold:{}, loadedPsaBuy:{}, loadedAt:null };
 function loadCustom(){ try{ const o=JSON.parse(localStorage.getItem(LS_KEY)||'{}'); return (o&&typeof o==='object')?o:{}; }catch(e){ return {}; } }
 function saveCustom(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state.custom)); return true; }catch(e){ return false; } }
 
@@ -767,6 +768,7 @@ function renderModal(){
   const condHTML=Object.keys(conds).length?Object.entries(conds).sort((a,b)=>a[1]-b[1]).map(([k,v])=>`<div class="row"><span>状態 ${esc(k)} の最安</span><span class="num">${yen(v)}</span></div>`).join(''):`<div class="row"><span>状態別の最安</span><span class="dim">出品データなし</span></div>`;
   const legend=Object.keys(SERIES).filter(s=>ps.some(p=>p.s===s)).map(s=>`<button data-s="${s}" aria-pressed="${state.enabled[s]}" style="color:${SERIES[s].color}"><span class="sw ${SERIES[s].style}"></span><span style="color:var(--text)">${SERIES[s].label}</span></button>`).join('');
   const sold=(state.loadedSold&&state.loadedSold[CUR]||{})[c.key]||null;   // 実際に売れた価格（DMMの販売履歴）
+  const psaBuy=(state.loadedPsaBuy&&state.loadedPsaBuy[CUR]||{})[c.key]||null;   // PSA10の買取価格（鑑定に出す価値）
   const rows=shopRows(c);
   const dmmLow=latestOf(c,'dmm');
   const shopHTML=rows.length?`<table><thead><tr><th>店舗</th><th class="r">販売価格</th><th class="r">DMM最安比</th><th>状態</th><th>取得</th></tr></thead><tbody>${rows.map(r=>{ const d=dmmLow?r.price-dmmLow.v:null; return `<tr><td>${esc(r.shop)}<span class="src">${esc(r.src)}</span></td><td class="r num">${yen(r.price)}</td><td class="r num ${d==null?'dim':d>0?'down':d<0?'up':''}">${d==null?'—':(d>0?'+':'')+yen(d).replace('¥-','-¥')}</td><td>${esc(r.cond||'—')}</td><td class="num">${esc(r.when)}</td></tr>`; }).join('')}</tbody></table>`:`<div class="note">店舗別の価格はまだありません。collect.py を回すと各店の値が入ります。</div>`;
@@ -792,6 +794,8 @@ function renderModal(){
           <div><div class="l">スプレッド（最安販売−最高買取）</div><div class="v num">${sp?sp.p.toFixed(0)+'%':'—'}</div></div>
           <div><div class="l">直近の成約（DMM）${sold?'・'+esc(sold.when):''}</div><div class="v num">${sold?yen(sold.med):'—'}${sold?`<small class="dim" style="font-weight:400"> ${sold.n}件・${sold.qty}枚</small>`:''}</div></div>
           <div><div class="l">成約と出品最安の差</div><div class="v num">${sold&&dmmLow?chg((sold.med-dmmLow.v)/dmmLow.v*100):'—'}</div></div>
+          <div><div class="l">PSA10 買取${psaBuy?'・'+esc(psaBuy.shop):''}</div><div class="v num" style="color:var(--s-psa)">${psaBuy?yen(psaBuy.price):'—'}</div></div>
+          <div><div class="l">鑑定差益（PSA10買取−素体最安）</div><div class="v num ${psaBuy&&sale?(psaBuy.price-sale.v>0?'up':'down'):''}">${psaBuy&&sale?yen(psaBuy.price-sale.v):'—'}</div></div>
         </div>
         <div class="ranges" id="ranges">${[['3d','3日'],['7d','1週'],['30d','1か月'],['all','全期間']].map(([k,l])=>`<button data-r="${k}" aria-pressed="${state.range===k}">${l}</button>`).join('')}</div>
         <div class="legend" id="legend">${legend}</div>
@@ -906,7 +910,7 @@ async function loadPricesJson(){
   try{
     const r=await fetch('./prices.json',{cache:'no-store'}); if(!r.ok) return;
     const snaps=await r.json(); if(!Array.isArray(snaps)||!snaps.length) return;
-    const loaded={}, shops={}; let last=null; const lastSnap=snaps[snaps.length-1]; state.loadedBuy={}; state.loadedSold={};
+    const loaded={}, shops={}; let last=null; const lastSnap=snaps[snaps.length-1]; state.loadedBuy={}; state.loadedSold={}; state.loadedPsaBuy={};
     const SHOP={cardrush:'カードラッシュ', hareruya2:'晴れる屋2', torecacamp:'トレカキャンプ', shinsoku:'シンソク', torecalounge:'トレカラウンジ', clabo:'カードラボ', kanabell:'カーナベル', manasource:'マナソース', amenitydream:'アメニティドリーム'};
     const apply=(setId,key,P,t,isLast)=>{
       const add=(s,v,src)=>{ if(v) (((loaded[setId]=loaded[setId]||{})[key])=(loaded[setId][key]||[])).push({s,t,v,src,custom:false}); };
@@ -915,6 +919,9 @@ async function loadPricesJson(){
       if(dmmSrc&&dmmSrc.sold&&dmmSrc.sold.med){ add('sold',dmmSrc.sold.med,'DMMマイカ 販売履歴の中央値（'+dmmSrc.sold.n+'件・'+dmmSrc.sold.qty+'枚）');
         if(isLast) ((state.loadedSold[setId]=state.loadedSold[setId]||{})[key]=dmmSrc.sold); }
       if(P.psa10&&P.psa10.lowest) add('psa',P.psa10.lowest,'PSA10 最安（DMMマイカ鑑定品'+(P.psa10.shops&&P.psa10.shops.shinsoku?'・シンソク':'')+'）');
+      if(P.psa10&&P.psa10.buy){ const pb=Object.entries(P.psa10.buy).filter(([,v])=>v).sort((x,y)=>y[1]-x[1])[0];
+        if(pb){ add('psabuy',pb[1],'PSA10 買取（'+buyLabel(pb[0])+'）');
+          if(isLast) ((state.loadedPsaBuy[setId]=state.loadedPsaBuy[setId]||{})[key]={shop:buyLabel(pb[0]), price:pb[1]}); } }
       const buys=[]; if(P.cardrush&&P.cardrush.buy) buys.push({shop:'カードラッシュ', price:P.cardrush.buy, when:fmtDT(t), src:''});
       for(const [k,v] of Object.entries(P.buy||{})) if(v&&v.price) buys.push({shop:buyLabel(k), price:v.price, when:v.when||fmtDT(t), src:v.src||''});
       if(P.cardrush&&!P.cardrush.soldout) add('rush',P.cardrush.sell,'カードラッシュ（prices.json）');

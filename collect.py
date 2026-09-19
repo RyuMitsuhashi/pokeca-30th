@@ -537,7 +537,6 @@ def shopify_json(url, dump_name, dump):
 
 
 # ---------- 買取価格（第1段：Web上のテキスト価格表） ----------
-SHINSOKU_LIST = "https://shinsoku-tcg.com/yuso-kaitori"     # シンソク：簡単カート買取（価格保証リスト）
 KANABELL_BUY_URL = ""   # カーナベルの買取検索URL（{q} にカード名）。ページ構造を確認してから入れる。空なら取得しない
 BUY_OCR = pathlib.Path("buy_ocr.json")                      # ocr_buylist.py の出力（画像の買取表）
 
@@ -556,16 +555,57 @@ def parse_card_blocks(text: str) -> dict[str, int]:
     return out
 
 
-def shinsoku_buylist(dump: bool) -> dict[str, int]:
-    try:
-        html = render(SHINSOKU_LIST, "shinsoku_list.html" if dump else None, scroll=12)
-    except Exception as e:
-        log(f"  shinsoku: {e}"); return {}
-    text = BeautifulSoup(html, "html.parser").get_text("\n", strip=True)
-    out = parse_card_blocks(text)
-    lines = [l for l in text.split("\n") if l.strip()]
-    log(f"  shinsoku: 買取 {len(out)}件（テキスト {len(lines)}行）" + (f"。先頭付近: {lines[:12]!r}" if len(out) < 20 else ""))
+SHINSOKU_API = "https://shinsoku-tcg.com/api/items"   # 郵送買取（簡単カート買取）の一覧。画面と同じデータをJSONで返す
+SHINSOKU_PAGES = 30          # 1ページ100件。ポケモンは約1,900件なので余裕をみて
+
+
+def _norm(s: str) -> str:
+    """カード名の表記ゆれを吸収（記号・空白・カッコ内を落とす）"""
+    s = re.sub(r"[【\[（(].*?[】\])）]", "", str(s))
+    return re.sub(r"[\s　・/\-‐−]", "", s).lower()
+
+
+def shinsoku_buylist(dump: bool) -> dict[str, list[dict]]:
+    """シンソクの郵送買取を API から取る → {カード番号: [{name, price, psa10, full}]}
+    modelno に同じ番号で別カードが入っていることがあるので、番号だけでなく名前でも照合できるよう一覧で返す"""
+    out: dict[str, list[dict]] = {}
+    raw_all = []
+    for page in range(SHINSOKU_PAGES):
+        params = {"postal_only": "true", "sort": "price_desc", "type": "ALL", "brand": "ポケモン",
+                  "page": page, "limit": 100}
+        try:
+            r = requests.get(SHINSOKU_API, params=params, headers=HEADERS, timeout=30)
+            r.raise_for_status(); j = r.json()
+        except Exception as e:
+            log(f"  shinsoku p{page}: {e}"); break
+        data = j.get("data") or {}
+        items = data.get("items") or []
+        raw_all += items
+        for it in items:
+            key_m = CARDNO.search(str(it.get("modelno") or ""))
+            price = it.get("postal_purchase_price_s")
+            if not key_m or not price: continue
+            out.setdefault(key_m.group(1), []).append({
+                "name": it.get("name") or "", "price": int(price),
+                "psa10": any((t or {}).get("slug") == "psa10" for t in (it.get("tags") or [])),
+                "full": bool(it.get("is_full_amount_flag"))})
+        time.sleep(0.4)
+        if not data.get("has_more") or not items: break
+    if dump and raw_all:
+        DUMP.mkdir(exist_ok=True); (DUMP / "shinsoku_items.json").write_text(json.dumps(raw_all, ensure_ascii=False, indent=1), encoding="utf-8")
+    n_psa = sum(1 for v in out.values() for x in v if x["psa10"])
+    log(f"  shinsoku: 商品 {len(raw_all)}件 → 番号つき {sum(len(v) for v in out.values())}件（PSA10 {n_psa}件 / 番号 {len(out)}種）")
     return out
+
+
+def pick_shinsoku(entries: list[dict], card_name: str, psa10: bool) -> dict | None:
+    """同じ番号の候補からこのカードのものを選ぶ。名前が一致するものを優先し、候補が1つだけなら採用"""
+    cand = [e for e in entries if e["psa10"] == psa10]
+    if not cand: return None
+    n = _norm(card_name)
+    hit = [e for e in cand if n and (n in _norm(e["name"]) or _norm(e["name"]) in n)]
+    if hit: return max(hit, key=lambda e: e["price"])
+    return cand[0] if len(cand) == 1 else None
 
 
 def kanabell_buy(name: str, dump: bool) -> int | None:
@@ -743,7 +783,7 @@ def main():
 
     sets_db = json.loads(SETS_FILE.read_text(encoding="utf-8")) if SETS_FILE.exists() else {}
     snap = {"fetched_at": dt.datetime.now(JST).isoformat(timespec="minutes"), "v": 2, "sets": {}}
-    shinsoku = shinsoku_buylist(a.dump)        # 弾をまたぐ一覧なのでカード番号で照合
+    shinsoku = shinsoku_buylist(a.dump)        # 弾をまたぐ一覧なのでカード番号＋名前で照合
     box_index = dmm_box_index(a.dump)          # 全シリーズのBOXを1回で取る（シリーズコードで紐づけ）
     log(f"BOX商品: {len(box_index)}件（コード付き {sum(1 for b in box_index if b['setcode'])}件）")
     ocr = ocr_buy_by_key()
@@ -773,7 +813,11 @@ def main():
             entry["cards"][c["key"]] = {"no": c["no"], "name": c["name"], "rarity": c["rarity"], "dmmId": c["dmmId"]}
             P = prices.get(c["key"], {}).get("prices", {}); P["dmm"] = {"lowest": c["lowest"], "cond": c["cond"]}
             buy = {}
-            if c["key"] in shinsoku: buy["shinsoku"] = {"price": shinsoku[c["key"]]}
+            sh = shinsoku.get(c["key"], [])
+            hit = pick_shinsoku(sh, c["name"], psa10=False)
+            if hit: buy["shinsoku"] = {"price": hit["price"], **({"full": True} if hit["full"] else {})}
+            hpsa = pick_shinsoku(sh, c["name"], psa10=True)   # PSA10の買取価格（鑑定に出す価値の判断に使う）
+            if hpsa: P.setdefault("psa10", {}).setdefault("buy", {})["shinsoku"] = hpsa["price"]
             if c["rarity"] in HIGH_RARITY and KANABELL_BUY_URL:
                 kb = kanabell_buy(c["name"], a.dump)
                 if kb: buy["kanabell"] = {"price": kb}
