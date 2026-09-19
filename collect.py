@@ -24,6 +24,10 @@ from bs4 import BeautifulSoup
 WAIT = 2.0
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; SOUBADEX-bot/2.0; +https://soubadex.com/#/about; contact@soubadex.com)", "Accept-Language": "ja,en;q=0.8"}
 OUT = pathlib.Path("prices.json"); SETS_FILE = pathlib.Path("sets.json"); DUMP = pathlib.Path("dump")
+HIST_FILE = pathlib.Path("dmm-hist.json")   # DMMの日次価格推移（毎回まるごと作り直す）
+LATEST_FILE = pathlib.Path("latest.json")   # 現在値（毎回まるごと置き換え。prices.json の後継）
+DAILY_FILE = pathlib.Path("daily.json")     # 自前の履歴：1日1点・値が変わったときだけ追記
+DAILY_KEEP = 800                            # 1カードあたりの保存点数の上限
 JST = dt.timezone(dt.timedelta(hours=9))
 BASE = "https://myca.dmm.com"; GENRE = "pokemon-trading-card-game"; SERIES = "ポケモンカードゲームMEGA"
 DMM_ITEM = f"{BASE}/{GENRE}/items/single-card/{{id}}"
@@ -34,7 +38,14 @@ CAMP = "https://torecacamp-pokemon.com/products/{id}.json"
 # DMM のパックID。自動発見できなかった弾は、DMMの一覧でその弾を選んだときのURLの myca_primary_pack_id をここに書く
 DMM_PACK_IDS = {"M6a": 6374, "M1L": 4761, "pack4762": 4762, "pack5250": 5250, "pack5873": 5873,
                 "pack6011": 6011, "pack6124": 6124, "pack6244": 6244, "pack6621": 6621, "pack6390": 6390, "pack6389": 6389}   # 名前が無い分は一覧の見出しから読む
-SET_NAMES = {"M6a": "30th CELEBRATION", "M1L": "メガブレイブ"}   # 表示名（自動発見した弾は DMM の表記が入る）
+SET_NAMES = {   # 表示名（自動発見した弾は DMM の表記が入る）
+    "M6a": "30th CELEBRATION", "M6": "ストームエメラルダ", "M5": "アビスアイ", "M4": "ニンジャスピナー",
+    "M3": "ムニキスゼロ", "M2a": "MEGAドリームex", "M2": "インフェルノX", "M1S": "メガシンフォニア", "M1L": "メガブレイブ",
+    "M-P": "プロモーションカード",
+    "MEE": "スターターセットex イーブイex", "MEZ": "スターターセットex ゾロア&ゾロアークex",
+    "MEM": "スターターセットex ニャオハ&マスカーニャex",
+    "MBG": "スターターセットMEGA メガゲンガーex", "MBD": "スターターセットMEGA メガディアンシーex",
+}
 HIGH_RARITY = {"SAR", "FUR", "RGB", "SR", "UR", "ACE", "HR", "CSR", "CHR", "SSR", "MUR", "BWR"}
 LISTING_MIN_PRICE = 3000   # この価格以上のカードも出品一覧まで取る
 MAX_LIST_PAGES = 12
@@ -59,8 +70,9 @@ M6A_SHOPS = {
 }
 
 PRICE = re.compile(r"[¥￥]\s?([\d,]+)|([\d,]+)\s?円")
-LINK = re.compile(r'href="(?:https://myca\.dmm\.com)?/' + GENRE + r'/items/single-card/(\d+)"[^>]*>(.*?)</a>', re.S)
-CARDNO = re.compile(r"(\d{3}/\d{3}|[A-Z]/RGB)")
+LINK = re.compile(r'href="(?:https://myca\.dmm\.com)?/' + GENRE + r'/items/single-card/(\d+)[^"]*"[^>]*>(.*?)</a>', re.S)
+# カード番号：通常（135/103）、プロモ（144/M-P、397/SM-P）、30thのRGB（R/RGB）
+CARDNO = re.compile(r"(\d{1,3}/\d{1,3}|\d{1,3}/[A-Za-z]{1,3}-P|[A-Z]/RGB)")
 
 
 def yen(s): return int(str(s).replace(",", "")) if s else None
@@ -68,10 +80,30 @@ def log(msg): print(msg, file=sys.stderr, flush=True)
 
 
 # ---------- 取得（requests / ブラウザ） ----------
-def get(url, dump_name=None):
+def get(url, dump_name=None, wait=None):
     r = requests.get(url, headers=HEADERS, timeout=30); r.raise_for_status()
     if dump_name: DUMP.mkdir(exist_ok=True); (DUMP / dump_name).write_text(r.text, encoding="utf-8")
-    time.sleep(WAIT); return r.text
+    time.sleep(WAIT if wait is None else wait); return r.text
+
+
+def get_json(url, wait=0.4):
+    r = requests.get(url, headers={**HEADERS, "Accept": "application/json"}, timeout=30); r.raise_for_status()
+    time.sleep(wait); return r.json()
+
+
+FALLBACK = {"n": 0}
+
+def fetch_html(url, dump_name=None, marker=None, wait=0.6, **render_kw):
+    """まず普通のHTTPで取る（DMMはサーバー側でHTMLを作っているので、これで中身が揃う）。
+    取れなかった・内容が足りないときだけブラウザ描画に落とす"""
+    try:
+        html = get(url, dump_name, wait=wait)
+        if not marker or marker in html: return html
+        log(f"  直接取得: 内容が足りないので描画に切替（{url[-40:]}）")
+    except Exception as e:
+        log(f"  直接取得: {e.__class__.__name__} → 描画に切替")
+    FALLBACK["n"] += 1
+    return render(url, dump_name, **render_kw)
 
 
 _B = {"pw": None, "browser": None}
@@ -191,12 +223,12 @@ def parse_list(html: str) -> list[dict]:
         if not name or cid in seen: continue
         seg = html[m.end(): links[i + 1].start() if i + 1 < len(links) else m.end() + 3000]
         text = BeautifulSoup(seg, "html.parser").get_text("\n", strip=True)
-        meta = re.search(r"(\d{3}/\d{3}|[A-Z]/RGB)/([A-Za-z]+)/([A-Za-z0-9]+)", text)
+        meta = re.search(r"(\d{1,3}/\d{1,3}|\d{1,3}/[A-Za-z]{1,3}-P|[A-Z]/RGB)/([A-Za-z]+)/([A-Za-z0-9-]+)", text)
         if meta:   # 30th 型：135/103/FUR/M6a が1行
             key, rarity, setcode = meta.group(1), meta.group(2).upper(), meta.group(3)
         else:      # MEGA 型：名前に「091/063」、別行に「SAR/M1L」
             k = CARDNO.search(name) or CARDNO.search(text); key = k.group(1) if k else None
-            rc = re.search(r"(?:^|\n)\s*([A-Z]{1,4}|[A-Z]{1,3}\d?)/([A-Za-z]{1,3}\d[A-Za-z0-9]{0,3})\s*(?:\n|$)", text)
+            rc = re.search(r"(?:^|\n)\s*([A-Z]{1,5}|[A-Z]{1,3}\d?)/([A-Za-z]{1,3}\d[A-Za-z0-9]{0,3}|[A-Za-z]{1,3}-P)\s*(?:\n|$)", text)
             rarity, setcode = (rc.group(1).upper(), rc.group(2)) if rc else ("", "")
         if not key: continue
         p = PRICE.search(text); c = re.search(r"状態([A-Z][+\-]?)", text)
@@ -313,7 +345,8 @@ def box_listings(html: str) -> list[dict]:
 def dmm_box_item(cid: int, dump: bool) -> dict | None:
     """BOX の商品ページを直接読む（手動指定用）。出品一覧があればその最安を採る"""
     try:
-        html = render(DMM_BOX_ITEM.format(id=cid), f"box_item_{cid}.html" if dump else None, wait_ms=20000, settle_ms=800)
+        html = fetch_html(DMM_BOX_ITEM.format(id=cid), f"box_item_{cid}.html" if dump else None,
+                          marker="他の出品情報", wait_ms=20000, settle_ms=800)
     except Exception as e:
         log(f"  BOX商品 {cid}: {e}"); return None
     text = BeautifulSoup(html, "html.parser").get_text("\n", strip=True)
@@ -329,7 +362,7 @@ def dmm_box_item(cid: int, dump: bool) -> dict | None:
                       if v and BOX_MIN_PRICE <= v <= BOX_MAX_PRICE), None)
     if not price: log(f"  BOX商品 {cid}『{name}』: 価格が読めず"); return None
     code = next((l for l in (x.strip() for x in text.split("\n")) if SETCODE.match(l)), "")
-    sold = sales_summary(parse_sales(html))   # BOX も販売履歴（実際に売れた価格・個数）を持つ
+    sold = sales_summary(dmm_trade_history(cid) or parse_sales(html))   # BOX も販売履歴を持つ
     return {"name": name, "dmmId": cid, "setcode": code, "lowest": price, "sold": sold,
             "sealed": bool(BOX_SEALED.search(text)) and not BOX_UNSEALED.search(name),
             "url": DMM_BOX_ITEM.format(id=cid), "listings": len(ls)}
@@ -391,7 +424,8 @@ def dmm_box_index(dump: bool, keyword: str = "BOX") -> list[dict]:
     for page in range(1, MAX_BOX_PAGES + 1):
         url = BOX_LIST.format(kw=requests.utils.quote(keyword)) + (f"&page={page}" if page > 1 else "")
         try:
-            html = render(url, f"boxlist_{keyword}_p{page}.html" if dump else None, wait_for='a[href*="/items/"]', scroll=3)
+            html = fetch_html(url, f"boxlist_{keyword}_p{page}.html" if dump else None,
+                              marker="/items/", wait_for='a[href*="/items/"]', scroll=3)
         except Exception as e:
             log(f"  BOX一覧 p{page}: {e}"); break
         ids = {b["dmmId"] for b in found}
@@ -404,6 +438,38 @@ def dmm_box_index(dump: bool, keyword: str = "BOX") -> list[dict]:
 
 PAGE_TITLE = {}   # pack_id → 一覧の見出し（パック名）
 
+SERIES_LIST = BASE + "/" + GENRE + "/list?cardseries={series}&category=CARD&conditionOption={cond}"
+CONDITION = "O2_A"        # 状態Aの最安で揃える（相場として比べやすい）。状態を問わないなら空にする
+MAX_SERIES_PAGES = 80     # 1ページ48枚。MEGA期は47ページ前後
+
+
+def collect_series(dump: bool) -> dict[str, list[dict]]:
+    """シリーズ一覧（パック横断）を全ページ読んで、行に入っているシリーズコードで振り分ける。
+    パックIDを管理しなくても、新しい弾やプロモが自動で入る"""
+    base = SERIES_LIST.format(series=requests.utils.quote(SERIES), cond=CONDITION)
+    if not CONDITION: base = base.replace("&conditionOption=", "")
+    groups: dict[str, list[dict]] = {}
+    seen: set[int] = set()
+    for page in range(1, MAX_SERIES_PAGES + 1):
+        html = ""
+        for attempt in range(2):
+            try:
+                html = fetch_html(f"{base}&page={page}", f"series_p{page}.html" if dump else None,
+                                  marker="/items/single-card/", wait_for='a[href*="/items/single-card/"]', scroll=3); break
+            except Exception as e:
+                log(f"  series page {page} attempt {attempt+1}: {e}")
+        if not html: break
+        found = [c for c in parse_list(html) if c["dmmId"] not in seen]
+        for c in found:
+            seen.add(c["dmmId"])
+            groups.setdefault(c["setcode"] or "—", []).append(c)
+        log(f"  series page {page}: {len(found)}枚（累計 {len(seen)}）")
+        if not found: break
+    log(f"シリーズ一覧: {len(seen)}枚 / {len(groups)}シリーズ → " +
+        ", ".join(f"{k}:{len(v)}" for k, v in sorted(groups.items(), key=lambda x: -len(x[1]))[:12]))
+    return groups
+
+
 def collect_set_list(pack_id: int, dump: bool, tag: str) -> list[dict]:
     cards, seen = [], set()
     base = f"{BASE}/{GENRE}/list?cardseries={requests.utils.quote(SERIES)}&myca_primary_pack_id={pack_id}"
@@ -411,7 +477,8 @@ def collect_set_list(pack_id: int, dump: bool, tag: str) -> list[dict]:
         html = ""
         for attempt in range(2):
             try:
-                html = render(f"{base}&page={page}", f"list_{tag}_p{page}.html" if dump else None, wait_for='a[href*="/items/single-card/"]', scroll=3); break
+                html = fetch_html(f"{base}&page={page}", f"list_{tag}_p{page}.html" if dump else None,
+                                  marker="/items/single-card/", wait_for='a[href*="/items/single-card/"]', scroll=3); break
             except Exception as e:
                 log(f"  list page {page} attempt {attempt+1} failed: {e}")
         if not html: break
@@ -504,13 +571,48 @@ def sales_summary(sales: list[dict], days: int = 30) -> dict | None:
     return {"med": med, "last": rows[0]["unit"], "n": len(rows), "qty": qty, "when": rows[0]["when"]}
 
 
-def dmm_item(cid: int, dump: bool) -> dict:
-    """商品ページを1回読んで、出品一覧と販売履歴の両方を返す（リクエストは増やさない）"""
+# 商品ページが裏で使っているAPI。販売履歴と日次の価格推移をそのまま取れる
+DMM_API_TRADE = BASE + "/api/myca-app/v2/items/{id}/trade-history?skip=0&take={take}&type=buy"
+DMM_API_GRAPH = BASE + "/api/myca-app/item/price/graph/?props%5Bid%5D={id}&props%5Bterm%5D={term}"
+HIST_TERM = 365      # 取れるだけ取る（発売前のぶんは返ってこない）
+HIST_MAX = 120       # 保存するのは直近この日数まで
+
+
+def dmm_trade_history(cid: int) -> list[dict]:
+    """販売履歴をAPIで取る（HTMLの『2時間前』表記と違い、正確な日時が入る）"""
     try:
-        html = render(DMM_ITEM.format(id=cid), f"dmm_{cid}.html" if dump else None, wait_for="text=他の出品情報")
+        j = get_json(DMM_API_TRADE.format(id=cid, take=50))
     except Exception as e:
-        log(f"  dmm item {cid} failed: {e}"); return {"listings": [], "sold": None}
-    return {"listings": parse_listings(html), "sold": sales_summary(parse_sales(html))}
+        log(f"  trade-history {cid}: {e}"); return []
+    out = []
+    for it in (j.get("items") if isinstance(j, dict) else None) or (j.get("data", {}).get("items") if isinstance(j, dict) else []) or []:
+        price, qty = it.get("price"), it.get("item_count") or 1
+        if not price: continue
+        out.append({"when": str(it.get("traded_at", ""))[:10], "cond": it.get("display_label", ""),
+                    "qty": qty, "total": price * qty, "unit": int(price)})
+    return out
+
+
+def dmm_price_graph(cid: int) -> list[list]:
+    """日次の価格推移（サイトのチャートと同じデータ）→ [[日付, 価格], ...]"""
+    try:
+        j = get_json(DMM_API_GRAPH.format(id=cid, term=HIST_TERM))
+    except Exception as e:
+        log(f"  price-graph {cid}: {e}"); return []
+    rows = (j.get("rows") if isinstance(j, dict) else None) or (j.get("data", {}).get("rows") if isinstance(j, dict) else []) or []
+    out = [[str(r.get("date"))[:10], int(r["value"])] for r in rows if r.get("value")]
+    return out[-HIST_MAX:]
+
+
+def dmm_item(cid: int, dump: bool) -> dict:
+    """商品ページ＋API：出品一覧・販売履歴・価格推移をまとめて取る"""
+    try:
+        html = fetch_html(DMM_ITEM.format(id=cid), f"dmm_{cid}.html" if dump else None,
+                          marker="他の出品情報", wait_for="text=他の出品情報")
+    except Exception as e:
+        log(f"  dmm item {cid} failed: {e}"); return {"listings": [], "sold": None, "hist": []}
+    sales = dmm_trade_history(cid) or parse_sales(html)     # APIが空ならHTMLから拾う
+    return {"listings": parse_listings(html), "sold": sales_summary(sales), "hist": dmm_price_graph(cid)}
 
 
 # ---------- 30th の他店 ----------
@@ -606,6 +708,98 @@ def pick_shinsoku(entries: list[dict], card_name: str, psa10: bool) -> dict | No
     hit = [e for e in cand if n and (n in _norm(e["name"]) or _norm(e["name"]) in n)]
     if hit: return max(hit, key=lambda e: e["price"])
     return cand[0] if len(cand) == 1 else None
+
+
+# ---------- 遊々亭（シングルカード買取・シリーズ別）----------
+# URL は /buy/poc/s/<コード>。コードはシリーズIDを小文字＋数字2桁にしたもの（M6a → m06a、M1L → m01l）。
+# 1ページに全カードが入っていて、買取価格と前回価格（値上がり・値下がり）まで載っている。
+# ただしデータセンターのIPからは 403 を返すことがあるため、拒否されたらその回はスキップする。
+YUYU_BUY = "https://yuyu-tei.jp/buy/poc/s/{code}"
+YUYU_OFF = {"off": False}
+
+
+def yuyu_code(set_id: str) -> str:
+    m = re.match(r"^([A-Za-z]+)(\d+)([A-Za-z]*)$", set_id)
+    return f"{m.group(1).lower()}{int(m.group(2)):02d}{m.group(3).lower()}" if m else set_id.lower()
+
+
+def yuyu_buylist(set_id: str, dump: bool) -> dict[str, dict]:
+    """遊々亭のシリーズ別買取 → {カード番号: {name, price, prev}}"""
+    if YUYU_OFF["off"]: return {}
+    code = yuyu_code(set_id)
+    try:
+        html = get(YUYU_BUY.format(code=code), f"yuyu_{code}.html" if dump else None)
+    except requests.HTTPError as e:
+        if getattr(e.response, "status_code", 0) in (403, 429):
+            YUYU_OFF["off"] = True; log(f"  yuyu: 拒否（{e.response.status_code}）。今回は遊々亭を取得しない"); return {}
+        log(f"  yuyu {code}: {e}"); return {}
+    except Exception as e:
+        log(f"  yuyu {code}: {e}"); return {}
+    out = {}
+    for c in BeautifulSoup(html, "html.parser").select(".card-product"):
+        st = c.select_one("strong")
+        if not st: continue
+        price = yen(re.sub(r"[^\d,]", "", st.get_text(" ", strip=True)))
+        if not price: continue
+        no_el = c.select_one("span.border")
+        img = c.select_one("img[alt]")
+        no = (no_el.get_text(strip=True) if no_el else (img["alt"].split("-")[0] if img else "")).strip()
+        m = CARDNO.search(no)
+        if not m: continue
+        h4 = c.select_one("h4"); dl = c.select_one("del")
+        out[m.group(1)] = {"name": h4.get_text(" ", strip=True) if h4 else "",
+                           "price": price,
+                           "prev": yen(re.sub(r"[^\d,]", "", dl.get_text(" ", strip=True))) if dl else None}
+    log(f"  yuyu {code}: 買取 {len(out)}件")
+    return out
+
+
+# ---------- 晴れる屋2（ハレツー買取）----------
+# 商品名が「カード名(レアリティ){タイプ}〈番号〉[シリーズコード]」の形で、シリーズコードまで入っている。
+# サーバー側で作られたHTMLなのでブラウザ描画は不要。カテゴリ一覧をページ送りで読むだけ。
+HARE2_LIST = "https://www.hare2buy.com/product-list/{id}"
+HARE2_LISTS = {187: "MEGAシリーズ", 128: "スカーレット&バイオレット", 2: "ソード&シールド", 1: "サン&ムーン"}
+HARE2_MAX_PAGES = 40         # 1ページ60件
+HARE2_NAME = re.compile(r"^(.*?)(?:\{(.*?)\})?〈(.+?)〉(?:\[(.+?)\])?\s*$")
+
+
+def hare2_page(list_id: int, page: int, dump: bool) -> list[dict]:
+    html = get(HARE2_LIST.format(id=list_id) + f"?page={page}", f"hare2_{list_id}_p{page}.html" if dump else None)
+    soup = BeautifulSoup(html, "html.parser")
+    out = []
+    for el in soup.select(".list_item_data"):
+        g = el.select_one(".goods_name"); pr = el.select_one(".selling_price .figure")
+        if not g or not pr: continue
+        m = HARE2_NAME.match(g.get_text(" ", strip=True))
+        if not m: continue
+        price = yen(re.sub(r"[^\d,]", "", pr.get_text("", strip=True)))
+        if not price: continue
+        out.append({"name": m.group(1).strip(), "no": m.group(3), "set": (m.group(4) or "").strip(), "price": price})
+    return out
+
+
+def hare2_buylist(dump: bool) -> dict[str, dict[str, dict]]:
+    """晴れる屋2の買取一覧 → {シリーズコード: {カード番号: {name, price}}}"""
+    out: dict[str, dict[str, dict]] = {}
+    total = 0
+    for list_id, label in HARE2_LISTS.items():
+        n = 0
+        for page in range(1, HARE2_MAX_PAGES + 1):
+            try:
+                items = hare2_page(list_id, page, dump)
+            except Exception as e:
+                log(f"  hare2 {label} p{page}: {e}"); break
+            for it in items:
+                if not it["set"]: continue
+                cur = out.setdefault(it["set"], {}).get(it["no"])
+                if cur is None or it["price"] > cur["price"]:   # 同じ番号が複数あれば高いほうを採る
+                    out[it["set"]][it["no"]] = {"name": it["name"], "price": it["price"]}
+            n += len(items)
+            if len(items) < 60: break
+        total += n
+        log(f"  hare2 {label}: {n}件")
+    log(f"  hare2: 合計 {total}件 / シリーズ {len(out)}種")
+    return out
 
 
 def kanabell_buy(name: str, dump: bool) -> int | None:
@@ -742,7 +936,10 @@ def main():
     # 自動発見は全世代のパックを返すので、MEGA 期（ID が MIN_PACK_ID 以上）に絞り、一覧のカード表記が M で始まるものだけ採用。判定は packs.json に記憶
     MIN_PACK_ID = 4700; MAX_PROBE = 40
     cache = json.loads(PACKS_FILE.read_text(encoding="utf-8")) if PACKS_FILE.exists() else {}   # {pack_id: {"name", "code"}}
-    discovered = [(n, pid) for n, pid in discover_packs(a.dump).items() if pid >= MIN_PACK_ID and pid not in packs.values()]
+    # シリーズ一覧から全カードを取るようになったので、パックIDの自動発見は既定でやらない（ブラウザ起動が不要になる）。
+    # 商品ページへのリンク用にIDが欲しいときだけ DISCOVER_PACKS=1 を付けて実行する
+    discovered = ([(n, pid) for n, pid in discover_packs(a.dump).items() if pid >= MIN_PACK_ID and pid not in packs.values()]
+                  if os.environ.get("DISCOVER_PACKS") == "1" else [])
     probed = 0
     for name, pid in sorted(discovered, key=lambda x: x[1]):
         key = str(pid)
@@ -784,21 +981,29 @@ def main():
     sets_db = json.loads(SETS_FILE.read_text(encoding="utf-8")) if SETS_FILE.exists() else {}
     snap = {"fetched_at": dt.datetime.now(JST).isoformat(timespec="minutes"), "v": 2, "sets": {}}
     shinsoku = shinsoku_buylist(a.dump)        # 弾をまたぐ一覧なのでカード番号＋名前で照合
+    hare2 = hare2_buylist(a.dump)              # シリーズコード＋番号で照合できる
+    hist: dict[str, dict[str, list]] = {}      # DMMの日次価格推移（latest.json とは別ファイルに保存）
+    # 前回の結果。最安値が動いていないカードは商品ページを開き直さず、前回のぶんをそのまま使う
+    prev_snap = (json.loads(LATEST_FILE.read_text(encoding="utf-8")) if LATEST_FILE.exists() else [{}]) or [{}]
+    PREV = (prev_snap[-1] or {}).get("sets", {})
+    PREV_HIST = json.loads(HIST_FILE.read_text(encoding="utf-8")) if HIST_FILE.exists() else {}
+    REFRESH_ALL = os.environ.get("REFRESH_ALL") == "1"      # 全カードを開き直したいとき
+    reused = {"n": 0}
     box_index = dmm_box_index(a.dump)          # 全シリーズのBOXを1回で取る（シリーズコードで紐づけ）
     log(f"BOX商品: {len(box_index)}件（コード付き {sum(1 for b in box_index if b['setcode'])}件）")
     ocr = ocr_buy_by_key()
 
-    for tmp_id, pid in packs.items():
-        if only and tmp_id not in only and not (tmp_id.startswith("pack")): continue
-        cards = collect_set_list(pid, a.dump, tmp_id)
-        if not cards: log(f"{tmp_id}: カードなし（pack id {pid}）"); continue
-        codes = [c["setcode"] for c in cards if c["setcode"]]
-        set_id = max(set(codes), key=codes.count) if codes else tmp_id   # 『…/FUR/M6a』の末尾が弾ID
-        if only and set_id not in only and tmp_id not in only: continue
-        if tmp_id != set_id and tmp_id in sets_db: sets_db.pop(tmp_id)   # packXXXX で保存した古い項目を捨てる
-        entry = sets_db.setdefault(set_id, {"id": set_id, "name": names.get(tmp_id, set_id), "dmm_pack_id": pid, "cards": {}})
-        entry["dmm_pack_id"] = pid; entry["name"] = names.get(tmp_id) or PAGE_TITLE.get(pid) or entry.get("name") or set_id
+    groups = collect_series(a.dump)                     # シリーズ一覧を1回読んでコードで振り分ける
+    code_to_pack = {code: pid for code, pid in packs.items()}
+    for set_id, cards in sorted(groups.items(), key=lambda x: -len(x[1])):
+        if set_id == "—": log(f"シリーズコードなし: {len(cards)}枚（スキップ）"); continue
+        if only and set_id not in only: continue
+        pid = code_to_pack.get(set_id)
+        entry = sets_db.setdefault(set_id, {"id": set_id, "name": names.get(set_id, set_id), "cards": {}})
+        if pid: entry["dmm_pack_id"] = pid
+        entry["name"] = names.get(set_id) or entry.get("name") or set_id
         prices = {}
+        yuyu = yuyu_buylist(set_id, a.dump)      # 遊々亭はシリーズ別ページ（403なら以降スキップ）
         graded = [c for c in cards if c.get("grade") in ("psa10", "psa9")]
         cards = [c for c in cards if c.get("grade", "raw") == "raw"]
         for g in graded:   # 鑑定品：同じ番号の素体カードに psa10/psa9 として付ける
@@ -818,6 +1023,10 @@ def main():
             if hit: buy["shinsoku"] = {"price": hit["price"], **({"full": True} if hit["full"] else {})}
             hpsa = pick_shinsoku(sh, c["name"], psa10=True)   # PSA10の買取価格（鑑定に出す価値の判断に使う）
             if hpsa: P.setdefault("psa10", {}).setdefault("buy", {})["shinsoku"] = hpsa["price"]
+            h2 = hare2.get(set_id, {}).get(c["key"])
+            if h2: buy["hareruya2"] = {"price": h2["price"]}
+            yy = yuyu.get(c["key"])
+            if yy: buy["yuyu"] = {"price": yy["price"], **({"prev": yy["prev"]} if yy.get("prev") else {})}
             if c["rarity"] in HIGH_RARITY and KANABELL_BUY_URL:
                 kb = kanabell_buy(c["name"], a.dump)
                 if kb: buy["kanabell"] = {"price": kb}
@@ -826,10 +1035,18 @@ def main():
                     buy["ocr:" + str(o["shop"])] = {"price": o["price"], "src": o.get("src"), "when": o.get("when")}
             if buy: P["buy"] = buy
             if c["rarity"] in HIGH_RARITY or (c["lowest"] or 0) >= LISTING_MIN_PRICE:
-                it = dmm_item(c["dmmId"], a.dump); ls = it["listings"]
-                if ls:
-                    low = min(ls, key=lambda l: l["price"]); P["dmm"] = {"lowest": low["price"], "cond": low["cond"], "listings": ls}
-                if it["sold"]: P["dmm"]["sold"] = it["sold"]   # 実際に売れた価格（中央値・件数・枚数）
+                pv = ((PREV.get(set_id, {}).get(c["key"], {}) or {}).get("prices") or {}).get("dmm") or {}
+                if not REFRESH_ALL and pv.get("listings") and pv.get("lowest") == c["lowest"]:
+                    # 一覧の最安値が前回と同じ＝出品も動いていないとみなして、前回の中身を引き継ぐ
+                    P["dmm"] = dict(pv); reused["n"] += 1
+                    ph = PREV_HIST.get(set_id, {}).get(c["key"])
+                    if ph: hist.setdefault(set_id, {})[c["key"]] = ph
+                else:
+                    it = dmm_item(c["dmmId"], a.dump); ls = it["listings"]
+                    if ls:
+                        low = min(ls, key=lambda l: l["price"]); P["dmm"] = {"lowest": low["price"], "cond": low["cond"], "listings": ls}
+                    if it["sold"]: P["dmm"]["sold"] = it["sold"]   # 実際に売れた価格（中央値・件数・枚数）
+                    if it.get("hist"): hist.setdefault(set_id, {})[c["key"]] = it["hist"]   # 日次の価格推移
             if c["rarity"] in SEARCH_RARITY:
                 for sk, sc in SHOPS_SEARCH.items():
                     if not sc["base"]: continue
@@ -879,10 +1096,30 @@ def main():
         snap["sets"][set_id] = prices
         log(f"{set_id} {entry['name']}: {len(cards)}枚")
 
+    if hist:
+        HIST_FILE.write_text(json.dumps(hist, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        log(f"saved {HIST_FILE}（{sum(len(v) for v in hist.values())}枚ぶんの価格推移）")
+    log(f"商品ページ: 前回のまま使い回した {reused['n']}枚（REFRESH_ALL=1 で全部取り直し）")
+    log(f"ブラウザ描画へのフォールバック: {FALLBACK['n']}回")
     SETS_FILE.write_text(json.dumps(sets_db, ensure_ascii=False, indent=1), encoding="utf-8")
-    hist = json.loads(OUT.read_text(encoding="utf-8")) if OUT.exists() else []
-    hist.append(snap); OUT.write_text(json.dumps(hist, ensure_ascii=False, indent=1), encoding="utf-8")
-    log(f"saved {OUT} ({len(hist)} snapshots), {SETS_FILE} ({len(sets_db)} sets)")
+    # 現在値（毎回まるごと置き換え）。prices.json のように積み上げないので容量が増えない
+    LATEST_FILE.write_text(json.dumps([snap], ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+
+    # 履歴は1日1点・値が変わったときだけ追記する（変化のないカードは行が増えない）
+    daily = json.loads(DAILY_FILE.read_text(encoding="utf-8")) if DAILY_FILE.exists() else {}
+    today = snap["fetched_at"][:10]; added = 0
+    for set_id, cards in snap["sets"].items():
+        d = daily.setdefault(set_id, {})
+        for key, v in cards.items():
+            price = ((v.get("prices") or {}).get("dmm") or {}).get("lowest")
+            if not price: continue
+            rows = d.setdefault(key, [])
+            if rows and rows[-1][0] == today: rows[-1] = [today, price]      # 同じ日の2回目は上書き
+            elif not rows or rows[-1][1] != price: rows.append([today, price]); added += 1
+            if len(rows) > DAILY_KEEP: del rows[:-DAILY_KEEP]
+    DAILY_FILE.write_text(json.dumps(daily, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    log(f"saved {LATEST_FILE}（{sum(len(v) for v in snap['sets'].values())}枚）, "
+        f"{DAILY_FILE}（+{added}点 / 全{sum(len(c) for c in daily.values())}枚ぶん）, {SETS_FILE}（{len(sets_db)}シリーズ）")
     close_browser()
 
 

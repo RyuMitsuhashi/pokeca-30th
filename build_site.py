@@ -14,7 +14,15 @@ import datetime as dt, html, json, os, pathlib, re, sys
 
 ROOT = pathlib.Path(".")
 SETS = json.loads((ROOT / "sets.json").read_text(encoding="utf-8")) if (ROOT / "sets.json").exists() else {}
-SNAPS = json.loads((ROOT / "prices.json").read_text(encoding="utf-8")) if (ROOT / "prices.json").exists() else []
+def _load_snaps():
+    for name in ("latest.json", "prices.json"):   # 現在値（新形式）→ 無ければ従来の積み上げ形式
+        f = ROOT / name
+        if f.exists():
+            try: return json.loads(f.read_text(encoding="utf-8"))
+            except Exception: pass
+    return []
+SNAPS = _load_snaps()
+DAILY = json.loads((ROOT / "daily.json").read_text(encoding="utf-8")) if (ROOT / "daily.json").exists() else {}
 SITE_NAME = "SOUBADEX"; TAG = "ポケカ相場"
 repo = os.environ.get("GITHUB_REPOSITORY", "")
 SITE_URL = os.environ.get("SITE_URL") or (f"https://{repo.split('/')[0].lower()}.github.io/{repo.split('/')[1]}" if "/" in repo else "https://example.com")
@@ -26,7 +34,7 @@ SET_META = {"M6a": {"msrp": 7200, "release": "2026-09-16", "ev": 19078},
             "M6": {"msrp": 6000}, "M5": {"msrp": 6000}, "M4": {"msrp": 5400}, "M3": {"msrp": 5400},
             "M2a": {"msrp": 5500}, "M2": {"msrp": 5400}, "M1S": {"msrp": 5400}, "M1L": {"msrp": 5400}}
 CHASE = {"RGB", "FUR", "SAR", "SR", "UR", "ACE", "HR", "CSR", "CHR", "SSR", "MUR", "CLS"}
-BUY_LABEL = {"yuyu": "遊々亭", "shinsoku": "シンソク", "kanabell": "カーナベル", "cardrush": "カードラッシュ"}
+BUY_LABEL = {"yuyu": "遊々亭", "shinsoku": "シンソク", "kanabell": "カーナベル", "cardrush": "カードラッシュ", "hareruya2": "晴れる屋2", "torecacamp": "トレカキャンプ"}
 SHOP_LABEL = {"cardrush": "カードラッシュ", "hareruya2": "晴れる屋2", "torecacamp": "トレカキャンプ", "shinsoku": "シンソク", "torecalounge": "トレカラウンジ"}
 
 def esc(s): return html.escape(str(s), quote=True)
@@ -250,14 +258,14 @@ def build():
     for u, t in urls: sm.append(f"<url><loc>{esc(u)}</loc><lastmod>{t.date()}</lastmod><changefreq>daily</changefreq></url>")
     sm.append("</urlset>"); (ROOT / "sitemap.xml").write_text("\n".join(sm), encoding="utf-8")
     robots = ("# HTMLは引用歓迎、生データ（JSON）と共有画像の一括取得は不可\n"
-              "User-agent: *\nAllow: /\nDisallow: /prices.json\nDisallow: /sets.json\nDisallow: /buy_ocr.json\nDisallow: /ids.json\nDisallow: /data/\nDisallow: /og/\n\n"
-              "User-agent: GPTBot\nAllow: /\nDisallow: /prices.json\nDisallow: /sets.json\nDisallow: /data/\n"
-              "User-agent: ClaudeBot\nAllow: /\nDisallow: /prices.json\nDisallow: /sets.json\nDisallow: /data/\n"
-              "User-agent: PerplexityBot\nAllow: /\nDisallow: /prices.json\nDisallow: /sets.json\nDisallow: /data/\n"
+              "User-agent: *\nAllow: /\nDisallow: /prices.json\nDisallow: /dmm-hist.json\nDisallow: /sets.json\nDisallow: /buy_ocr.json\nDisallow: /ids.json\nDisallow: /data/\nDisallow: /og/\n\n"
+              "User-agent: GPTBot\nAllow: /\nDisallow: /prices.json\nDisallow: /dmm-hist.json\nDisallow: /sets.json\nDisallow: /data/\n"
+              "User-agent: ClaudeBot\nAllow: /\nDisallow: /prices.json\nDisallow: /dmm-hist.json\nDisallow: /sets.json\nDisallow: /data/\n"
+              "User-agent: PerplexityBot\nAllow: /\nDisallow: /prices.json\nDisallow: /dmm-hist.json\nDisallow: /sets.json\nDisallow: /data/\n"
               "User-agent: Google-Extended\nAllow: /\n\n"
               f"Sitemap: {SITE_URL}/sitemap.xml\n")
     (ROOT / "robots.txt").write_text(robots, encoding="utf-8")
-    (ROOT / "llms.txt").write_text(f"# {SITE_NAME} ｜ {TAG}\n\n> ポケモンカードの販売価格・買取価格・PSA10価格を、DMMマイカ・カードラッシュ・晴れる屋2・シンソクなどの公開ページから1日2回集計している相場サイト。シリーズ別のBOX期待値、主要カードの指数、鑑定価値（PSA10÷素体）を掲載。\n\n## ページ\n" + "\n".join(f"- [{u}]({u})" for u, t in urls[:500]) + "\n", encoding="utf-8")
+    (ROOT / "llms.txt").write_text(f"# {SITE_NAME} ｜ {TAG}\n\n> ポケモンカードの販売価格・買取価格・PSA10価格を、DMMマイカ・カードラッシュ・晴れる屋2・シンソク・遊々亭などの公開ページから1日2回集計している相場サイト。シリーズ別のBOX期待値、主要カードの指数、鑑定価値（PSA10÷素体）を掲載。\n\n## ページ\n" + "\n".join(f"- [{u}]({u})" for u, t in urls[:500]) + "\n", encoding="utf-8")
     print(f"pages: {len(urls)}, sitemap written", file=sys.stderr)
 
 
