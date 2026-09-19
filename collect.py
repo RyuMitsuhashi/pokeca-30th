@@ -35,13 +35,15 @@ RUSH = "https://www.cardrush-pokemon.jp/product/{id}"
 HARERUYA = "https://www.hareruya2.com/products/{id}.json"
 CAMP = "https://torecacamp-pokemon.com/products/{id}.json"
 
-# DMM のパックID。自動発見できなかった弾は、DMMの一覧でその弾を選んだときのURLの myca_primary_pack_id をここに書く
-DMM_PACK_IDS = {"M6a": 6374, "M1L": 4761, "pack4762": 4762, "pack5250": 5250, "pack5873": 5873,
-                "pack6011": 6011, "pack6124": 6124, "pack6244": 6244, "pack6621": 6621, "pack6390": 6390, "pack6389": 6389}   # 名前が無い分は一覧の見出しから読む
+# シリーズ一覧（cardseries=ポケモンカードゲームMEGA）に出てこない弾だけ、パックIDを明示して追加で読む。
+# IDは DMMの一覧でその弾を選んだときのURLの myca_primary_pack_id。
+# 以前はここからパックIDを自動発見していたが、シリーズ一覧で全カードが取れるようになったので不要になった
+EXTRA_PACKS = {"MF": 6389}   # 30th プレミアムデッキセット エーフィ・ブラッキー
 SET_NAMES = {   # 表示名（自動発見した弾は DMM の表記が入る）
     "M6a": "30th CELEBRATION", "M6": "ストームエメラルダ", "M5": "アビスアイ", "M4": "ニンジャスピナー",
     "M3": "ムニキスゼロ", "M2a": "MEGAドリームex", "M2": "インフェルノX", "M1S": "メガシンフォニア", "M1L": "メガブレイブ",
     "M-P": "プロモーションカード",
+    "MF": "30th CELEBRATION プレミアムデッキセット エーフィ・ブラッキー",
     "MEE": "スターターセットex イーブイex", "MEZ": "スターターセットex ゾロア&ゾロアークex",
     "MEM": "スターターセットex ニャオハ&マスカーニャex",
     "MBG": "スターターセットMEGA メガゲンガーex", "MBD": "スターターセットMEGA メガディアンシーex",
@@ -79,7 +81,13 @@ CARDNO = re.compile(r"(" + NO + r")")
 #   092/103/-/M6a   … レアリティが「-」（AR・SAR以外のカードに多い）
 #   052/103/M6a     … レアリティ欄そのものが無い
 # 「-」や欠落を許さないと、そのカードがシリーズ不明で丸ごと落ちる
-META_LINE = re.compile(r"(?:^|\n)\s*(" + NO + r")/(?:([A-Za-z]+|-)/)?([A-Za-z]{1,4}(?:\d{1,2}[A-Za-z]?)?|[A-Za-z]{1,3}-P)\s*(?=\n|$)")
+# 区切りの数はカードによって違う：
+#   128/103/SAR/M6a   … レアリティあり
+#   092/103/-/M6a     … レアリティが「-」
+#   052/103/M6a       … レアリティ欄なし
+#   446/742/ミラー/MC  … 英字以外の区分が入ることもある
+# 最後の区切りをシリーズコード、その直前をレアリティとして読む
+META_LINE = re.compile(r"(?:^|\n)\s*(" + NO + r")(?:/([^/\n]{1,12}))*?/([A-Za-z]{1,4}(?:\d{1,2}[A-Za-z]?)?|[A-Za-z]{1,3}-P)\s*(?=\n|$)")
 
 
 def yen(s): return int(str(s).replace(",", "")) if s else None
@@ -152,72 +160,6 @@ PACK_JS = """() => { const out = {};
   document.querySelectorAll('option').forEach(o => { const s = o.closest('select'); const n = ((s && (s.name || s.id)) || '').toLowerCase(); if (/^\\d+$/.test(o.value) && o.textContent.trim() && n.includes('pack')) out[o.textContent.trim()] = +o.value; });
   document.querySelectorAll('input[type=checkbox],input[type=radio]').forEach(i => { if ((i.name || '').includes('pack') && /^\\d+$/.test(i.value)) { const l = i.closest('label') || (i.id && document.querySelector('label[for="' + i.id + '"]')); const t = l ? l.textContent.trim() : ''; if (t) out[t] = +i.value; } });
   return out; }"""
-
-
-def discover_packs(dump) -> dict[str, int]:
-    """DMM の一覧（MEGA）で絞り込み「封入パック」を開き、ページが受け取ったパック一覧のデータ（IDと名前）を通信とページ内容から拾う"""
-    url = f"{BASE}/{GENRE}/list?cardseries={requests.utils.quote(SERIES)}"
-    packs: dict[str, int] = {}
-    blobs: list[str] = []
-    page = browser().new_page(user_agent=HEADERS["User-Agent"], locale="ja-JP")
-    def on_response(resp):
-        try:
-            ct = resp.headers.get("content-type", "")
-            if "json" in ct or "text" in ct or "javascript" in ct:
-                body = resp.text()
-                if "pack" in body.lower() or "封入" in body: blobs.append(body)
-        except Exception: pass
-    page.on("response", on_response)
-    try:
-        try: page.goto(url, wait_until="domcontentloaded", timeout=60000)
-        except Exception: pass
-        page.wait_for_timeout(2500)
-        try:
-            page.get_by_text("封入パック", exact=True).first.click(); page.wait_for_timeout(1500)
-            box = page.get_by_placeholder("封入パックを検索").first
-            if box: box.fill(""); page.wait_for_timeout(800)
-        except Exception as e:
-            log(f"  封入パック: 開けず ({e.__class__.__name__})")
-        blobs.append(page.content())
-        if dump: DUMP.mkdir(exist_ok=True); (DUMP / "series_list.html").write_text(page.content(), encoding="utf-8")
-    finally:
-        page.close()
-    # ID と名前の対を拾う（JSON でも RSC のペイロードでも、id と name が同じオブジェクト内に並ぶ）
-    pat_a = re.compile(r'"(?:id|packId|pack_id|primary_pack_id|myca_primary_pack_id|value)"\s*:\s*"?(\d{2,6})"?[^{}]{0,200}?"(?:name|label|title|pack_name|packName)"\s*:\s*"((?:[^"\\]|\\.){2,60})"')
-    pat_b = re.compile(r'"(?:name|label|title|pack_name|packName)"\s*:\s*"((?:[^"\\]|\\.){2,60})"[^{}]{0,200}?"(?:id|packId|pack_id|primary_pack_id|myca_primary_pack_id|value)"\s*:\s*"?(\d{2,6})"?')
-    for b in blobs:
-        for m in pat_a.finditer(b): packs.setdefault(m.group(2).encode().decode("unicode_escape", "ignore") if "\\u" in m.group(2) else m.group(2), int(m.group(1)))
-        for m in pat_b.finditer(b): packs.setdefault(m.group(1).encode().decode("unicode_escape", "ignore") if "\\u" in m.group(1) else m.group(1), int(m.group(2)))
-    # パックらしい名前だけ残す（拡張パック・ハイクラスパック・デッキ・BOX・プロモ など）
-    keep = {n: i for n, i in packs.items() if re.search(r"パック|デッキ|BOX|ボックス|セット|プロモ|コレクション|ex|ex|30th", n)}
-    log(f"dmm packs found: {len(keep)}（候補{len(packs)}） → {list(keep.items())[:15]}")
-    return keep
-
-
-PACKS_FILE = pathlib.Path("packs.json")   # 総当たりで見つけたパックIDのキャッシュ {setId: {name, pack_id}}
-
-def probe_packs(center: int = 6374, before: int = 140, after: int = 30) -> dict[str, dict]:
-    """絞り込みUIが読めないときの保険：pack id を前後に総当たりして、一覧の『…/M6a』からシリーズを判定する（1回だけ、結果はキャッシュ）"""
-    found = json.loads(PACKS_FILE.read_text(encoding="utf-8")) if PACKS_FILE.exists() else {}
-    if found: return found
-    base = f"{BASE}/{GENRE}/list?cardseries={requests.utils.quote(SERIES)}&myca_primary_pack_id="
-    ids = list(range(center - 1, center - before - 1, -1)) + list(range(center + 1, center + after + 1))
-    for n, pid in enumerate(ids, 1):
-        if n % 10 == 0: log(f"  probe 進行 {n}/{len(ids)}（見つかった: {len(found)}）")
-        try:
-            html = render(base + str(pid), None, wait_for='a[href*="/items/single-card/"]', wait_ms=5000, settle_ms=300)
-        except Exception as e:
-            log(f"  probe {pid}: {e}"); continue
-        cards = parse_list(html)
-        codes = [c["setcode"] for c in cards if c["setcode"]]
-        if not codes: continue
-        code = max(set(codes), key=codes.count)
-        if not code.lower().startswith("m") or code in found: continue
-        m = re.search(r"<title>(.*?)</title>", html, re.S); title = re.sub(r"\s*[|｜].*$", "", m.group(1)).strip() if m else code
-        found[code] = {"name": title or code, "pack_id": pid}
-        log(f"  probe {pid}: {code} {found[code]['name']} ({len(cards)}枚)")
-    PACKS_FILE.write_text(json.dumps(found, ensure_ascii=False, indent=1), encoding="utf-8")
-    return found
 
 
 # ---------- DMM：一覧ページから全カード ----------
@@ -672,6 +614,10 @@ def parse_card_blocks(text: str) -> dict[str, int]:
 
 SHINSOKU_API = "https://shinsoku-tcg.com/api/items"   # 郵送買取（簡単カート買取）の一覧。画面と同じデータをJSONで返す
 SHINSOKU_PAGES = 30          # 1ページ100件。ポケモンは約1,900件なので余裕をみて
+# type は ALL/BOX/PSA/PACK/CARTON/NORMAL/UNOPENED_PROMO/UNOPENED_OTHER。
+# NORMAL＝シングル、PSA＝鑑定品。ALL だとBOXやカートンまで混ざるので、素体と鑑定品を分けて取る
+SHINSOKU_TYPES = {"NORMAL": False, "PSA": True}   # APIのtype → PSA10扱いか
+SHINSOKU_REJECT: list[str] = []   # 番号は合うが名前が違って捨てた組み合わせ（ログ用）
 
 
 def _norm(s: str) -> str:
@@ -681,46 +627,109 @@ def _norm(s: str) -> str:
 
 
 def shinsoku_buylist(dump: bool) -> dict[str, list[dict]]:
-    """シンソクの郵送買取を API から取る → {カード番号: [{name, price, psa10, full}]}
-    modelno に同じ番号で別カードが入っていることがあるので、番号だけでなく名前でも照合できるよう一覧で返す"""
+    """シンソクの郵送買取を API から取る → {カード番号: [{name, price, psa10, full, rarity}]}
+    一覧は旧裏まで含む全弾横断なので、同じ番号（例 081/080）に別の弾のカードが必ず混ざる。
+    番号で引いたあと名前で照合できるよう、候補を配列のまま返す"""
     out: dict[str, list[dict]] = {}
     raw_all = []
-    for page in range(SHINSOKU_PAGES):
-        params = {"postal_only": "true", "sort": "price_desc", "type": "ALL", "brand": "ポケモン",
-                  "page": page, "limit": 100}
-        try:
-            r = requests.get(SHINSOKU_API, params=params, headers=HEADERS, timeout=30)
-            r.raise_for_status(); j = r.json()
-        except Exception as e:
-            log(f"  shinsoku p{page}: {e}"); break
-        data = j.get("data") or {}
-        items = data.get("items") or []
-        raw_all += items
-        for it in items:
-            key_m = CARDNO.search(str(it.get("modelno") or ""))
-            price = it.get("postal_purchase_price_s")
-            if not key_m or not price: continue
-            out.setdefault(key_m.group(1), []).append({
-                "name": it.get("name") or "", "price": int(price),
-                "psa10": any((t or {}).get("slug") == "psa10" for t in (it.get("tags") or [])),
-                "full": bool(it.get("is_full_amount_flag"))})
-        time.sleep(0.4)
-        if not data.get("has_more") or not items: break
+    for typ, is_psa in SHINSOKU_TYPES.items():
+        for page in range(SHINSOKU_PAGES):
+            params = {"postal_only": "true", "sort": "price_desc", "type": typ, "brand": "ポケモン",
+                      "page": page, "limit": 100}
+            try:
+                r = requests.get(SHINSOKU_API, params=params, headers=HEADERS, timeout=30)
+                r.raise_for_status(); j = r.json()
+            except Exception as e:
+                log(f"  shinsoku {typ} p{page}: {e}"); break
+            data = j.get("data") or {}
+            items = data.get("items") or []
+            raw_all += items
+            for it in items:
+                key_m = CARDNO.search(str(it.get("modelno") or ""))
+                price = it.get("postal_purchase_price_s")
+                if not key_m or not price: continue
+                name = it.get("name") or ""
+                if is_psa and re.search(r"PSA\s*9\b", name): continue   # PSA9はPSA10と混ぜない
+                out.setdefault(key_m.group(1), []).append({
+                    "name": name, "price": int(price), "psa10": is_psa,
+                    "rarity": (it.get("rarity") or "").strip().upper(),
+                    "full": bool(it.get("is_full_amount_flag"))})
+            time.sleep(0.4)
+            if not data.get("has_more") or not items: break
     if dump and raw_all:
         DUMP.mkdir(exist_ok=True); (DUMP / "shinsoku_items.json").write_text(json.dumps(raw_all, ensure_ascii=False, indent=1), encoding="utf-8")
     n_psa = sum(1 for v in out.values() for x in v if x["psa10"])
-    log(f"  shinsoku: 商品 {len(raw_all)}件 → 番号つき {sum(len(v) for v in out.values())}件（PSA10 {n_psa}件 / 番号 {len(out)}種）")
+    dup = sum(1 for v in out.values() if len(v) > 1)
+    log(f"  shinsoku: 商品 {len(raw_all)}件 → 番号つき {sum(len(v) for v in out.values())}件"
+        f"（PSA10 {n_psa}件 / 番号 {len(out)}種 / 同じ番号に複数 {dup}種）")
     return out
 
 
-def pick_shinsoku(entries: list[dict], card_name: str, psa10: bool) -> dict | None:
-    """同じ番号の候補からこのカードのものを選ぶ。名前が一致するものを優先し、候補が1つだけなら採用"""
+SEALED_TYPES = ("BOX", "UNOPENED_OTHER", "PACK", "CARTON")   # 未開封商品（BOX・デッキセット・パック・カートン）
+SEALED_NG = re.compile(r"カートン|再販|海外|英語|中国語|韓国")
+
+
+def shinsoku_sealed(dump: bool) -> list[dict]:
+    """シンソクの未開封商品（BOX・デッキセット等）の買取 → [{name, price, type}]
+    単品カードと違って番号が無いので、商品名で突き合わせる"""
+    out: list[dict] = []
+    for typ in SEALED_TYPES:
+        for page in range(SHINSOKU_PAGES):
+            params = {"postal_only": "true", "sort": "price_desc", "type": typ, "brand": "ポケモン",
+                      "page": page, "limit": 100}
+            try:
+                r = requests.get(SHINSOKU_API, params=params, headers=HEADERS, timeout=30)
+                r.raise_for_status(); j = r.json()
+            except Exception as e:
+                log(f"  shinsoku {typ} p{page}: {e}"); break
+            data = j.get("data") or {}; items = data.get("items") or []
+            for it in items:
+                price = it.get("postal_purchase_price_s")
+                if price: out.append({"name": it.get("name") or "", "price": int(price), "type": typ})
+            time.sleep(0.4)
+            if not data.get("has_more") or not items: break
+    log(f"  shinsoku 未開封商品: {len(out)}件")
+    return out
+
+
+def pick_sealed(items: list[dict], series_name: str, box_name: str = "") -> dict | None:
+    """このシリーズの未開封商品をシンソクの一覧から探す。
+    商品名は店ごとに表記が違うので、シリーズ名がそのまま入っているものを拾う（カートン等は除く）"""
+    q = _norm(series_name)
+    if len(q) < 3: return None
+    hit = [x for x in items if q in _norm(x["name"]) and not SEALED_NG.search(x["name"])]
+    if not hit and box_name:
+        qb = _norm(box_name)
+        hit = [x for x in items if qb and qb in _norm(x["name"]) and not SEALED_NG.search(x["name"])]
+    if not hit: return None
+    return max(hit, key=lambda x: x["price"])   # 同名が複数あれば高いほう（＝減額なし側）
+
+
+def _name_match(a: str, b: str) -> bool:
+    """カード名が同じものを指しているか。番号が一致しても名前が違えば別カードなので、ここは厳しめに見る"""
+    # 部分一致は許さない。「ピカチュウ」と「ピカチュウex」、「リザードン」と「リザードンex」は
+    # 別カードで価格も桁違いなので、含んでいるだけで採用すると取り違える。
+    # カッコ内（(SAR仕様) など）と記号・空白は _norm が落とすので、表記ゆれはそこで吸収する
+    x, y = _norm(a), _norm(b)
+    return bool(x) and x == y
+
+
+def pick_shinsoku(entries: list[dict], card_name: str, psa10: bool, rarity: str = "") -> dict | None:
+    """同じ番号の候補からこのカードのものを選ぶ。
+    シンソクの一覧は全弾横断で、同じ番号に別の弾のカードが入っている。
+    以前は『候補が1つなら名前を見ずに採用』していたため、
+    M2 ルンパッパ(AR) に別カードの ¥150,000 が付くといった取り違えが起きていた。
+    名前が一致しないものは採用しない"""
     cand = [e for e in entries if e["psa10"] == psa10]
     if not cand: return None
-    n = _norm(card_name)
-    hit = [e for e in cand if n and (n in _norm(e["name"]) or _norm(e["name"]) in n)]
-    if hit: return max(hit, key=lambda e: e["price"])
-    return cand[0] if len(cand) == 1 else None
+    hit = [e for e in cand if _name_match(card_name, e["name"])]
+    if not hit:
+        SHINSOKU_REJECT.append(f'{card_name} ≠ ' + " / ".join(f'{e["name"]}(¥{e["price"]:,})' for e in cand[:2]))
+        return None
+    if len(hit) > 1 and rarity:   # 名前まで同じ候補が複数あるときだけレアリティで絞る
+        same = [e for e in hit if e["rarity"] == rarity.upper()]
+        if same: hit = same
+    return max(hit, key=lambda e: e["price"])
 
 
 # ---------- 遊々亭（シングルカード買取・シリーズ別）----------
@@ -945,37 +954,10 @@ def main():
     a = ap.parse_args()
     only = set(s.strip() for s in a.sets.split(",") if s.strip())
 
-    packs = dict(DMM_PACK_IDS); names = dict(SET_NAMES)   # 手動指定 + 自動発見
-    # 自動発見は全世代のパックを返すので、MEGA 期（ID が MIN_PACK_ID 以上）に絞り、一覧のカード表記が M で始まるものだけ採用。判定は packs.json に記憶
-    MIN_PACK_ID = 4700; MAX_PROBE = 40
-    cache = json.loads(PACKS_FILE.read_text(encoding="utf-8")) if PACKS_FILE.exists() else {}   # {pack_id: {"name", "code"}}
-    # シリーズ一覧から全カードを取るようになったので、パックIDの自動発見は既定でやらない（ブラウザ起動が不要になる）。
-    # 商品ページへのリンク用にIDが欲しいときだけ DISCOVER_PACKS=1 を付けて実行する
-    discovered = ([(n, pid) for n, pid in discover_packs(a.dump).items() if pid >= MIN_PACK_ID and pid not in packs.values()]
-                  if os.environ.get("DISCOVER_PACKS") == "1" else [])
-    probed = 0
-    for name, pid in sorted(discovered, key=lambda x: x[1]):
-        key = str(pid)
-        if key not in cache:
-            if probed >= MAX_PROBE: break
-            probed += 1
-            try:
-                html = render(f"{BASE}/{GENRE}/list?cardseries={requests.utils.quote(SERIES)}&myca_primary_pack_id={pid}", None, wait_for='a[href*="/items/single-card/"]', wait_ms=6000, settle_ms=300)
-                codes = [c["setcode"] for c in parse_list(html) if c["setcode"]]
-                cache[key] = {"name": name, "code": max(set(codes), key=codes.count) if codes else ""}
-            except Exception as e:
-                cache[key] = {"name": name, "code": ""}
-            log(f"  判定 {pid} {name} → {cache[key]['code'] or '対象外'}")
-        code = cache[key].get("code", "")
-        if re.match(r"^M\d", code) and code not in packs:
-            packs[code] = pid; names[code] = name
-    PACKS_FILE.write_text(json.dumps(cache, ensure_ascii=False, indent=1), encoding="utf-8")
-    log(f"対象パック: {len(packs)} → {[(k, v) for k, v in packs.items()]}")
-    if len(packs) <= 1 and os.environ.get("PROBE_PACKS") == "1":   # 総当たりは環境変数で明示したときだけ
-        for code, info in probe_packs().items():
-            if info["pack_id"] in packs.values(): continue
-            packs[code] = info["pack_id"]; names[code] = info["name"]
-        log(f"packs after probe: {len(packs)} → {[(k, v) for k, v in packs.items()]}")
+    names = dict(SET_NAMES)
+    packs = dict(EXTRA_PACKS)   # シリーズ一覧に出ない弾だけ、パックIDを指定して追加で読む
+    log(f"追加で読む弾: {[(k, v) for k, v in packs.items()]}" if packs else "追加で読む弾: なし")
+
     if a.boxes:   # 確認用：BOX一覧だけ見て終わる
         idx = dmm_box_index(a.dump)
         log(f"BOX商品 {len(idx)}件（コード付き {sum(1 for b in idx if b['setcode'])}件）")
@@ -992,8 +974,12 @@ def main():
         close_browser(); return
 
     sets_db = json.loads(SETS_FILE.read_text(encoding="utf-8")) if SETS_FILE.exists() else {}
+    stale = [k for k in sets_db if re.match(r"^pack\d+$", k)]   # パック自動発見時代の残骸（pack6389 など）
+    for k in stale: sets_db.pop(k, None)
+    if stale: log(f"sets.json から古い弾を削除: {stale}")
     snap = {"fetched_at": dt.datetime.now(JST).isoformat(timespec="minutes"), "v": 2, "sets": {}}
     shinsoku = shinsoku_buylist(a.dump)        # 弾をまたぐ一覧なのでカード番号＋名前で照合
+    sealed = shinsoku_sealed(a.dump)           # BOX・デッキセットの買取（商品名で照合）
     hare2 = hare2_buylist(a.dump)              # シリーズコード＋番号で照合できる
     hist: dict[str, dict[str, list]] = {}      # DMMの日次価格推移（latest.json とは別ファイルに保存）
     # 前回の結果。最安値が動いていないカードは商品ページを開き直さず、前回のぶんをそのまま使う
@@ -1016,6 +1002,13 @@ def main():
     ocr = ocr_buy_by_key()
 
     groups = collect_series(a.dump)                     # シリーズ一覧を1回読んでコードで振り分ける
+    seen_ids = {c["dmmId"] for v in groups.values() for c in v}
+    for code, pid in packs.items():                    # シリーズ一覧に出てこない弾を足す
+        extra = [c for c in collect_set_list(pid, a.dump, code) if c["dmmId"] not in seen_ids]
+        for c in extra:
+            seen_ids.add(c["dmmId"])
+            groups.setdefault(c["setcode"] or code, []).append(c)
+        log(f"  {code}（パック{pid}）: +{len(extra)}枚")
     code_to_pack = {code: pid for code, pid in packs.items()}
     for set_id, cards in sorted(groups.items(), key=lambda x: -len(x[1])):
         if set_id == "—": log(f"シリーズコードなし: {len(cards)}枚（スキップ）"); continue
@@ -1041,9 +1034,9 @@ def main():
             P = prices.get(c["key"], {}).get("prices", {}); P["dmm"] = {"lowest": c["lowest"], "cond": c["cond"]}
             buy = {}
             sh = shinsoku.get(c["key"], [])
-            hit = pick_shinsoku(sh, c["name"], psa10=False)
+            hit = pick_shinsoku(sh, c["name"], psa10=False, rarity=c["rarity"])
             if hit: buy["shinsoku"] = {"price": hit["price"], **({"full": True} if hit["full"] else {})}
-            hpsa = pick_shinsoku(sh, c["name"], psa10=True)   # PSA10の買取価格（鑑定に出す価値の判断に使う）
+            hpsa = pick_shinsoku(sh, c["name"], psa10=True, rarity=c["rarity"])   # PSA10の買取価格（鑑定に出す価値の判断に使う）
             if hpsa: P.setdefault("psa10", {}).setdefault("buy", {})["shinsoku"] = hpsa["price"]
             h2 = hare2.get(set_id, {}).get(c["key"])
             if h2: buy["hareruya2"] = {"price": h2["price"]}
@@ -1093,9 +1086,10 @@ def main():
         log(f"  PSA10 付き: {sum(1 for v in prices.values() if v['prices'].get('psa10'))}枚")
         try:
             bid = box_id_for(set_id, entry["name"])
-            if bid == 0:   # 0 = 取得しない（DMMにまだBOXが無い弾。似た名前の別商品を拾わせない）
-                entry.pop("box", None)   # 前回の実行で誤って入った値が残らないように消す
-                log("  BOX 実勢: 取得しない指定（BOX_IDS = 0）"); raise StopIteration
+            b = None
+            if bid == 0:   # 0 = DMMの実勢は取らない（まだBOXが無い弾。似た名前の別商品を拾わせないため）
+                log("  BOX 実勢: 取得しない指定（BOX_IDS = 0）")
+                raise StopIteration    # 買取だけは finally で付ける
             b = dmm_box_item(bid, a.dump) if bid else None          # ① BOX_IDS で手動指定があればそれ
             if b: log(f"  BOX 商品ID指定: {bid}")
             if not b: b = pick_box(box_index_lazy(), set_id, entry["name"])   # ② keyword=BOX の一覧からコード照合
@@ -1112,11 +1106,25 @@ def main():
             else:
                 entry.pop("box", None); log("  BOX 実勢: 見つからず")
         except StopIteration:
-            pass
+            entry.pop("box", None)   # 前回の実行で誤って入った実勢価格が残らないように消す
         except Exception as e:
             log(f"  BOX: {e}")
+        try:   # 未開封商品の買取（シンソク）。実勢が取れない弾（デッキセット等）でもここは付く
+            sb = pick_sealed(sealed, entry["name"], (entry.get("box") or {}).get("name", ""))
+            if sb:
+                entry.setdefault("box", {"when": snap["fetched_at"]})["buy"] = {
+                    "shinsoku": sb["price"], "name": sb["name"]}
+                log(f"  BOX 買取: ¥{sb['price']:,}（シンソク・{sb['name']}）")
+            elif entry.get("box"):
+                entry["box"].pop("buy", None)
+        except Exception as e:
+            log(f"  BOX 買取: {e}")
         snap["sets"][set_id] = prices
         log(f"{set_id} {entry['name']}: {len(cards)}枚")
+
+    if SHINSOKU_REJECT:
+        log(f"シンソク: 番号は一致するが名前が違うため不採用 {len(SHINSOKU_REJECT)}件（先頭10件）")
+        for r in SHINSOKU_REJECT[:10]: log("    " + r)
 
     if hist:
         HIST_FILE.write_text(json.dumps(hist, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
