@@ -1002,18 +1002,18 @@
    }
   },
   "box": {
-   "price": 31800,
-   "when": "2026-10-07T13:30+09:00",
+   "price": 31350,
+   "when": "2026-10-08T03:46+09:00",
    "src": "DMMマイカ",
    "name": "30th CELEBRATION BOX",
    "dmmId": 10004030,
    "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10004030",
    "sealed": true,
    "sold": {
-    "med": 28500,
-    "last": 29800,
+    "med": 28800,
+    "last": 28900,
     "n": 50,
-    "qty": 112,
+    "qty": 113,
     "when": "2026-10-07"
    },
    "buy": {
@@ -1582,7 +1582,7 @@
   },
   "box": {
    "price": 13000,
-   "when": "2026-10-07T13:30+09:00",
+   "when": "2026-10-08T03:46+09:00",
    "src": "DMMマイカ",
    "name": "メガブレイブ BOX",
    "dmmId": 10003850,
@@ -1590,13 +1590,13 @@
    "sealed": true,
    "sold": {
     "med": 7700,
-    "last": 7800,
+    "last": 9980,
     "n": 50,
     "qty": 173,
-    "when": "2026-10-06"
+    "when": "2026-10-07"
    },
    "buy": {
-    "shinsoku": 7900,
+    "shinsoku": 7800,
     "name": "拡張パック「メガブレイブ」(M1L)"
    }
   }
@@ -2161,7 +2161,7 @@
   },
   "box": {
    "price": 11000,
-   "when": "2026-10-07T13:30+09:00",
+   "when": "2026-10-08T03:46+09:00",
    "src": "DMMマイカ",
    "name": "メガシンフォニア BOX",
    "dmmId": 10003860,
@@ -2169,13 +2169,13 @@
    "sealed": true,
    "sold": {
     "med": 7200,
-    "last": 7100,
+    "last": 7000,
     "n": 50,
     "qty": 160,
-    "when": "2026-10-06"
+    "when": "2026-10-07"
    },
    "buy": {
-    "shinsoku": 7200,
+    "shinsoku": 7100,
     "name": "拡張パック「メガシンフォニア」(M1S)"
    }
   }
@@ -2884,7 +2884,7 @@
   },
   "box": {
    "price": 17900,
-   "when": "2026-10-07T13:30+09:00",
+   "when": "2026-10-08T03:46+09:00",
    "src": "DMMマイカ",
    "name": "インフェルノX BOX",
    "dmmId": 10003880,
@@ -2898,7 +2898,7 @@
     "when": "2026-10-07"
    },
    "buy": {
-    "shinsoku": 14000,
+    "shinsoku": 14200,
     "name": "拡張パック「インフェルノX」(M2)"
    }
   }
@@ -4411,7 +4411,7 @@
   },
   "box": {
    "price": 14960,
-   "when": "2026-10-07T13:30+09:00",
+   "when": "2026-10-08T03:46+09:00",
    "src": "DMMマイカ",
    "name": "MEGAドリームex BOX",
    "dmmId": 10003900,
@@ -4419,13 +4419,13 @@
    "sealed": true,
    "sold": {
     "med": 13500,
-    "last": 14800,
+    "last": 14980,
     "n": 50,
     "qty": 117,
     "when": "2026-10-07"
    },
    "buy": {
-    "shinsoku": 11800,
+    "shinsoku": 11600,
     "name": "ハイクラスパック「MEGAドリームex」(M2a)"
    }
   }
@@ -5140,7 +5140,7 @@
   },
   "box": {
    "price": 9500,
-   "when": "2026-10-07T13:30+09:00",
+   "when": "2026-10-08T03:46+09:00",
    "src": "DMMマイカ",
    "name": "ムニキスゼロ BOX",
    "dmmId": 10003925,
@@ -5887,17 +5887,17 @@
   },
   "box": {
    "price": 9280,
-   "when": "2026-10-07T13:30+09:00",
+   "when": "2026-10-08T03:46+09:00",
    "src": "DMMマイカ",
    "name": "ニンジャスピナー BOX",
    "dmmId": 10003950,
    "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10003950",
    "sealed": true,
    "sold": {
-    "med": 8500,
-    "last": 9980,
+    "med": 8780,
+    "last": 8780,
     "n": 50,
-    "qty": 106,
+    "qty": 103,
     "when": "2026-10-07"
    },
    "buy": {
@@ -6622,18 +6622,18 @@
   },
   "box": {
    "price": 9680,
-   "when": "2026-10-07T13:30+09:00",
+   "when": "2026-10-08T03:46+09:00",
    "src": "DMMマイカ",
    "name": "アビスアイ BOX",
    "dmmId": 10003970,
    "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10003970",
    "sealed": true,
    "sold": {
-    "med": 8300,
-    "last": 8300,
+    "med": 8100,
+    "last": 8100,
     "n": 50,
-    "qty": 125,
-    "when": "2026-10-06"
+    "qty": 182,
+    "when": "2026-10-07"
    },
    "buy": {
     "shinsoku": 8200,
@@ -7326,18 +7326,18 @@
    }
   },
   "box": {
-   "price": 11500,
-   "when": "2026-10-07T13:30+09:00",
+   "price": 13500,
+   "when": "2026-10-08T03:46+09:00",
    "src": "DMMマイカ",
    "name": "ストームエメラルダ BOX",
    "dmmId": 10003980,
    "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10003980",
    "sealed": true,
    "sold": {
-    "med": 9700,
-    "last": 15800,
+    "med": 10500,
+    "last": 10000,
     "n": 50,
-    "qty": 100,
+    "qty": 92,
     "when": "2026-10-07"
    },
    "buy": {
