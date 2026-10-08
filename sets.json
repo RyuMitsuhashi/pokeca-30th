@@ -1002,18 +1002,18 @@
    }
   },
   "box": {
-   "price": 31350,
-   "when": "2026-10-08T13:41+09:00",
+   "price": 30000,
+   "when": "2026-10-09T03:28+09:00",
    "src": "DMMマイカ",
    "name": "30th CELEBRATION BOX",
    "dmmId": 10004030,
    "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10004030",
    "sealed": true,
    "sold": {
-    "med": 28900,
-    "last": 32500,
+    "med": 28500,
+    "last": 27000,
     "n": 50,
-    "qty": 115,
+    "qty": 117,
     "when": "2026-10-08"
    },
    "buy": {
@@ -1582,7 +1582,7 @@
   },
   "box": {
    "price": 13000,
-   "when": "2026-10-08T13:41+09:00",
+   "when": "2026-10-09T03:28+09:00",
    "src": "DMMマイカ",
    "name": "メガブレイブ BOX",
    "dmmId": 10003850,
@@ -1593,10 +1593,10 @@
     "last": 9980,
     "n": 50,
     "qty": 173,
-    "when": "2026-10-07"
+    "when": "2026-10-08"
    },
    "buy": {
-    "shinsoku": 7800,
+    "shinsoku": 7600,
     "name": "拡張パック「メガブレイブ」(M1L)"
    }
   }
@@ -2160,8 +2160,8 @@
    }
   },
   "box": {
-   "price": 11000,
-   "when": "2026-10-08T13:41+09:00",
+   "price": 10999,
+   "when": "2026-10-09T03:28+09:00",
    "src": "DMMマイカ",
    "name": "メガシンフォニア BOX",
    "dmmId": 10003860,
@@ -2171,7 +2171,7 @@
     "med": 7200,
     "last": 8000,
     "n": 50,
-    "qty": 160,
+    "qty": 158,
     "when": "2026-10-08"
    },
    "buy": {
@@ -2884,17 +2884,17 @@
   },
   "box": {
    "price": 21000,
-   "when": "2026-10-08T13:41+09:00",
+   "when": "2026-10-09T03:28+09:00",
    "src": "DMMマイカ",
    "name": "インフェルノX BOX",
    "dmmId": 10003880,
    "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10003880",
    "sealed": true,
    "sold": {
-    "med": 16900,
-    "last": 16000,
+    "med": 17000,
+    "last": 21800,
     "n": 50,
-    "qty": 91,
+    "qty": 92,
     "when": "2026-10-08"
    },
    "buy": {
@@ -4410,8 +4410,8 @@
    }
   },
   "box": {
-   "price": 15950,
-   "when": "2026-10-08T13:41+09:00",
+   "price": 15999,
+   "when": "2026-10-09T03:28+09:00",
    "src": "DMMマイカ",
    "name": "MEGAドリームex BOX",
    "dmmId": 10003900,
@@ -4419,13 +4419,13 @@
    "sealed": true,
    "sold": {
     "med": 13500,
-    "last": 13500,
+    "last": 13800,
     "n": 50,
-    "qty": 106,
+    "qty": 90,
     "when": "2026-10-08"
    },
    "buy": {
-    "shinsoku": 11600,
+    "shinsoku": 12000,
     "name": "ハイクラスパック「MEGAドリームex」(M2a)"
    }
   }
@@ -5139,18 +5139,18 @@
    }
   },
   "box": {
-   "price": 9500,
-   "when": "2026-10-08T13:41+09:00",
+   "price": 9900,
+   "when": "2026-10-09T03:28+09:00",
    "src": "DMMマイカ",
    "name": "ムニキスゼロ BOX",
    "dmmId": 10003925,
    "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10003925",
    "sealed": true,
    "sold": {
-    "med": 8200,
-    "last": 8380,
+    "med": 8300,
+    "last": 19800,
     "n": 50,
-    "qty": 102,
+    "qty": 100,
     "when": "2026-10-08"
    },
    "buy": {
@@ -5887,7 +5887,7 @@
   },
   "box": {
    "price": 9280,
-   "when": "2026-10-08T13:41+09:00",
+   "when": "2026-10-09T03:28+09:00",
    "src": "DMMマイカ",
    "name": "ニンジャスピナー BOX",
    "dmmId": 10003950,
@@ -5895,13 +5895,13 @@
    "sealed": true,
    "sold": {
     "med": 8900,
-    "last": 8800,
+    "last": 7000,
     "n": 50,
     "qty": 101,
     "when": "2026-10-08"
    },
    "buy": {
-    "shinsoku": 8500,
+    "shinsoku": 8600,
     "name": "拡張パック「ニンジャスピナー」(M4)"
    }
   }
@@ -6621,8 +6621,8 @@
    }
   },
   "box": {
-   "price": 9680,
-   "when": "2026-10-08T13:41+09:00",
+   "price": 9700,
+   "when": "2026-10-09T03:28+09:00",
    "src": "DMMマイカ",
    "name": "アビスアイ BOX",
    "dmmId": 10003970,
@@ -6630,13 +6630,13 @@
    "sealed": true,
    "sold": {
     "med": 8100,
-    "last": 8180,
+    "last": 8400,
     "n": 50,
-    "qty": 182,
+    "qty": 202,
     "when": "2026-10-08"
    },
    "buy": {
-    "shinsoku": 8300,
+    "shinsoku": 8400,
     "name": "拡張パック「アビスアイ」(M5)"
    }
   }
@@ -7326,22 +7326,22 @@
    }
   },
   "box": {
-   "price": 13500,
-   "when": "2026-10-08T13:41+09:00",
+   "price": 11500,
+   "when": "2026-10-09T03:28+09:00",
    "src": "DMMマイカ",
    "name": "ストームエメラルダ BOX",
    "dmmId": 10003980,
    "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10003980",
    "sealed": true,
    "sold": {
-    "med": 9800,
-    "last": 9800,
+    "med": 10500,
+    "last": 12800,
     "n": 50,
-    "qty": 92,
+    "qty": 97,
     "when": "2026-10-08"
    },
    "buy": {
-    "shinsoku": 9500,
+    "shinsoku": 9600,
     "name": "拡張パック「ストームエメラルダ」(M6)"
    }
   }
@@ -7895,6 +7895,18 @@
     "name": "イーブイ",
     "rarity": "PROMO",
     "dmmId": 375470
+   },
+   "154/M-P": {
+    "no": "154",
+    "name": "ルカリオ",
+    "rarity": "PROMO",
+    "dmmId": 375540
+   },
+   "151/M-P": {
+    "no": "151",
+    "name": "ゲッコウガex",
+    "rarity": "PROMO",
+    "dmmId": 375525
    }
   }
  },
@@ -8153,13 +8165,19 @@
     "name": "ヤミカラス",
     "rarity": "",
     "dmmId": 373275
+   },
+   "011/040": {
+    "no": "011",
+    "name": "ミュウ",
+    "rarity": "",
+    "dmmId": 373240
    }
   },
   "dmm_pack_id": 6389,
   "box": {
-   "when": "2026-10-05T01:30+09:00",
+   "when": "2026-10-09T03:28+09:00",
    "buy": {
-    "shinsoku": 16000,
+    "shinsoku": 16100,
     "name": "30th CELEBRATION プレミアムデッキセット エーフィ・ブラッキー"
    }
   }
