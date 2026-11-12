@@ -1003,17 +1003,17 @@
   },
   "box": {
    "price": 23780,
-   "when": "2026-11-12T14:53+09:00",
+   "when": "2026-11-13T04:35+09:00",
    "src": "DMMマイカ",
    "name": "30th CELEBRATION BOX",
    "dmmId": 10004030,
    "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10004030",
    "sealed": true,
    "sold": {
-    "med": 21800,
-    "last": 25500,
+    "med": 22500,
+    "last": 20000,
     "n": 50,
-    "qty": 85,
+    "qty": 80,
     "when": "2026-11-12"
    },
    "buy": {
@@ -1582,17 +1582,17 @@
   },
   "box": {
    "price": 9000,
-   "when": "2026-11-12T14:53+09:00",
+   "when": "2026-11-13T04:35+09:00",
    "src": "DMMマイカ",
    "name": "メガブレイブ BOX",
    "dmmId": 10003850,
    "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10003850",
    "sealed": true,
    "sold": {
-    "med": 8800,
-    "last": 14300,
+    "med": 8980,
+    "last": 7500,
     "n": 50,
-    "qty": 104,
+    "qty": 97,
     "when": "2026-11-12"
    },
    "buy": {
@@ -2161,7 +2161,7 @@
   },
   "box": {
    "price": 8900,
-   "when": "2026-11-12T14:53+09:00",
+   "when": "2026-11-13T04:35+09:00",
    "src": "DMMマイカ",
    "name": "メガシンフォニア BOX",
    "dmmId": 10003860,
@@ -2169,10 +2169,10 @@
    "sealed": true,
    "sold": {
     "med": 7400,
-    "last": 7300,
+    "last": 6480,
     "n": 50,
-    "qty": 94,
-    "when": "2026-11-11"
+    "qty": 95,
+    "when": "2026-11-12"
    },
    "buy": {
     "shinsoku": 7300,
@@ -2884,7 +2884,7 @@
   },
   "box": {
    "price": 19700,
-   "when": "2026-11-12T14:53+09:00",
+   "when": "2026-11-13T04:35+09:00",
    "src": "DMMマイカ",
    "name": "インフェルノX BOX",
    "dmmId": 10003880,
@@ -3066,9 +3066,9 @@
    },
    "228/193": {
     "no": "228",
-    "name": "メガルカリオex（表面加工エラー）",
+    "name": "メガルカリオex",
     "rarity": "MA",
-    "dmmId": 364855
+    "dmmId": 364850
    },
    "227/193": {
     "no": "227",
@@ -4411,7 +4411,7 @@
   },
   "box": {
    "price": 13900,
-   "when": "2026-11-12T14:53+09:00",
+   "when": "2026-11-13T04:35+09:00",
    "src": "DMMマイカ",
    "name": "MEGAドリームex BOX",
    "dmmId": 10003900,
@@ -4419,7 +4419,7 @@
    "sealed": true,
    "sold": {
     "med": 13000,
-    "last": 13900,
+    "last": 13200,
     "n": 50,
     "qty": 81,
     "when": "2026-11-12"
@@ -5140,7 +5140,7 @@
   },
   "box": {
    "price": 10400,
-   "when": "2026-11-12T14:53+09:00",
+   "when": "2026-11-13T04:35+09:00",
    "src": "DMMマイカ",
    "name": "ムニキスゼロ BOX",
    "dmmId": 10003925,
@@ -5887,7 +5887,7 @@
   },
   "box": {
    "price": 11100,
-   "when": "2026-11-12T14:53+09:00",
+   "when": "2026-11-13T04:35+09:00",
    "src": "DMMマイカ",
    "name": "ニンジャスピナー BOX",
    "dmmId": 10003950,
@@ -5895,7 +5895,7 @@
    "sealed": true,
    "sold": {
     "med": 10200,
-    "last": 8500,
+    "last": 9900,
     "n": 50,
     "qty": 144,
     "when": "2026-11-12"
@@ -6622,21 +6622,21 @@
   },
   "box": {
    "price": 8500,
-   "when": "2026-11-12T14:53+09:00",
+   "when": "2026-11-13T04:35+09:00",
    "src": "DMMマイカ",
    "name": "アビスアイ BOX",
    "dmmId": 10003970,
    "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10003970",
    "sealed": true,
    "sold": {
-    "med": 8200,
+    "med": 8500,
     "last": 13000,
     "n": 50,
     "qty": 122,
     "when": "2026-11-12"
    },
    "buy": {
-    "shinsoku": 7800,
+    "shinsoku": 8000,
     "name": "拡張パック「アビスアイ」(M5)"
    }
   }
@@ -7327,21 +7327,21 @@
   },
   "box": {
    "price": 9800,
-   "when": "2026-11-12T14:53+09:00",
+   "when": "2026-11-13T04:35+09:00",
    "src": "DMMマイカ",
    "name": "ストームエメラルダ BOX",
    "dmmId": 10003980,
    "url": "https://myca.dmm.com/pokemon-trading-card-game/items/box/10003980",
    "sealed": true,
    "sold": {
-    "med": 9800,
-    "last": 9000,
+    "med": 9300,
+    "last": 10800,
     "n": 50,
-    "qty": 164,
+    "qty": 78,
     "when": "2026-11-12"
    },
    "buy": {
-    "shinsoku": 8200,
+    "shinsoku": 8000,
     "name": "拡張パック「ストームエメラルダ」(M6)"
    }
   }
@@ -7931,6 +7931,12 @@
     "name": "リオル",
     "rarity": "PROMO",
     "dmmId": 375545
+   },
+   "077/M-P": {
+    "no": "077",
+    "name": "ジャンボアイス",
+    "rarity": "PROMO",
+    "dmmId": 370220
    }
   }
  },
